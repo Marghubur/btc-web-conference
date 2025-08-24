@@ -52,7 +52,7 @@ export class AppComponent implements OnDestroy {
             if (window.location.hostname === this.ipAddress) {
                 APPLICATION_SERVER_URL = `http://${this.ipAddress}:6080/`;
             } else {
-                APPLICATION_SERVER_URL = 'https://' + window.location.hostname + ':6443/';
+                APPLICATION_SERVER_URL = 'https://' + window.location.hostname;
             }
         }
 
@@ -61,9 +61,9 @@ export class AppComponent implements OnDestroy {
             if (window.location.hostname === this.ipAddress) {
                 LIVEKIT_URL = `ws://${this.ipAddress}:7880/`;
             } else {
-                LIVEKIT_URL = 'wss://' + window.location.hostname + ':7443/';
+                // LIVEKIT_URL = 'wss://' + window.location.hostname + ':7443/';
+                LIVEKIT_URL = 'wss://' + this.livekitAddress;
             }
-            LIVEKIT_URL = 'wss://' + this.livekitAddress;
         }
     }
 
