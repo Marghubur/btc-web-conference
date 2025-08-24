@@ -149,7 +149,7 @@ export class AppComponent implements OnDestroy {
      */
     async getToken(roomName: string, participantName: string): Promise<string> {
         const response = await lastValueFrom(
-            this.httpClient.post<{ token: string }>(APPLICATION_SERVER_URL + '/api/conference/token', { roomName, participantName })
+            this.httpClient.post<{ token: string }>(APPLICATION_SERVER_URL + 'api/conference/token', { roomName, participantName })
         );
         return response.token;
     }
