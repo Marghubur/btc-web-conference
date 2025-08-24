@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/angular",
+            "outputPath": "dist/btc-web-conference",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -59,10 +59,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "angular:build:production"
+              "buildTarget": "btc-web-conference:build:production"
             },
             "development": {
-              "buildTarget": "angular:build:development"
+              "buildTarget": "btc-web-conference:build:development"
             }
           },
           "defaultConfiguration": "development"

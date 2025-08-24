@@ -15,4 +15,4 @@ RUN npm run build -- --configuration $BUILD_CONFIG
 
 # STAGE 2
 FROM nginx:alpine
-COPY --from=node /app/dist/ems_emstum_ui/browser /usr/share/nginx/html
+COPY --from=node /app/dist/btc-web-conference/browser /usr/share/nginx/html
