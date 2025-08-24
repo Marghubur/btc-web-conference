@@ -38,7 +38,7 @@ export class AppComponent implements OnDestroy {
 
     room = signal<Room | undefined>(undefined);
     ipAddress: any = 'localhost';
-    livekitAddress: any = 'www.axilcorps.com';
+    livekitAddress: any = 'www.axilcorps.com/conference';
     localTrack = signal<LocalVideoTrack | undefined>(undefined);
     remoteTracksMap = signal<Map<string, TrackInfo>>(new Map());
 
@@ -149,7 +149,7 @@ export class AppComponent implements OnDestroy {
      */
     async getToken(roomName: string, participantName: string): Promise<string> {
         const response = await lastValueFrom(
-            this.httpClient.post<{ token: string }>(APPLICATION_SERVER_URL + 'token', { roomName, participantName })
+            this.httpClient.post<{ token: string }>(APPLICATION_SERVER_URL + 'conference/token', { roomName, participantName })
         );
         return response.token;
     }
