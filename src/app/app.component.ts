@@ -52,7 +52,7 @@ export class AppComponent implements OnDestroy {
             if (window.location.hostname === this.ipAddress) {
                 APPLICATION_SERVER_URL = `http://${this.ipAddress}:6080/`;
             } else {
-                APPLICATION_SERVER_URL = 'https://' + window.location.hostname;
+                APPLICATION_SERVER_URL = 'https://' + window.location.hostname + "/";
             }
         }
 
