@@ -1,0 +1,164 @@
+#join {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+#join-dialog {
+    width: 70%;
+    max-width: 900px;
+    padding: 60px;
+    border-radius: 6px;
+    background-color: #f0f0f0;
+}
+
+#join-dialog h2 {
+    color: #4d4d4d;
+    font-size: 60px;
+    font-weight: bold;
+    text-align: center;
+}
+
+#join-dialog form {
+    text-align: left;
+}
+
+#join-dialog label {
+    display: block;
+    margin-bottom: 10px;
+    color: #0088aa;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.form-control:focus {
+    box-shadow: none !important;
+}
+
+#join-dialog button {
+    display: block;
+    margin: 20px auto 0;
+}
+
+.btn {
+    font-weight: bold;
+}
+
+.btn-success {
+    background-color: #06d362;
+    border-color: #06d362;
+}
+
+.btn-success:hover {
+    background-color: #1abd61;
+    border-color: #1abd61;
+}
+
+#room {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#room-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1000px;
+    padding: 0 20px;
+    margin-bottom: 20px;
+}
+
+#room-title {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 0;
+}
+
+#layout-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 1000px;
+    height: 100%;
+}
+
+/* Media Queries */
+@media screen and (max-width: 768px) {
+    #join-dialog {
+        width: 90%;
+        padding: 30px;
+    }
+
+    #join-dialog h2 {
+        font-size: 50px;
+    }
+
+    #layout-container {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
+
+@media screen and (max-width: 480px) {
+    #join-dialog {
+        width: 100%;
+        padding: 20px;
+    }
+
+    #join-dialog h2 {
+        font-size: 40px;
+    }
+
+    #layout-container {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+}
+
+
+.video-icon {
+    width: 20px;
+}
+
+.control-size {
+    width: 8rem;
+}
+
+.preview-container {
+    width: 100%;
+    max-width: 700px;
+}
+
+.video-preview-container {
+  width: 100%;
+  max-width: 700px;           /* Optional: limit size */
+  aspect-ratio: 16 / 9;       /* Ensures perfect rectangle like Google Meet */
+  border-radius: 12px;        /* Rounded corners */
+  overflow: hidden;           /* Crop video edges */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Optional shadow */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: black;          /* Fallback background */
+}
+
+.video-preview-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;          /* Maintain aspect ratio and crop */
+  border-radius: inherit;     /* Matches container’s rounding */
+}
+
+.drop-icon {
+    width: 1rem;
+}
+
+.full-height {
+    height: 85vh;
+}

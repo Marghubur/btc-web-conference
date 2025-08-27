@@ -1,0 +1,133 @@
+<div id="device-preview">
+    @if (!room()) {
+    <div class="row full-height">
+        <div class="col-md-6 d-flex justify-content-end align-items-center">
+            <div class="col-md-10">
+                <!-- Video Preview -->
+                <div class="video-preview-container">
+                    <video #previewVideo autoplay playsinline muted class="camera-box"></video>
+                </div>
+
+                <div class="preview-container mt-4">
+                    <!-- Device Selection -->
+                    <div class="d-flex justify-content-center">
+                        <div class="mx-2 d-flex control-size">
+                            <svg
+                                fill="#000000"
+                                class="video-icon"
+                                viewBox="0 -4 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                <g id="SVGRepo_iconCarrier">
+                                    <defs>
+                                        <style>
+                                            .cls-1 {
+                                                fill-rule: evenodd;
+                                            }
+                                        </style>
+                                    </defs>
+                                    <path
+                                        id="video-camera"
+                                        class="cls-1"
+                                        d="M1450,258l-5-2v2a2,2,0,0,1-2,2h-13a2,2,0,0,1-2-2V246a2,2,0,0,1,2-2h13a2,2,0,0,1,2,2v2l5-2a2,2,0,0,1,2,2v8A2,2,0,0,1,1450,258Zm-7-4v-8h-13v12h13v-4Zm7-6-5,2v4l5,2v-8Z"
+                                        transform="translate(-1428 -244)"
+                                    ></path>
+                                </g>
+                            </svg>
+                            <select
+                                [(ngModel)]="selectedCamera"
+                                class="border-0 form-control"
+                                (change)="onCameraChange($event)"
+                            >
+                                @for (cam of cameras; track cam.deviceId) {
+                                <option [value]="cam.deviceId">{{ cam.label || "Camera" }}</option>
+                                }
+                            </select>
+                            <svg fill="#000000" class="drop-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M24 11.305l-7.997 11.39L8 11.305z"></path></g></svg>
+                        </div>
+
+                        <div class="mx-2 d-flex control-size">
+                            <svg
+                                fill="#000000"
+                                class="video-icon"
+                                viewBox="0 0 1920 1920"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                <g id="SVGRepo_iconCarrier">
+                                    <path
+                                        d="M960.315 96.818c-186.858 0-338.862 152.003-338.862 338.861v484.088c0 186.858 152.004 338.862 338.862 338.862 186.858 0 338.861-152.004 338.861-338.862V435.68c0-186.858-152.003-338.861-338.861-338.861M427.818 709.983V943.41c0 293.551 238.946 532.497 532.497 532.497 293.55 0 532.496-238.946 532.496-532.497V709.983h96.818V943.41c0 330.707-256.438 602.668-580.9 627.471l-.006 252.301h242.044V1920H669.862v-96.818h242.043l-.004-252.3C587.438 1546.077 331 1274.116 331 943.41V709.983h96.818ZM960.315 0c240.204 0 435.679 195.475 435.679 435.68v484.087c0 240.205-195.475 435.68-435.68 435.68-240.204 0-435.679-195.475-435.679-435.68V435.68C524.635 195.475 720.11 0 960.315 0Z"
+                                        fill-rule="evenodd"
+                                    ></path>
+                                </g>
+                            </svg>
+                            <select
+                                [(ngModel)]="selectedMic"
+                                class="border-0 form-control"
+                                (change)="onMicChange($event)"
+                            >
+                                @for (mic of microphones; track mic.deviceId) {
+                                <option [value]="mic.deviceId">{{ mic.label || "Microphone" }}</option>
+                                }
+                            </select>
+                            <svg fill="#000000" class="drop-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M24 11.305l-7.997 11.39L8 11.305z"></path></g></svg>
+                        </div>
+
+                        <div class="mx-2 d-flex control-size">
+                            <svg viewBox="0 0 24 24" class="video-icon" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                <g id="SVGRepo_iconCarrier">
+                                    <path
+                                        d="M16 9C16.5 9.5 17 10.5 17 12C17 13.5 16.5 14.5 16 15M19 6C20.5 7.5 21 10 21 12C21 14 20.5 16.5 19 18M13 3L7 8H5C3.89543 8 3 8.89543 3 10V14C3 15.1046 3.89543 16 5 16H7L13 21V3Z"
+                                        stroke="#000000"
+                                        stroke-width="1.5"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    ></path>
+                                </g>
+                            </svg>
+                            <select
+                                [(ngModel)]="selectedSpeaker"
+                                class="border-0 form-control"
+                                (change)="onSpeakerChange($event)"
+                            >
+                                @for (sp of speakers; track sp.deviceId) {
+                                <option [value]="sp.deviceId">{{ sp.label || "Speaker" }}</option>
+                                }
+                            </select>
+                            <svg fill="#000000" class="drop-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M24 11.305l-7.997 11.39L8 11.305z"></path></g></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div id="join">
+                <div id="join-dialog">
+                    <h2>Join a Video Room</h2>
+                    <form [formGroup]="roomForm" (ngSubmit)="joinRoom()">
+                        <div>
+                            <label for="participant-name">Participant</label>
+                            <input
+                                formControlName="participantName"
+                                id="participant-name"
+                                class="form-control"
+                                type="text"
+                            />
+                        </div>
+                        <div>
+                            <label for="room-name">Room</label>
+                            <input formControlName="roomName" id="room-name" class="form-control" type="text" />
+                        </div>
+                        <button class="btn btn-lg btn-success" type="submit" [disabled]="!roomForm.valid">Join!</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+</div>
