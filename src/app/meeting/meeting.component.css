@@ -98,7 +98,7 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    max-width: 1350px;
+    /* max-width: 1350px; */
     height: 100%;
 }
 
@@ -216,7 +216,7 @@
 
 /* Bottom Section (Controls) */
 .footer-section {
-    height: 10%;
+    height: 8%;
     background-color: #202124;
     display: flex;
     justify-content: center;
