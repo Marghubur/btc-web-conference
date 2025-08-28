@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { LocalVideoTrack, Room } from 'livekit-client';
+import { createLocalScreenTracks, LocalTrackPublication, LocalVideoTrack, Room } from 'livekit-client';
 import { CameraService } from '../services/camera.service';
 import { RoomService } from '../services/room.service';
 import { AudioComponent } from '../audio/audio.component';
@@ -18,6 +18,9 @@ import { MediaPermissions, MediaPermissionsService } from '../services/media-per
   styleUrl: './meeting.component.css'
 })
 export class MeetingComponent implements OnDestroy, OnInit {
+    // Reference to the dedicated <video> element for screen sharing
+    @ViewChild('screenPreview') screenPreview!: ElementRef<HTMLVideoElement>;
+
     roomForm = new FormGroup({
         roomName: new FormControl('Test Room', Validators.required),
         participantName: new FormControl('Participant' + Math.floor(Math.random() * 100), Validators.required),
@@ -155,6 +158,40 @@ export class MeetingComponent implements OnDestroy, OnInit {
         } else {
             await this.cameraService.enableMic(this.room()!);
             this.isMicOn.set(true);
+        }
+    }
+
+    async shareScreen() {
+        if(!this.room()) return;
+
+        // const tracks = await createLocalScreenTracks();
+        // for(const track of tracks) {
+        //     await this.room()?.localParticipant.publishTrack(track);
+        // }
+
+        const [screenTrack] = await createLocalScreenTracks({
+            audio: false, // set to true to share system audio
+            resolution: { width: 1920, height: 1080 },
+        });
+
+        await this.room()?.localParticipant.publishTrack(screenTrack);
+        screenTrack.attach(this.screenPreview.nativeElement);
+    }
+
+    async stopScreenShare() {
+        if (!this.room) return;
+
+        const publications = this.room()?.localParticipant.videoTrackPublications;
+        publications?.forEach((pub: LocalTrackPublication) => {
+            if (pub.track?.source === 'screen_share') {
+                this.room()?.localParticipant.unpublishTrack(pub.track);
+                pub.track.stop();
+            }
+        });
+
+        // Clear the preview
+        if (this.screenPreview?.nativeElement) {
+            this.screenPreview.nativeElement.srcObject = null;
         }
     }
 

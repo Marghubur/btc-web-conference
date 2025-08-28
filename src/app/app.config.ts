@@ -11,4 +11,4 @@ export const appConfig: ApplicationConfig = {
         provideRouter(routes),
         {provide: LocationStrategy, useClass: HashLocationStrategy},
     ],
-};
+  };

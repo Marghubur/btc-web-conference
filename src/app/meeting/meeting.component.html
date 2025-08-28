@@ -4,9 +4,6 @@
             <div>Joining Please wait ...</div>
         } @else {
             <div id="room" class="w-100">
-                <div id="room-header">
-                    <h2 id="room-title">{{ roomForm.value.roomName }}</h2>
-                </div>
                 <div id="layout-container" class="video-preview-container">
                     @if (localTrack()) {
                         <video-component
@@ -73,8 +70,15 @@
                 }
             </button>
 
-            <button class="footer-btn">
+            <button class="footer-btn" (click)="shareScreen()">
                 <!-- Screen Share -->
+                 <video class="d-none"
+                    #screenPreview
+                    autoplay
+                    playsinline
+                    muted
+                    style="width: 100%; border: 2px solid #007bff; border-radius: 8px;"
+                ></video>
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M440-320h80v-166l64 63 57-57-161-160-160 160 57 56 63-63v167ZM160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
             </button>
 
