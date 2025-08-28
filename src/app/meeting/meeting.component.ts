@@ -1,4 +1,4 @@
-import { Component, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
+import { AfterViewInit, Component, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LocalVideoTrack, Room } from 'livekit-client';
 import { CameraService } from '../services/camera.service';
@@ -6,11 +6,14 @@ import { RoomService } from '../services/room.service';
 import { AudioComponent } from '../audio/audio.component';
 import { VideoComponent } from '../video/video.component';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { interval, Subscription } from 'rxjs';
+import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
 
 @Component({
   selector: 'app-meeting',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent],
+  imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule],
   templateUrl: './meeting.component.html',
   styleUrl: './meeting.component.css'
 })
@@ -35,16 +38,32 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     isCameraOn = signal(true);
     isMicOn = signal(true);
-
+    currentTime: Date = new Date();
+    private timerSubscription: Subscription | undefined;
+    permissions: MediaPermissions = {
+        camera: 'unknown',
+        microphone: 'unknown',
+    };
+    private subscription?: Subscription;
     constructor(
         private cameraService: CameraService,
         private router: ActivatedRoute,
         private roomService: RoomService,
-        private route: Router
-    ) { }
+        private route: Router,
+        private mediaPerm: MediaPermissionsService
+    ) {}
 
     async ngOnInit() {
-      const devices = await navigator.mediaDevices.enumerateDevices();
+        this.timerSubscription = interval(60 * 1000).subscribe(() => {
+            this.currentTime = new Date();
+        });
+        this.subscription = this.mediaPerm.permissions$.subscribe(
+            permissions => {
+                this.permissions = permissions;
+                console.log('Permissions updated:', permissions, 'Update #');
+            }
+        );
+        const devices = await navigator.mediaDevices.enumerateDevices();
         this.cameras = devices.filter(d => d.kind === 'videoinput');
         this.microphones = devices.filter(d => d.kind === 'audioinput');
         this.speakers = devices.filter(d => d.kind === 'audiooutput');
@@ -55,7 +74,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         // Using snapshot (loads once)
         this.meetingId = this.router.snapshot.paramMap.get('id');
         if(this.meetingId) {
-          this.joinRoom();
+            this.joinRoom();
         }
     }
 
@@ -113,8 +132,19 @@ export class MeetingComponent implements OnDestroy, OnInit {
         }
     }
 
+    showUserMicActivePopup() {
+        
+    }
+
     @HostListener('window:beforeunload')
     async ngOnDestroy() {
         await this.leaveRoom();
+        if (this.timerSubscription) {
+            this.timerSubscription.unsubscribe();
+        }
+        if (this.subscription) {
+            this.subscription.unsubscribe();
+        }
+        this.mediaPerm.destroy();
     }    
 }
