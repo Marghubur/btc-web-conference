@@ -52,13 +52,22 @@ export class MeetingComponent implements OnDestroy, OnInit {
     @ViewChild('microphoneActiveModal') microphoneActiveModal!: ElementRef;
     @ViewChild('cameraActiveModal') cameraActiveModal!: ElementRef;
     private modalInstance: any;
+
+    get remoteUsersCount(): number {
+    const map = this.remoteTracksMap();
+    const uniqueParticipants = new Set(
+        Array.from(map.values()).map(track => track.participantIdentity)
+    );
+    return uniqueParticipants.size;
+    }
+
     constructor(
         private cameraService: CameraService,
         private router: ActivatedRoute,
         private roomService: RoomService,
         private route: Router,
         private mediaPerm: MediaPermissionsService
-    ) {}
+    ) { }
 
     async ngOnInit() {
         this.timerSubscription = interval(60 * 1000).subscribe(() => {
