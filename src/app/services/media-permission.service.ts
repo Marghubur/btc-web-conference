@@ -287,6 +287,29 @@ export class MediaPermissionsService {
     }
   }
 
+  async requesMictPermissions(microphone: boolean = true): Promise<MediaPermissions> {
+    try {
+      const constraints: MediaStreamConstraints = {
+        audio: microphone
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      // Clean up the stream immediately after getting permission
+      stream.getTracks().forEach(track => track.stop());
+
+      // Permissions will be automatically updated via event listeners
+      // But we can force a check to get immediate feedback
+      await this.checkPermissions();
+      
+      return this.getCurrentPermissions();
+    } catch (error) {
+      console.error('Error requesting media permissions:', error);
+      await this.checkPermissions();
+      return this.getCurrentPermissions();
+    }
+  }
+
   // Force a manual check (useful for user-triggered checks)
   async forceCheck(): Promise<MediaPermissions> {
     return await this.checkPermissions();

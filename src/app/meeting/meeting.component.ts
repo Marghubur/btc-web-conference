@@ -48,6 +48,9 @@ export class MeetingComponent implements OnDestroy, OnInit {
         microphone: 'unknown',
     };
     private subscription?: Subscription;
+    @ViewChild('microphoneActiveModal') microphoneActiveModal!: ElementRef;
+    @ViewChild('cameraActiveModal') cameraActiveModal!: ElementRef;
+    private modalInstance: any;
     constructor(
         private cameraService: CameraService,
         private router: ActivatedRoute,
@@ -78,6 +81,28 @@ export class MeetingComponent implements OnDestroy, OnInit {
         this.meetingId = this.router.snapshot.paramMap.get('id');
         if(this.meetingId) {
             this.joinRoom();
+        }
+    }
+
+    ngAfterViewInit() {
+        const modalEl = document.getElementById('microphoneActiveModal');
+        if (modalEl) {
+        // @ts-ignore (bootstrap comes from CDN)
+        this.modalInstance = new bootstrap.Modal(modalEl);
+
+        modalEl.addEventListener('shown.bs.modal', () => {
+            this.microphoneActiveModal?.nativeElement.focus();
+        });
+        }
+
+        const cameraActiveModal = document.getElementById('cameraActiveModal');
+        if (cameraActiveModal) {
+        // @ts-ignore (bootstrap comes from CDN)
+        this.modalInstance = new bootstrap.Modal(modalEl);
+
+        cameraActiveModal.addEventListener('shown.bs.modal', () => {
+            this.cameraActiveModal?.nativeElement.focus();
+        });
         }
     }
 
@@ -170,8 +195,33 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     showUserMicActivePopup() {
-        
+        if (this.modalInstance) {
+            this.modalInstance.show();
+        }
     }
+
+    async activeMic() {
+        await this.mediaPerm.requestPermissions(true, true);
+    }
+
+    getColorFromName(name: string): string {
+        // Predefined color palette (Google Meet style soft colors)
+        const colors = [
+            "#f28b829f", "#FDD663", "#81C995", "#AECBFA", "#D7AEFB", "#FFB300",
+            "#34A853", "#4285F4", "#FBBC05", "#EA4335", "#9AA0A6", "#F6C7B6"
+        ];
+
+        // Create hash from name
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        // Pick color based on hash
+        const index = Math.abs(hash) % colors.length;
+        return colors[index];
+    }
+    
 
     @HostListener('window:beforeunload')
     async ngOnDestroy() {
