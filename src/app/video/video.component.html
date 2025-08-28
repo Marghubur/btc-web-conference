@@ -1,14 +1,7 @@
-<div class="row col-md-12">
-    <div class="col-md-2 py-5">
-        <div class="card">MD</div>
+<div [id]="'camera-' + participantIdentity()" class="video-container">
+    <div class="participant-data">
+        <p>{{ participantIdentity() + (local() ? " (You)" : "") }}</p>
     </div>
-    <div class="col-md-10 ps-4 pe-3">
-        <div [id]="'camera-' + participantIdentity()" class="video-container">
-            <div class="participant-data">
-                <p>{{ participantIdentity() + (local() ? " (You)" : "") }}</p>
-            </div>
-            <video #videoElement [id]="track().sid"></video>
-        </div>
-    </div>
+    <video #videoElement [id]="track().sid"></video>
 </div>
 

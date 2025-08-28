@@ -106,3 +106,24 @@ footer .text span {
         padding: 10px;
     }
 }
+
+
+select:focus,
+a:focus,
+input:focus {
+  outline: none !important;
+  border-color: 1px solid #d9d9d9 !important;
+  -webkit-box-shadow: none !important;
+  box-shadow: none !important;
+}
+
+select,
+a,
+label,
+input,
+button,
+textarea {
+  outline: none !important;
+  -webkit-box-shadow: none !important;
+  box-shadow: none !important;
+}

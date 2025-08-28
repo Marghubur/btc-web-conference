@@ -1,10 +1,11 @@
+import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnDestroy, input, viewChild } from '@angular/core';
 import { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client';
 
 @Component({
     selector: 'video-component',
     standalone: true,
-    imports: [],
+    imports: [CommonModule],
     templateUrl: './video.component.html',
     styleUrl: './video.component.css',
 })

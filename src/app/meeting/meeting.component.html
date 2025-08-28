@@ -1,32 +1,51 @@
 <div class="d-flex flex-column h-100 overflow-hidden">
     <div class="conference-section flex-grow-1">
         @if (!room()) {
-            <div>Joining Please wait ...</div>
+        <div>Joining Please wait ...</div>
         } @else {
-            <div id="room" class="w-100">
-                <div id="layout-container" class="video-preview-container">
-                    @if (localTrack()) {
-                        <video-component
-                        [track]="localTrack()!"
-                        [participantIdentity]="roomForm.value.participantName!"
-                        [local]="true"
-                        ></video-component>
-                    }
-                    @for (remoteTrack of remoteTracksMap().values(); track remoteTrack.trackPublication.trackSid) {
-                        @if (remoteTrack.trackPublication.kind === 'video') {
-                            <video-component
-                            [track]="remoteTrack.trackPublication.videoTrack!"
-                            [participantIdentity]="remoteTrack.participantIdentity"
-                            ></video-component>
-                        } @else {
-                            <audio-component [track]="remoteTrack.trackPublication.audioTrack!" hidden></audio-component>
+        <div id="room" class="w-100">
+            <div class="row col-md-12 pt-3">
+                <div class="col-md-2">
+                    <div class="row align-items-start flex-column ps-4">
+                        @if (localTrack()) {
+                        <div class="card participant-card fw-semibold"
+                                [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">{{roomForm.value.participantName}}</div>
                         }
-                    }
+                        <!-- @for (remoteTrack of remoteTracksMap().values(); track remoteTrack.trackPublication.trackSid;) {
+                            @if (remoteTrack.trackPublication.kind === 'video') {
+                                <div class="card participant-card fw-semibold mt-2"
+                                    [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity)}">{{remoteTrack.participantIdentity}}</div>
+                            }
+                        } -->
+                    </div>
+                </div>
+                <div class="col-md-10 ps-4 pe-3">
+                    <div class="meet-container">
+                        <div class="grid-container" [attr.data-count]="1">
+                            @if (localTrack()) {
+                                <video-component [track]="localTrack()!" [participantIdentity]="roomForm.value.participantName!"
+                                    [local]="false"></video-component>
+                            }
+                            @for (remoteTrack of remoteTracksMap().values(); track remoteTrack.trackPublication.trackSid) {
+                            @if (remoteTrack.trackPublication.kind === 'video') {
+                            <video-component [track]="remoteTrack.trackPublication.videoTrack!"
+                                [participantIdentity]="remoteTrack.participantIdentity"></video-component>
+                            } @else {
+                            <audio-component [track]="remoteTrack.trackPublication.audioTrack!" hidden></audio-component>
+                            }
+                            }
+
+                        </div>
+                    </div>
+                    <div id="layout-container" class="video-preview-container">
+                    </div>
+
                 </div>
             </div>
+        </div>
         }
     </div>
-    
+
     <!-- Bottom 10% Area: Controls -->
     <div class="footer-section justify-content-between px-3 py-2">
         <div class="footer-left fw-semibold text-white">
@@ -38,58 +57,98 @@
             <button class="footer-btn">
                 <!-- More Options -->
                 <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" fill="white">
-                    <circle cx="5" cy="12" r="2"/>
-                    <circle cx="12" cy="12" r="2"/>
-                    <circle cx="19" cy="12" r="2"/>
+                    <circle cx="5" cy="12" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="19" cy="12" r="2" />
                 </svg>
             </button>
 
             @if (permissions.microphone == 'granted') {
-                <button class="footer-btn active" [ngStyle]="{'background-color': isMicOn() ? '#e3e3e3' : '#000'}" (click)="toggleMic()" data-bs-toggle="tooltip" 
-                data-bs-placement="top" [attr.title]="isMicOn() ? 'Turn off microphone' : 'Turn on microphone'">                
-                    <!-- Mute Mic -->
-                    @if (isMicOn()) {
-                         <!-- UnMute Mic -->
-                         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000"><path d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z"/></svg>
-                    } @else { 
-                       <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z"/></svg>
-                    }
-                </button>
-            } @else {
-                <button #micBtn class="footer-btn active" style="background-color: #000;" data-bs-toggle="tooltip" data-bs-placement="top" title="Show more info" (click)="showUserMicActivePopup()">                
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M400-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-80q17 0 28.5-11.5T440-520v-240q0-17-11.5-28.5T400-800q-17 0-28.5 11.5T360-760v240q0 17 11.5 28.5T400-480Zm40 360h-80v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T400-320q11 0 20.5-1t19.5-3v204Zm240-40q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6Zm-20-80h40v-160h-40v160Zm20 160q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80ZM400-640Z"/></svg>
-                </button>
-            }
-
-            <button class="footer-btn active" (click)="toggleCamera()" [ngStyle]="{'background-color': isCameraOn() ? '#e3e3e3' : '#000'}">
-                <!-- Camera -->
-                @if(isCameraOn()) {
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Zm0-80h480v-480H160v480Zm0 0v-480 480Z"/></svg>
+            <button class="footer-btn active" [ngStyle]="{'background-color': isMicOn() ? '#e3e3e3' : '#000'}"
+                (click)="toggleMic()" data-bs-toggle="tooltip" data-bs-placement="top"
+                [attr.title]="isMicOn() ? 'Turn off microphone' : 'Turn on microphone'">
+                <!-- Mute Mic -->
+                @if (isMicOn()) {
+                <!-- UnMute Mic -->
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000">
+                    <path
+                        d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z" />
+                </svg>
                 } @else {
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M880-260 720-420v67l-80-80v-287H353l-80-80h367q33 0 56.5 23.5T720-720v180l160-160v440ZM822-26 26-822l56-56L878-82l-56 56ZM498-575ZM382-464ZM160-800l80 80h-80v480h480v-80l80 80q0 33-23.5 56.5T640-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800Z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFFFF">
+                    <path
+                        d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
+                </svg>
                 }
             </button>
+            } @else {
+            <button #micBtn class="footer-btn active" style="background-color: #000;" data-bs-toggle="tooltip"
+                data-bs-placement="top" title="Show more info" (click)="showUserMicActivePopup()">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFFFF">
+                    <path
+                        d="M400-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-80q17 0 28.5-11.5T440-520v-240q0-17-11.5-28.5T400-800q-17 0-28.5 11.5T360-760v240q0 17 11.5 28.5T400-480Zm40 360h-80v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T400-320q11 0 20.5-1t19.5-3v204Zm240-40q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6Zm-20-80h40v-160h-40v160Zm20 160q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80ZM400-640Z" />
+                </svg>
+            </button>
+            }
+
+            @if (permissions.camera == 'granted') {
+            <button class="footer-btn active" (click)="toggleCamera()"
+                [ngStyle]="{'background-color': isCameraOn() ? '#e3e3e3' : '#000'}">
+                <!-- Camera -->
+                @if(isCameraOn()) {
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000">
+                    <path
+                        d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Zm0-80h480v-480H160v480Zm0 0v-480 480Z" />
+                </svg>
+                } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFFFF">
+                    <path
+                        d="M880-260 720-420v67l-80-80v-287H353l-80-80h367q33 0 56.5 23.5T720-720v180l160-160v440ZM822-26 26-822l56-56L878-82l-56 56ZM498-575ZM382-464ZM160-800l80 80h-80v480h480v-80l80 80q0 33-23.5 56.5T640-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800Z" />
+                </svg>
+                }
+            </button>
+            } @else {
+            <button #micBtn class="footer-btn active" style="background-color: #000;" data-bs-toggle="tooltip"
+                data-bs-placement="top" title="Show more info" (click)="showUserMicActivePopup()">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFFFF">
+                    <path
+                        d="M400-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-80q17 0 28.5-11.5T440-520v-240q0-17-11.5-28.5T400-800q-17 0-28.5 11.5T360-760v240q0 17 11.5 28.5T400-480Zm40 360h-80v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T400-320q11 0 20.5-1t19.5-3v204Zm240-40q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6Zm-20-80h40v-160h-40v160Zm20 160q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80ZM400-640Z" />
+                </svg>
+            </button>
+            }
 
             <button class="footer-btn" (click)="shareScreen()">
                 <!-- Screen Share -->
-                 <video class="d-none"
-                    #screenPreview
-                    autoplay
-                    playsinline
-                    muted
-                    style="width: 100%; border: 2px solid #007bff; border-radius: 8px;"
-                ></video>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M440-320h80v-166l64 63 57-57-161-160-160 160 57 56 63-63v167ZM160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
+                <video class="d-none" #screenPreview autoplay playsinline muted
+                    style="width: 100%; border: 2px solid #007bff; border-radius: 8px;"></video>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFFFF">
+                    <path
+                        d="M440-320h80v-166l64 63 57-57-161-160-160 160 57 56 63-63v167ZM160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z" />
+                </svg>
             </button>
 
-            <button class="footer-btn" (click)="showSettingPopup()">
+            <button class="footer-btn" data-bs-toggle="offcanvas" data-bs-target="#seetingOffCanvas"
+                aria-controls="seetingOffCanvas">
                 <!-- Raise Hand -->
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFFFF">
+                    <path
+                        d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z" />
+                </svg>
             </button>
 
             <button class="footer-btn end-call" (click)="leaveRoom()">
                 <!-- End Call -->
-                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m136-304-92-90q-12-12-12-28t12-28q88-95 203-142.5T480-640q118 0 232.5 47.5T916-450q12 12 12 28t-12 28l-92 90q-11 11-25.5 12t-26.5-8l-116-88q-8-6-12-14t-4-18v-114q-38-12-78-19t-82-7q-42 0-82 7t-78 19v114q0 10-4 18t-12 14l-116 88q-12 9-26.5 8T136-304Zm104-198q-29 15-56 34.5T128-424l40 40 72-56v-62Zm480 2v60l72 56 40-38q-29-26-56-45t-56-33Zm-480-2Zm480 2Z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFFFF">
+                    <path
+                        d="m136-304-92-90q-12-12-12-28t12-28q88-95 203-142.5T480-640q118 0 232.5 47.5T916-450q12 12 12 28t-12 28l-92 90q-11 11-25.5 12t-26.5-8l-116-88q-8-6-12-14t-4-18v-114q-38-12-78-19t-82-7q-42 0-82 7t-78 19v114q0 10-4 18t-12 14l-116 88q-12 9-26.5 8T136-304Zm104-198q-29 15-56 34.5T128-424l40 40 72-56v-62Zm480 2v60l72 56 40-38q-29-26-56-45t-56-33Zm-480-2Zm480 2Z" />
+                </svg>
                 <!-- <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" fill="white">
                     <path d="M4 14q0-.825.587-1.412Q5.175 12 6 12h3q.825 0 1.413.588Q11 13.175 11 14v3q0 .825-.587 1.412Q9.825 19 9 19H6q-.825 0-1.412-.588Q4 17.825 4 17Zm10 0q0-.825.588-1.412Q15.175 12 16 12h3q.825 0 1.412.588Q21 13.175 21 14v3q0 .825-.588 1.412Q20.175 19 19 19h-3q-.825 0-1.412-.588Q14 17.825 14 17Z"/>
                     <path d="M12 10q-3.95 0-7.4 1.175-1.05.375-1.8 1.2Q2 13.2 2 14.3v5q0 .425.288.712Q2.575 20.3 3 20.3h18q.425 0 .713-.288Q22 19.725 22 19.3v-5q0-1.1-.8-1.925-.75-.825-1.8-1.2Q15.95 10 12 10Z"/>
@@ -99,42 +158,160 @@
 
         <div class="footer-right">
             <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" fill="white">
-                <path d="M12 21q-.825 0-1.412-.588Q10 19.825 10 19V9q0-.825.588-1.412Q11.175 7 12 7t1.412.588Q14 8.175 14 9v10q0 .825-.588 1.412Q12.825 21 12 21Zm-6-4q-.825 0-1.412-.587Q4 15.825 4 15V9q0-.825.588-1.412Q5.175 7 6 7t1.412.588Q8 8.175 8 9v6q0 .825-.588 1.413Q6.825 17 6 17Zm12 0q-.825 0-1.412-.587Q16 15.825 16 15V9q0-.825.588-1.412Q17.175 7 18 7t1.412.588Q20 8.175 20 9v6q0 .825-.588 1.413Q18.825 17 18 17Z"/>
+                <path
+                    d="M12 21q-.825 0-1.412-.588Q10 19.825 10 19V9q0-.825.588-1.412Q11.175 7 12 7t1.412.588Q14 8.175 14 9v10q0 .825-.588 1.412Q12.825 21 12 21Zm-6-4q-.825 0-1.412-.587Q4 15.825 4 15V9q0-.825.588-1.412Q5.175 7 6 7t1.412.588Q8 8.175 8 9v6q0 .825-.588 1.413Q6.825 17 6 17Zm12 0q-.825 0-1.412-.587Q16 15.825 16 15V9q0-.825.588-1.412Q17.175 7 18 7t1.412.588Q20 8.175 20 9v6q0 .825-.588 1.413Q18.825 17 18 17Z" />
             </svg>
         </div>
     </div>
 </div>
 
 
-<!-- Modal -->
-<div class="modal fade" id="microphoneActiveModal" tabindex="-1" aria-labelledby="microphoneActiveModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content px-3 pb-3">
-      <div class="modal-header border-bottom-0">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center">
-        <h4>Do you want peope to hear you in the meetng?</h4>
-        <p>You can still turn off your microphone anytime in the meeting</p>
-        <button class="btn btn-primary px-5 rounded-pill" (click)="activeMic()">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z"/></svg>
-            Use microphone
-        </button>
-      </div>
+<!-- Micro phone Permission Modal -->
+<div class="modal fade" id="microphoneActiveModal" tabindex="-1" aria-labelledby="microphoneActiveModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content px-3 pb-3">
+            <div class="modal-header border-bottom-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h4>Do you want peope to hear you in the meetng?</h4>
+                <p>You can still turn off your microphone anytime in the meeting</p>
+                <button class="btn btn-primary px-5 rounded-pill" (click)="activeMic()">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                        fill="#FFFFFF">
+                        <path
+                            d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z" />
+                    </svg>
+                    Use microphone
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="settingModel" tabindex="-1" aria-labelledby="settingModelLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content px-3 pb-3">
-      <div class="modal-header border-bottom-0">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center">
-        
-      </div>
+<!--Video permission Modal -->
+<div class="modal fade" id="cameraActiveModal" tabindex="-1" aria-labelledby="cameraActiveModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content px-3 pb-3">
+            <div class="modal-header border-bottom-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h4>Do you want peope to see you in the meetng?</h4>
+                <p>You can still turn off your camera anytime in the meeting</p>
+                <button class="btn btn-primary px-5 rounded-pill" (click)="activeMic()">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                        fill="#FFFFFF">
+                        <path
+                            d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z" />
+                    </svg>
+                    Use microphone
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
+</div>
+
+
+<!-- Modal -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="seetingOffCanvas" aria-labelledby="seetingOffCanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="seetingOffCanvasLabel">Settings</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="d-flex align-items-start">
+            <div class="nav flex-column nav-pills me-3" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                <button class="nav-link active" id="v-pills-audio-tab" data-bs-toggle="pill"
+                    data-bs-target="#v-pills-audio" type="button" role="tab" aria-controls="v-pills-audio"
+                    aria-selected="true">
+                    Audio
+                </button>
+                <button class="nav-link" id="v-pills-video-tab" data-bs-toggle="pill" data-bs-target="#v-pills-video"
+                    type="button" role="tab" aria-controls="v-pills-video" aria-selected="false">
+                    Video
+                </button>
+                <!-- <button class="nav-link" id="v-pills-general-tab" data-bs-toggle="pill" data-bs-target="#v-pills-general" type="button" role="tab" aria-controls="v-pills-general" aria-selected="false">
+                General
+            </button> -->
+            </div>
+            <div class="tab-content" id="v-pills-tabContent">
+                <div class="tab-pane fade show active" id="v-pills-audio" role="tabpanel"
+                    aria-labelledby="v-pills-audio-tab" tabindex="0">
+                    <div class="col-md-12">
+                        <label class="form-label">Microphone</label>
+                        <div class="d-flex justify-content-between">
+                            <div class="w-75 form-select d-flex align-items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                    width="24px" fill="#000000">
+                                    <path
+                                        d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z" />
+                                </svg>
+                                <select class="form-control border-0 p-0 mb-0 ms-1">
+                                    @for (mic of microphones; track $index) {
+                                    <option [value]="mic.deviceId">{{ mic.label || "Microphone" }}</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-auto fw-bold bg-light rounded-pill px-3 d-flex align-items-center ms-2">
+                                @if (permissions.microphone == 'granted') {
+                                {{isMicOn() ? 'Microphone is on' : 'Microphone is off'}}
+                                } @else {
+                                Microphone is blocked
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label">Speaker</label>
+                        <div class="d-flex justify-content-between">
+                            <div class="w-75 form-select d-flex align-items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                    width="24px" fill="#000000">
+                                    <path
+                                        d="M560-131v-82q90-26 145-100t55-168q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 127-78 224.5T560-131ZM120-360v-240h160l200-200v640L280-360H120Zm440 40v-322q47 22 73.5 66t26.5 96q0 51-26.5 94.5T560-320ZM400-606l-86 86H200v80h114l86 86v-252ZM300-480Z" />
+                                </svg>
+                                <select class="form-control border-0 p-0 mb-0 ms-1">
+                                    @for (sp of speakers; track $index) {
+                                    <option [value]="sp.deviceId">{{ sp.label || "Speaker" }}</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="v-pills-video" role="tabpanel" aria-labelledby="v-pills-video-tab"
+                    tabindex="0">
+                    <div class="col-md-12">
+                        <label class="form-label">Camera</label>
+                        <div class="d-flex justify-content-between">
+                            <div class="w-75 form-select d-flex align-items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                    width="24px" fill="#000000">
+                                    <path
+                                        d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Zm0-80h480v-480H160v480Zm0 0v-480 480Z" />
+                                </svg>
+                                <select class="form-control border-0 p-0 mb-0 ms-1">
+                                    @for (cam of cameras; track $index) {
+                                    <option [value]="cam.deviceId">{{ cam.label || "Camera" }}</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-auto fw-bold bg-light rounded-pill px-3 d-flex align-items-center ms-2">
+                                @if (permissions.camera == 'granted') {
+                                {{isMicOn() ? 'Camera is on' : 'Camera is off'}}
+                                } @else {
+                                Camera is blocked
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="v-pills-general" role="tabpanel" aria-labelledby="v-pills-general-tab"
+                    tabindex="0">...</div>
+            </div>
+        </div>
+    </div>
 </div>
