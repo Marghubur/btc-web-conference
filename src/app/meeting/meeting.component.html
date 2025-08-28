@@ -1,4 +1,4 @@
-<div class="d-flex flex-column h-100">
+<div class="d-flex flex-column h-100 overflow-hidden">
     <div class="conference-section flex-grow-1">
         @if (!room()) {
             <div>Joining Please wait ...</div>
@@ -31,7 +31,7 @@
     </div>
     
     <!-- Bottom 10% Area: Controls -->
-    <div class="footer-section justify-content-between px-3">
+    <div class="footer-section justify-content-between px-3 py-2">
         <div class="footer-left fw-semibold text-white">
             <span class="time">{{currentTime | date:'shortTime'}}</span>
             <span class="room-code">| {{meetingId}}</span>
@@ -78,13 +78,9 @@
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M440-320h80v-166l64 63 57-57-161-160-160 160 57 56 63-63v167ZM160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
             </button>
 
-            <button class="footer-btn">
+            <button class="footer-btn" (click)="showSettingPopup()">
                 <!-- Raise Hand -->
-                <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" fill="white">
-                    <path d="M12 2q.825 0 1.413.588Q14 3.175 14 4v8q0 .825-.587 1.412Q12.825 14 12 14t-1.413-.588Q10 12.825 10 12V4q0-.825.587-1.412Q11.175 2 12 2Z"/>
-                    <path d="M17 6q.825 0 1.412.587Q19 7.175 19 8v8q0 .825-.588 1.412Q17.825 18 17 18q-.825 0-1.412-.588Q15 16.825 15 16V8q0-.825.588-1.412Q16.175 6 17 6Z"/>
-                    <path d="M7 10q.825 0 1.412.588Q9 11.175 9 12v4q0 .825-.588 1.413Q7.825 18 7 18q-.825 0-1.412-.587Q5 16.825 5 16v-4q0-.825.588-1.412Q6.175 10 7 10Z"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/></svg>
             </button>
 
             <button class="footer-btn end-call" (click)="leaveRoom()">
@@ -103,4 +99,38 @@
             </svg>
         </div>
     </div>
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="microphoneActiveModal" tabindex="-1" aria-labelledby="microphoneActiveModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content px-3 pb-3">
+      <div class="modal-header border-bottom-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <h4>Do you want peope to hear you in the meetng?</h4>
+        <p>You can still turn off your microphone anytime in the meeting</p>
+        <button class="btn btn-primary px-5 rounded-pill" (click)="activeMic()">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z"/></svg>
+            Use microphone
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="settingModel" tabindex="-1" aria-labelledby="settingModelLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content px-3 pb-3">
+      <div class="modal-header border-bottom-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        
+      </div>
+    </div>
+  </div>
 </div>

@@ -4,11 +4,13 @@
     aspect-ratio: 16/9;
     border-radius: 6px;
     overflow: hidden;
-    /* max-height: 79vh !important; */
+    max-height: 79vh !important;
+    max-width: 96% !important;
 }
 
 .video-container video {
     width: 100%;
+    max-height: 79vh !important;
 }
 
 .video-container .participant-data {

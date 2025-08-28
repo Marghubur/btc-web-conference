@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LocalVideoTrack, Room } from 'livekit-client';
 import { CameraService } from '../services/camera.service';
@@ -45,6 +45,10 @@ export class MeetingComponent implements OnDestroy, OnInit {
         microphone: 'unknown',
     };
     private subscription?: Subscription;
+    @ViewChild('microphoneActiveModal') microphoneActiveModal!: ElementRef;
+    @ViewChild('settingModel') settingModel!: ElementRef;
+
+    private modalInstance: any;
     constructor(
         private cameraService: CameraService,
         private router: ActivatedRoute,
@@ -75,6 +79,28 @@ export class MeetingComponent implements OnDestroy, OnInit {
         this.meetingId = this.router.snapshot.paramMap.get('id');
         if(this.meetingId) {
             this.joinRoom();
+        }
+    }
+
+    ngAfterViewInit() {
+        const modalEl = document.getElementById('microphoneActiveModal');
+        if (modalEl) {
+        // @ts-ignore (bootstrap comes from CDN)
+        this.modalInstance = new bootstrap.Modal(modalEl);
+
+        modalEl.addEventListener('shown.bs.modal', () => {
+            this.microphoneActiveModal?.nativeElement.focus();
+        });
+        }
+
+        const settiingMod = document.getElementById('settingModel');
+        if (settiingMod) {
+            // @ts-ignore (bootstrap comes from CDN)
+            this.modalInstance = new bootstrap.Modal(settiingMod);
+
+            settiingMod.addEventListener('shown.bs.modal', () => {
+                this.microphoneActiveModal?.nativeElement.focus();
+            });
         }
     }
 
@@ -133,7 +159,19 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     showUserMicActivePopup() {
-        
+        if (this.modalInstance) {
+            this.modalInstance.show();
+        }
+    }
+
+    showSettingPopup() {
+        if (this.modalInstance) {
+            this.modalInstance.show();
+        }
+    }
+
+    async activeMic() {
+        await this.mediaPerm.requestPermissions(true, true);
     }
 
     @HostListener('window:beforeunload')

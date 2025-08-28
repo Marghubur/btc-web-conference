@@ -82,7 +82,7 @@
     width: 100%;
     max-width: 1000px;
     padding: 0 20px;
-    margin-bottom: 20px;
+    /* margin-bottom: 20px; */
 }
 
 #room-title {
@@ -216,7 +216,7 @@
 
 /* Bottom Section (Controls) */
 .footer-section {
-    height: 8%;
+    height: auto;
     background-color: #202124;
     display: flex;
     justify-content: center;
