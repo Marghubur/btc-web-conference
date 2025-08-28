@@ -236,6 +236,18 @@
     width: 60vw !important;
 }
 
+.participant-list {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.adjest-p-list {
+    margin-top: 3rem;
+    margin-bottom: 2rem;
+    overflow-y: auto;
+}
+
 .participant-card {
     height: 21vh;
     display: flex;

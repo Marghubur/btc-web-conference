@@ -4,44 +4,62 @@
         <div>Joining Please wait ...</div>
         } @else {
         <div id="room" class="w-100">
-            <div class="row col-md-12 pt-3">
-                <div class="col-md-2">
-                    <div class="row align-items-start flex-column ps-4">
-                        @if (localTrack()) {
-                        <div class="card participant-card fw-semibold"
-                                [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">{{roomForm.value.participantName}}</div>
-                        }
-                        <!-- @for (remoteTrack of remoteTracksMap().values(); track remoteTrack.trackPublication.trackSid;) {
-                            @if (remoteTrack.trackPublication.kind === 'video') {
-                                <div class="card participant-card fw-semibold mt-2"
-                                    [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity)}">{{remoteTrack.participantIdentity}}</div>
-                            }
-                        } -->
-                    </div>
-                </div>
-                <div class="col-md-10 ps-4 pe-3">
-                    <div class="meet-container">
-                        <div class="grid-container" [attr.data-count]="1">
-                            @if (localTrack()) {
-                                <video-component [track]="localTrack()!" [participantIdentity]="roomForm.value.participantName!"
-                                    [local]="false"></video-component>
-                            }
-                            @for (remoteTrack of remoteTracksMap().values(); track remoteTrack.trackPublication.trackSid) {
-                            @if (remoteTrack.trackPublication.kind === 'video') {
-                            <video-component [track]="remoteTrack.trackPublication.videoTrack!"
-                                [participantIdentity]="remoteTrack.participantIdentity"></video-component>
-                            } @else {
-                            <audio-component [track]="remoteTrack.trackPublication.audioTrack!" hidden></audio-component>
-                            }
-                            }
-
+            @if(enableScreenSharing()) {
+                <div class="row col-md-12 justify-content-center pt-3">
+                    <div class="col-md-2">
+                        <div class="col adjest-p-list">
+                            <div class="card participant-list fw-semibold" [attr.data-count]="1">
+                                @if (localTrack()) {
+                                    <video-component [track]="localTrack()!" [participantIdentity]="roomForm.value.participantName!"
+                                        [local]="false"></video-component>
+                                }
+                                @for (remoteTrack of remoteTracksMap().values(); track remoteTrack.trackPublication.trackSid) {
+                                    @if (remoteTrack.trackPublication.kind === 'video') {
+                                    <video-component [track]="remoteTrack.trackPublication.videoTrack!"
+                                        [participantIdentity]="remoteTrack.participantIdentity"></video-component>
+                                    } @else {
+                                    <audio-component [track]="remoteTrack.trackPublication.audioTrack!" hidden></audio-component>
+                                    }
+                                }
+                            </div>
                         </div>
                     </div>
-                    <div id="layout-container" class="video-preview-container">
-                    </div>
 
+                    <!-- New screen sharing video container -->
+                    <div class="col-md-10">
+                        <video
+                            #screenPreview
+                            autoplay
+                            playsinline
+                            muted
+                            style="width: 100%; border: 2px solid #007bff; border-radius: 8px;"
+                        ></video>
+                    </div>
                 </div>
-            </div>
+            } @else {
+                <div class="row col-md-12 justify-content-center pt-3">
+                    <div class="col-md-10 ps-4 pe-3">
+                        <div class="meet-container">
+                            <div class="grid-container" [attr.data-count]="1">
+                                @if (localTrack()) {
+                                    <video-component [track]="localTrack()!" [participantIdentity]="roomForm.value.participantName!"
+                                        [local]="false"></video-component>
+                                }
+                                @for (remoteTrack of remoteTracksMap().values(); track remoteTrack.trackPublication.trackSid) {
+                                    @if (remoteTrack.trackPublication.kind === 'video') {
+                                    <video-component [track]="remoteTrack.trackPublication.videoTrack!"
+                                        [participantIdentity]="remoteTrack.participantIdentity"></video-component>
+                                    } @else {
+                                    <audio-component [track]="remoteTrack.trackPublication.audioTrack!" hidden></audio-component>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div id="layout-container" class="video-preview-container">
+                        </div>
+                    </div>                        
+                </div>
+            }
         </div>
         }
     </div>

@@ -38,6 +38,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
     selectedMic: string | null = null;
     selectedSpeaker: string | null = null;
     meetingId: string | null = null;
+    enableScreenSharing = signal(false);
 
     isCameraOn = signal(true);
     isMicOn = signal(true);
@@ -163,11 +164,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
     async shareScreen() {
         if(!this.room()) return;
 
-        // const tracks = await createLocalScreenTracks();
-        // for(const track of tracks) {
-        //     await this.room()?.localParticipant.publishTrack(track);
-        // }
-
+        this.enableScreenSharing.set(true);
         const [screenTrack] = await createLocalScreenTracks({
             audio: false, // set to true to share system audio
             resolution: { width: 1920, height: 1080 },
@@ -179,7 +176,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async stopScreenShare() {
         if (!this.room) return;
-
+        
         const publications = this.room()?.localParticipant.videoTrackPublications;
         publications?.forEach((pub: LocalTrackPublication) => {
             if (pub.track?.source === 'screen_share') {
@@ -192,6 +189,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         if (this.screenPreview?.nativeElement) {
             this.screenPreview.nativeElement.srcObject = null;
         }
+        this.enableScreenSharing.set(false);
     }
 
     showUserMicActivePopup() {
