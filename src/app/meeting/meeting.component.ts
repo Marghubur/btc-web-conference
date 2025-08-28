@@ -140,13 +140,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
     async toggleCamera() {
         if (!this.room()) return;
         
-        if (this.isCameraOn()) {
-            await this.cameraService.disableCamera(this.room()!);
-            this.isCameraOn.set(false);
-        } else {
-            await this.cameraService.enableCamera(this.room()!);
-            this.isCameraOn.set(true);
-        }
+        this.isCameraOn.set(!this.isCameraOn());
+        this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
     }
 
     async toggleMic() {
