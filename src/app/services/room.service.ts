@@ -1,11 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, signal, WritableSignal } from '@angular/core';
 import {
+  Participant,
     RemoteParticipant,
     RemoteTrack,
     RemoteTrackPublication,
     Room,
     RoomEvent,
+    Track,
+    TrackPublication,
 } from 'livekit-client';
 import { lastValueFrom } from 'rxjs';
 import { HttpHandlerService } from './http-handler.service';
@@ -29,7 +32,7 @@ export class RoomService {
 
   room = signal<Room | undefined>(undefined);
   remoteTracksMap = signal<Map<string, any>>(new Map());
-
+  participantMediaStatus = signal<Map<string, any>>(new Map());
   constructor(private httpClient: HttpClient, private http: HttpHandlerService) {
     http.setSFUProdEnabled(true);
     this.sfuProdEnabled = http.getSFUProdEnabled();
@@ -81,14 +84,53 @@ export class RoomService {
           });
           return map;
         });
+
+        // Update participant media status
+        this.updateParticipantMediaStatus(participant);
       }
     );
 
     // Remove unsubscribed tracks
-    room.on(RoomEvent.TrackUnsubscribed, (_track: RemoteTrack, publication: RemoteTrackPublication) => {
+    room.on(RoomEvent.TrackUnsubscribed, (_track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
       this.remoteTracksMap.update((map) => {
         map.delete(publication.trackSid);
         return map;
+      });
+
+      // Update participant media status
+        this.updateParticipantMediaStatus(participant);
+    });
+
+    // Handle track muted/unmuted
+    room.on(RoomEvent.TrackMuted, (publication: TrackPublication, participant: Participant) => {
+      if (participant instanceof RemoteParticipant) {
+        this.updateParticipantMediaStatus(participant);
+      }
+    });
+
+    room.on(RoomEvent.TrackUnmuted, (publication: TrackPublication, participant: Participant) => {
+      if (participant instanceof RemoteParticipant) {
+        this.updateParticipantMediaStatus(participant);
+      }
+    });
+
+    // Handle participant connected
+    room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+      this.updateParticipantMediaStatus(participant);
+    });
+
+    // Handle participant disconnected
+    room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
+      this.participantMediaStatus.update((map) => {
+        map.delete(participant.identity);
+        return map;
+      });
+    });
+
+    // Handle existing participants after connection
+    room.on(RoomEvent.Connected, () => {
+      room.remoteParticipants.forEach((participant) => {
+        this.updateParticipantMediaStatus(participant);
       });
     });
 
@@ -96,6 +138,52 @@ export class RoomService {
     await room.connect(this.LIVEKIT_URL, token);
     return room;
   }
+
+  private updateParticipantMediaStatus(participant: RemoteParticipant) {
+    let cameraTrackPublication: RemoteTrackPublication | undefined;
+    let audioTrackPublication: RemoteTrackPublication | undefined;
+
+    // Find camera and audio tracks
+    for (const [, publication] of participant.trackPublications) {
+      if (publication.kind === Track.Kind.Video && publication.source === Track.Source.Camera) {
+        cameraTrackPublication = publication;
+      } else if (publication.kind === Track.Kind.Audio && publication.source === Track.Source.Microphone) {
+        audioTrackPublication = publication;
+      }
+    }
+
+    const mediaStatus = {
+      participantIdentity: participant.identity,
+      participantName: participant.name || participant.identity,
+      // Camera status
+      hasCameraTrack: !!cameraTrackPublication,
+      isCameraEnabled: cameraTrackPublication ? !cameraTrackPublication.isMuted : false,
+      // Audio status
+      hasAudioTrack: !!audioTrackPublication,
+      isAudioEnabled: audioTrackPublication ? !audioTrackPublication.isMuted : false,
+    };
+
+    this.participantMediaStatus.update((map) => {
+      map.set(participant.identity, mediaStatus);
+      return map;
+    });
+
+  }
+  
+  getParticipantMediaStatus(participantIdentity: string): any | undefined {
+    return this.participantMediaStatus().get(participantIdentity);
+  }
+
+  updateLocalParticipantStatus(participantIdentity: string, isMicEnabled?: boolean) {
+    var mediaStatus = this.participantMediaStatus().get(participantIdentity);
+    mediaStatus.isAudioEnabled = isMicEnabled;
+
+    this.participantMediaStatus.update((map) => {
+      map.set(participantIdentity, mediaStatus);
+      return map;
+    });
+  }
+  
 
   async leaveRoom() {
     await this.room()?.disconnect();

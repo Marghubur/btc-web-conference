@@ -52,7 +52,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
     @ViewChild('microphoneActiveModal') microphoneActiveModal!: ElementRef;
     @ViewChild('cameraActiveModal') cameraActiveModal!: ElementRef;
     private modalInstance: any;
-
+    private videoModalInstance: any;
     get remoteUsersCount(): number {
     const map = this.remoteTracksMap();
     const uniqueParticipants = new Set(
@@ -97,22 +97,22 @@ export class MeetingComponent implements OnDestroy, OnInit {
     ngAfterViewInit() {
         const modalEl = document.getElementById('microphoneActiveModal');
         if (modalEl) {
-        // @ts-ignore (bootstrap comes from CDN)
-        this.modalInstance = new bootstrap.Modal(modalEl);
+            // @ts-ignore (bootstrap comes from CDN)
+            this.modalInstance = new bootstrap.Modal(modalEl);
 
-        modalEl.addEventListener('shown.bs.modal', () => {
-            this.microphoneActiveModal?.nativeElement.focus();
-        });
+            modalEl.addEventListener('shown.bs.modal', () => {
+                this.microphoneActiveModal?.nativeElement.focus();
+            });
         }
 
         const cameraActiveModal = document.getElementById('cameraActiveModal');
         if (cameraActiveModal) {
-        // @ts-ignore (bootstrap comes from CDN)
-        this.modalInstance = new bootstrap.Modal(modalEl);
+            // @ts-ignore (bootstrap comes from CDN)
+            this.videoModalInstance = new bootstrap.Modal(cameraActiveModal);
 
-        cameraActiveModal.addEventListener('shown.bs.modal', () => {
-            this.cameraActiveModal?.nativeElement.focus();
-        });
+            cameraActiveModal.addEventListener('shown.bs.modal', () => {
+                this.cameraActiveModal?.nativeElement.focus();
+            });
         }
     }
 
@@ -163,24 +163,36 @@ export class MeetingComponent implements OnDestroy, OnInit {
             await this.cameraService.enableMic(this.room()!);
             this.isMicOn.set(true);
         }
+        this.room()?.localParticipant.setMicrophoneEnabled(this.isMicOn());
     }
 
     async shareScreen() {
-        if(!this.room()) return;
-
-        this.enableScreenSharing.set(true);
-        const [screenTrack] = await createLocalScreenTracks({
-            audio: false, // set to true to share system audio
-            resolution: { width: 1920, height: 1080 },
-        });
-
-        await this.room()?.localParticipant.publishTrack(screenTrack);
-        screenTrack.attach(this.screenPreview.nativeElement);
+        try {
+            if(!this.room()) return;
+            
+            const [screenTrack] = await createLocalScreenTracks({
+                audio: false, // set to true to share system audio
+                resolution: { width: 1920, height: 1080 },
+            });
+            
+            this.enableScreenSharing.set(true);
+            // Detect when user presses "Stop sharing" in browser UI
+            screenTrack.mediaStreamTrack.onended = () => {
+                console.log("User stopped screen sharing");
+                this.stopScreenShare(); // 👈 implement cleanup here
+            };
+    
+            await this.room()?.localParticipant.publishTrack(screenTrack);
+            screenTrack.attach(this.screenPreview.nativeElement);
+        } catch (error) {
+            this.enableScreenSharing.set(false);          
+        }
     }
 
     async stopScreenShare() {
         if (!this.room) return;
         
+        this.enableScreenSharing.set(false);
         const publications = this.room()?.localParticipant.videoTrackPublications;
         publications?.forEach((pub: LocalTrackPublication) => {
             if (pub.track?.source === 'screen_share') {
@@ -193,7 +205,6 @@ export class MeetingComponent implements OnDestroy, OnInit {
         if (this.screenPreview?.nativeElement) {
             this.screenPreview.nativeElement.srcObject = null;
         }
-        this.enableScreenSharing.set(false);
     }
 
     showUserMicActivePopup() {
@@ -203,7 +214,15 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     async activeMic() {
-        await this.mediaPerm.requestPermissions(true, true);
+        console.log("Working")
+         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        //this.mediaPerm.requestPermissions(true, true);
+    }
+
+    showUseCameraActivePopup() {
+        if (this.videoModalInstance) {
+            this.videoModalInstance.show();
+        }
     }
 
     getColorFromName(name: string): string {
@@ -222,6 +241,16 @@ export class MeetingComponent implements OnDestroy, OnInit {
         // Pick color based on hash
         const index = Math.abs(hash) % colors.length;
         return colors[index];
+    }
+
+    isParticipantCameraEnabled(participantIdentity: string): boolean {
+        const status = this.roomService.getParticipantMediaStatus(participantIdentity);
+        return status ? (status.hasCameraTrack && status.isCameraEnabled) : false;
+    }
+
+    isParticipantAudioEnabled(participantIdentity: string): boolean {
+        const status = this.roomService.getParticipantMediaStatus(participantIdentity);
+        return status ? (status.hasAudioTrack && status.isAudioEnabled) : false;
     }
     
 
