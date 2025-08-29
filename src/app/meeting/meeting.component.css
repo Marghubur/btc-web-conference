@@ -323,3 +323,21 @@
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr; 
   grid-template-rows: 1fr 1fr 1fr 1fr; 
 }
+
+.user-name-icon {
+    width: 6rem;
+    height: 6rem;
+}
+
+.h-97 {
+    height: 97%;
+}
+
+.user-mute-mic {
+    top: 0;
+    right: 0;
+}
+
+.dropdown-menu.show {
+    width: 15rem !important;
+}
