@@ -9,6 +9,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
 import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
+import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../services/video-background.service';
 
 @Component({
   selector: 'app-meeting',
@@ -29,11 +30,10 @@ export class MeetingComponent implements OnDestroy, OnInit {
     room = signal<Room | undefined>(undefined);
     localTrack = signal<LocalVideoTrack | undefined>(undefined);
     remoteTracksMap = this.roomService.remoteTracksMap;
-
+    remoteSharescreenTrack = this.roomService.remoteSharescreenTrack;
     cameras: MediaDeviceInfo[] = [];
     microphones: MediaDeviceInfo[] = [];
     speakers: MediaDeviceInfo[] = [];
-
     selectedCamera: string | null = null;
     selectedMic: string | null = null;
     selectedSpeaker: string | null = null;
@@ -54,20 +54,30 @@ export class MeetingComponent implements OnDestroy, OnInit {
     private modalInstance: any;
     private videoModalInstance: any;
     get remoteUsersCount(): number {
-    const map = this.remoteTracksMap();
-    const uniqueParticipants = new Set(
-        Array.from(map.values()).map(track => track.participantIdentity)
-    );
-    return uniqueParticipants.size;
+        const map = this.remoteTracksMap();
+        const uniqueParticipants = new Set(
+            Array.from(map.values()).map(track => track.participantIdentity)
+        );
+        return uniqueParticipants.size;
     }
 
+    backgroundOptions: BackgroundOption[] = [];
+    selectedBackground: BackgroundOption | null = null;
+    isProcessing = false;
+    private subscriptions = new Subscription();
+    frames: Array<number> = [1,2, 3,4,5, 6 ,7, 8, 9,10];
+    isMyshareScreen: boolean = false;
     constructor(
         private cameraService: CameraService,
         private router: ActivatedRoute,
         private roomService: RoomService,
         private route: Router,
-        private mediaPerm: MediaPermissionsService
-    ) { }
+        private mediaPerm: MediaPermissionsService,
+        public videoBackgroundService: VideoBackgroundService
+    ) {
+        // Initialize virtual background service
+        this.videoBackgroundService.initialize().catch(console.error);
+    }
 
     async ngOnInit() {
         this.timerSubscription = interval(60 * 1000).subscribe(() => {
@@ -92,6 +102,27 @@ export class MeetingComponent implements OnDestroy, OnInit {
         if(this.meetingId) {
             this.joinRoom();
         }
+
+        // Load default backgrounds
+        this.backgroundOptions = this.videoBackgroundService.getBackgrounds();
+
+        // Subscribe to current background
+        this.subscriptions.add(
+            this.videoBackgroundService.getCurrentBackground().subscribe(bg => {
+                this.selectedBackground = bg;
+            })
+        );
+
+        // Subscribe to processing status
+        this.subscriptions.add(
+            this.videoBackgroundService.getProcessingStatus().subscribe(status => {
+                this.isProcessing = status;
+            })
+        );
+
+        this.roomService.screenShare$.subscribe(value => {
+            this.enableScreenSharing.set(value);
+        });
     }
 
     ngAfterViewInit() {
@@ -148,9 +179,12 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async toggleCamera() {
         if (!this.room()) return;
-        
+		
         this.isCameraOn.set(!this.isCameraOn());
         this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
+        if (!this.isCameraOn()) {
+            await this.videoBackgroundService.removeBackground(this.localTrack()!)
+        }
     }
 
     async toggleMic() {
@@ -176,6 +210,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
             });
             
             this.enableScreenSharing.set(true);
+            this.isMyshareScreen = true;
             // Detect when user presses "Stop sharing" in browser UI
             screenTrack.mediaStreamTrack.onended = () => {
                 console.log("User stopped screen sharing");
@@ -193,6 +228,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         if (!this.room) return;
         
         this.enableScreenSharing.set(false);
+        this.isMyshareScreen = false;
         const publications = this.room()?.localParticipant.videoTrackPublications;
         publications?.forEach((pub: LocalTrackPublication) => {
             if (pub.track?.source === 'screen_share') {
@@ -264,5 +300,34 @@ export class MeetingComponent implements OnDestroy, OnInit {
             this.subscription.unsubscribe();
         }
         this.mediaPerm.destroy();
-    }    
+        this.subscriptions.unsubscribe();
+    } 
+    
+    async selectBackground(option: BackgroundOption) {
+        if (this.isProcessing) return;
+        if (!this.localTrack()) {
+            throw new Error('Camera must be enabled to apply virtual background');
+        }
+
+        this.selectedBackground = option;
+        try {
+            await this.videoBackgroundService.applyBackground(this.localTrack()!, this.selectedBackground);
+        } catch (error) {
+            console.error('Failed to apply virtual background:', error);
+            throw error;
+        }
+    }
+
+    getBackgroundTypeIcon(type: BackgroundType): string {
+        switch (type) {
+            case BackgroundType.NONE:
+                return 'close';
+            case BackgroundType.BLUR:
+                return 'blur_on';
+            case BackgroundType.IMAGE:
+                return 'image';
+            default:
+                return 'help';
+        }
+    }
 }
