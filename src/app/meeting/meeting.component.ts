@@ -34,7 +34,6 @@ export class MeetingComponent implements OnDestroy, OnInit {
     cameras: MediaDeviceInfo[] = [];
     microphones: MediaDeviceInfo[] = [];
     speakers: MediaDeviceInfo[] = [];
-
     selectedCamera: string | null = null;
     selectedMic: string | null = null;
     selectedSpeaker: string | null = null;
