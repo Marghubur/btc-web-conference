@@ -10,7 +10,7 @@ import {
     Track,
     TrackPublication,
 } from 'livekit-client';
-import { lastValueFrom } from 'rxjs';
+import { BehaviorSubject, lastValueFrom } from 'rxjs';
 import { HttpHandlerService } from './http-handler.service';
 import { environment } from '../../environments/environment';
 
@@ -32,7 +32,10 @@ export class RoomService {
 
   room = signal<Room | undefined>(undefined);
   remoteTracksMap = signal<Map<string, any>>(new Map());
+  remoteSharescreenTrack = signal<any>(null);
   participantMediaStatus = signal<Map<string, any>>(new Map());
+  private screenShareSource = new BehaviorSubject<boolean | false>(false);
+  screenShare$ = this.screenShareSource.asObservable();
   constructor(private httpClient: HttpClient, private http: HttpHandlerService) {
     http.setSFUProdEnabled(true);
     this.sfuProdEnabled = http.getSFUProdEnabled();
@@ -77,6 +80,15 @@ export class RoomService {
     room.on(
       RoomEvent.TrackSubscribed,
       (_track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+        if (publication.source === Track.Source.ScreenShare) {
+          console.log('Ignoring screen share track in remoteTracksMap');
+          this.remoteSharescreenTrack.set({
+            trackSid: publication.trackSid, 
+            trackPublication: publication,
+            participantIdentity: participant.identity,
+          });
+          return;
+        }
         this.remoteTracksMap.update((map) => {
           map.set(publication.trackSid, {
             trackPublication: publication,
@@ -103,6 +115,7 @@ export class RoomService {
 
     // Handle track muted/unmuted
     room.on(RoomEvent.TrackMuted, (publication: TrackPublication, participant: Participant) => {
+      
       if (participant instanceof RemoteParticipant) {
         this.updateParticipantMediaStatus(participant);
       }
@@ -111,6 +124,18 @@ export class RoomService {
     room.on(RoomEvent.TrackUnmuted, (publication: TrackPublication, participant: Participant) => {
       if (participant instanceof RemoteParticipant) {
         this.updateParticipantMediaStatus(participant);
+      }
+    });
+
+    room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+      if (publication.trackSid && publication.source === Track.Source.ScreenShare) {
+        this.screenShareSource.next(true);
+      }
+    });
+
+    room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+      if (publication.source === Track.Source.ScreenShare) {
+        this.screenShareSource.next(false); // reset when stop sharing
       }
     });
 
@@ -183,7 +208,6 @@ export class RoomService {
       return map;
     });
   }
-  
 
   async leaveRoom() {
     await this.room()?.disconnect();
@@ -191,3 +215,4 @@ export class RoomService {
     this.remoteTracksMap.set(new Map());
   }
 }
+
