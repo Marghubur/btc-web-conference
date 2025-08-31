@@ -10,13 +10,14 @@ import { CommonModule } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
 import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
 import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../services/video-background.service';
+import { User } from '../preview/preview.component';
 
 @Component({
-  selector: 'app-meeting',
-  standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule],
-  templateUrl: './meeting.component.html',
-  styleUrl: './meeting.component.css'
+    selector: 'app-meeting',
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule],
+    templateUrl: './meeting.component.html',
+    styleUrl: './meeting.component.css'
 })
 export class MeetingComponent implements OnDestroy, OnInit {
     // Reference to the dedicated <video> element for screen sharing
@@ -39,7 +40,6 @@ export class MeetingComponent implements OnDestroy, OnInit {
     selectedSpeaker: string | null = null;
     meetingId: string | null = null;
     enableScreenSharing = signal(false);
-
     isCameraOn = signal(true);
     isMicOn = signal(true);
     currentTime: Date = new Date();
@@ -51,8 +51,10 @@ export class MeetingComponent implements OnDestroy, OnInit {
     private subscription?: Subscription;
     @ViewChild('microphoneActiveModal') microphoneActiveModal!: ElementRef;
     @ViewChild('cameraActiveModal') cameraActiveModal!: ElementRef;
+    @ViewChild('shareMeetingURLModal') shareMeetingURLModal!: ElementRef;
     private modalInstance: any;
     private videoModalInstance: any;
+    private shareLinkModalInstance: any;
     get remoteUsersCount(): number {
         const map = this.remoteTracksMap();
         const uniqueParticipants = new Set(
@@ -65,8 +67,15 @@ export class MeetingComponent implements OnDestroy, OnInit {
     selectedBackground: BackgroundOption | null = null;
     isProcessing = false;
     private subscriptions = new Subscription();
-    frames: Array<number> = [1,2, 3,4,5, 6 ,7, 8, 9,10];
     isMyshareScreen: boolean = false;
+    mediaRecorder!: MediaRecorder;
+    recordedChunks: BlobPart[] = [];
+    meetingUrl = window.location.href;
+    whatsappUrl: string = "";
+    gmailUrl: string = "";
+    tweetUrl: string = "";
+    linkedInUrl: string = "";
+    user: User | null = null;
     constructor(
         private cameraService: CameraService,
         private router: ActivatedRoute,
@@ -80,13 +89,15 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     async ngOnInit() {
+        this.meetingId = this.router.snapshot.paramMap.get('id');
+        this.user = JSON.parse(sessionStorage.getItem(this.meetingId!)!);
+        this.roomForm.get('participantName')?.setValue(this.user?.Name!);
         this.timerSubscription = interval(60 * 1000).subscribe(() => {
             this.currentTime = new Date();
         });
         this.subscription = this.mediaPerm.permissions$.subscribe(
             permissions => {
                 this.permissions = permissions;
-                console.log('Permissions updated:', permissions, 'Update #');
             }
         );
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -98,8 +109,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         this.selectedMic = this.microphones[0]?.deviceId || null;
         this.selectedSpeaker = this.speakers[0]?.deviceId || null;
         // Using snapshot (loads once)
-        this.meetingId = this.router.snapshot.paramMap.get('id');
-        if(this.meetingId) {
+        if (this.meetingId) {
             this.joinRoom();
         }
 
@@ -145,21 +155,35 @@ export class MeetingComponent implements OnDestroy, OnInit {
                 this.cameraActiveModal?.nativeElement.focus();
             });
         }
+
+        const shareLinkModal = document.getElementById('shareMeetingURLModal');
+        if (shareLinkModal) {
+            // @ts-ignore (bootstrap comes from CDN)
+            this.shareLinkModalInstance = new bootstrap.Modal(shareLinkModal);
+
+            shareLinkModal.addEventListener('shown.bs.modal', () => {
+                this.shareMeetingURLModal?.nativeElement.focus();
+            });
+        }
     }
 
     async joinRoom() {
         try {
             // const roomName = this.roomForm.value.roomName!;
-            const participantName = `User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
-            const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName);
+            const participantName = this.user?.Name; //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
+            const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
 
             this.room.set(joinedRoom);
 
             // Enable default camera & mic
+            //await this.cameraService.enableMic(joinedRoom);
+            this.isMicOn.set(!this.user?.isMicOn!);
+            await this.toggleMic();
             await this.cameraService.enableCamera(joinedRoom);
-            await this.cameraService.enableMic(joinedRoom);
+            this.isCameraOn.set(!this.user?.isCameraOn!);
+            await this.toggleCamera();
 
-            // Set the local video track for display
+            // Set the local video track for disroomFormplay
             const videoPub = joinedRoom.localParticipant.videoTrackPublications.values().next().value;
             if (videoPub?.videoTrack) {
                 this.localTrack.set(videoPub.videoTrack);
@@ -179,7 +203,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async toggleCamera() {
         if (!this.room()) return;
-		
+
         this.isCameraOn.set(!this.isCameraOn());
         this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
         if (!this.isCameraOn()) {
@@ -189,7 +213,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async toggleMic() {
         if (!this.room()) return;
-        
+
         if (this.isMicOn()) {
             await this.cameraService.disableMic(this.room()!);
             this.isMicOn.set(false);
@@ -202,31 +226,30 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async shareScreen() {
         try {
-            if(!this.room()) return;
-            
+            if (!this.room()) return;
+
             const [screenTrack] = await createLocalScreenTracks({
                 audio: false, // set to true to share system audio
                 resolution: { width: 1920, height: 1080 },
             });
-            
+
             this.enableScreenSharing.set(true);
             this.isMyshareScreen = true;
             // Detect when user presses "Stop sharing" in browser UI
             screenTrack.mediaStreamTrack.onended = () => {
-                console.log("User stopped screen sharing");
                 this.stopScreenShare(); // 👈 implement cleanup here
             };
-    
+
             await this.room()?.localParticipant.publishTrack(screenTrack);
             screenTrack.attach(this.screenPreview.nativeElement);
         } catch (error) {
-            this.enableScreenSharing.set(false);          
+            this.enableScreenSharing.set(false);
         }
     }
 
     async stopScreenShare() {
         if (!this.room) return;
-        
+
         this.enableScreenSharing.set(false);
         this.isMyshareScreen = false;
         const publications = this.room()?.localParticipant.videoTrackPublications;
@@ -250,8 +273,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     async activeMic() {
-        console.log("Working")
-         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         //this.mediaPerm.requestPermissions(true, true);
     }
 
@@ -288,7 +310,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         const status = this.roomService.getParticipantMediaStatus(participantIdentity);
         return status ? (status.hasAudioTrack && status.isAudioEnabled) : false;
     }
-    
+
 
     @HostListener('window:beforeunload')
     async ngOnDestroy() {
@@ -301,8 +323,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
         }
         this.mediaPerm.destroy();
         this.subscriptions.unsubscribe();
-    } 
-    
+    }
+
     async selectBackground(option: BackgroundOption) {
         if (this.isProcessing) return;
         if (!this.localTrack()) {
@@ -329,5 +351,39 @@ export class MeetingComponent implements OnDestroy, OnInit {
             default:
                 return 'help';
         }
+    }
+
+    sharePopupModal() {
+        if (this.shareLinkModalInstance) {
+            const encodedUrl = encodeURIComponent(`Join my meeting: ${window.location.href}`);
+            this.whatsappUrl = `https://wa.me/?text=${encodedUrl}`;
+            this.gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=Join Meeting&body=${encodedUrl}`;
+            this.tweetUrl = `https://twitter.com/intent/tweet?text=${encodedUrl}`;
+            this.linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${window.location.href}`;
+            this.shareLinkModalInstance.show();
+        }
+    }
+
+    copyLink() {
+        navigator.clipboard.writeText(this.meetingUrl);
+        alert("Meeting link copied!");
+    }
+
+    toggleHandRaise() {
+        //this.handRaised = !this.handRaised;
+
+        const message = JSON.stringify({
+            type: 'hand_raise',
+            raised: true
+        });
+
+        // Send to all participants
+        this.room()?.localParticipant.publishData(
+            new TextEncoder().encode('hand_raise'),
+            {
+                reliable: true,
+                topic: 'hand_signal'
+            }
+        );
     }
 }

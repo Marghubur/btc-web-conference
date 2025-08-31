@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, signal, WritableSignal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import {
   Participant,
     RemoteParticipant,
@@ -80,8 +80,8 @@ export class RoomService {
     room.on(
       RoomEvent.TrackSubscribed,
       (_track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+        // 'Ignoring screen share track in remoteTracksMap
         if (publication.source === Track.Source.ScreenShare) {
-          console.log('Ignoring screen share track in remoteTracksMap');
           this.remoteSharescreenTrack.set({
             trackSid: publication.trackSid, 
             trackPublication: publication,
@@ -115,7 +115,6 @@ export class RoomService {
 
     // Handle track muted/unmuted
     room.on(RoomEvent.TrackMuted, (publication: TrackPublication, participant: Participant) => {
-      
       if (participant instanceof RemoteParticipant) {
         this.updateParticipantMediaStatus(participant);
       }
@@ -127,6 +126,7 @@ export class RoomService {
       }
     });
 
+    // Handle screenshare
     room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
       if (publication.trackSid && publication.source === Track.Source.ScreenShare) {
         this.screenShareSource.next(true);
@@ -157,6 +157,15 @@ export class RoomService {
       room.remoteParticipants.forEach((participant) => {
         this.updateParticipantMediaStatus(participant);
       });
+    });
+
+    // Handle hand raise
+    room.on(RoomEvent.DataReceived, (payload, participant, _) => {
+      const message = new TextDecoder().decode(payload);
+      if (message === "hand_raise") {
+        console.log(`${participant?.identity} raised hand ✋`);
+        // you can trigger a UI change here
+      }
     });
 
     const token = await this.getToken(roomName, participantName);

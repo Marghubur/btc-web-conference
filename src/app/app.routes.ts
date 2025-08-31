@@ -19,7 +19,8 @@ export function btcRouteMatcher(segments: UrlSegment[]) {
 }
 
 export const routes: Routes = [
-    { path: "", component: PreviewComponent },
-    { path: ':id', component: PreviewComponent },
-    { path: "meeting/:id", component: MeetingComponent }
+    { path: '', loadComponent: () => import('./preview/preview.component').then(c => c.PreviewComponent) },
+    { path: ':id', loadComponent: () => import('./preview/preview.component').then(c => c.PreviewComponent) },
+    { path: "meeting/:id", loadComponent: () => import('./meeting/meeting.component').then(c => c.MeetingComponent) },
+    { path: '**', redirectTo: ''}
 ]

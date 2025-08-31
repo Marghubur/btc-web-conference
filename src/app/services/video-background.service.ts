@@ -79,8 +79,10 @@ export class VideoBackgroundService {
 
   async removeBackground(track: LocalVideoTrack): Promise<void> {
     try {
-      await track.stopProcessor();
-      this.currentBackground$.next({ id: 'none', type: BackgroundType.NONE, name: 'No Background' });
+      if (track) {
+        await track.stopProcessor();
+        this.currentBackground$.next({ id: 'none', type: BackgroundType.NONE, name: 'No Background' });
+      }
     } catch (error) {
       console.error('Error removing background processor:', error);
     }
