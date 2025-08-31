@@ -91,6 +91,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
     async ngOnInit() {
         this.meetingId = this.router.snapshot.paramMap.get('id');
         this.user = JSON.parse(sessionStorage.getItem(this.meetingId!)!);
+        this.isCameraOn.set(this.user?.isCameraOn!);
+        this.isMicOn.set(!this.user?.isMicOn!);
         this.roomForm.get('participantName')?.setValue(this.user?.Name!);
         this.timerSubscription = interval(60 * 1000).subscribe(() => {
             this.currentTime = new Date();
@@ -169,8 +171,6 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async joinRoom() {
         try {
-            this.isCameraOn.set(!this.user?.isCameraOn!);
-            this.isMicOn.set(!this.user?.isMicOn!);
             // const roomName = this.roomForm.value.roomName!;
             const participantName = this.user?.Name; //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
             const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
@@ -181,8 +181,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
             //await this.cameraService.enableMic(joinedRoom);
             await this.cameraService.enableCamera(joinedRoom);
             setTimeout(async () => {
-                await this.toggleCamera();
-            }, 90);
+                this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
+            }, 100);
             await this.toggleMic();
             // Set the local video track for disroomFormplay
             const videoPub = joinedRoom.localParticipant.videoTrackPublications.values().next().value;
