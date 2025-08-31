@@ -12,15 +12,15 @@ import { filter } from 'rxjs';
 export class AppComponent implements OnInit {
     private router = inject(Router);
     ngOnInit() {
-      // this.router.events
-      // .pipe(filter(event => event instanceof NavigationEnd))
-      // .subscribe((event: any) => {
-      //   // Now we have the correct URL
-      //   if (event.urlAfterRedirects === '/' || event.urlAfterRedirects === '') {
-      //     const randomId = this.generateRandomString();
-      //     this.router.navigate([`/meeting/${randomId}`]);
-      //   }
-      // });
+      this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        // Now we have the correct URL
+        if (event.urlAfterRedirects === '/' || event.urlAfterRedirects === '') {
+          const randomId = this.generateRandomString();
+          this.router.navigate([`/meeting/${randomId}`]);
+        }
+      });
     } 
 
     private generateRandomString(length: number = 12): string {

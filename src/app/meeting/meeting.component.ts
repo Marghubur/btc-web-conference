@@ -73,8 +73,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
     meetingUrl = window.location.href;
     whatsappUrl: string = "";
     gmailUrl: string = "";
-    tweetUrl: string ="";
-    linkedInUrl: string ="";
+    tweetUrl: string = "";
+    linkedInUrl: string = "";
     user: User | null = null;
     constructor(
         private cameraService: CameraService,
@@ -170,7 +170,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
     async joinRoom() {
         try {
             // const roomName = this.roomForm.value.roomName!;
-            const participantName =  this.user?.Name; //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
+            const participantName = this.user?.Name; //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
             const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
 
             this.room.set(joinedRoom);
@@ -367,5 +367,23 @@ export class MeetingComponent implements OnDestroy, OnInit {
     copyLink() {
         navigator.clipboard.writeText(this.meetingUrl);
         alert("Meeting link copied!");
+    }
+
+    toggleHandRaise() {
+        //this.handRaised = !this.handRaised;
+
+        const message = JSON.stringify({
+            type: 'hand_raise',
+            raised: true
+        });
+
+        // Send to all participants
+        this.room()?.localParticipant.publishData(
+            new TextEncoder().encode('hand_raise'),
+            {
+                reliable: true,
+                topic: 'hand_signal'
+            }
+        );
     }
 }

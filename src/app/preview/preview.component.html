@@ -6,6 +6,22 @@
                 <!-- Video Preview -->
                 <div class="video-preview-container position-relative">
                     <video #previewVideo autoplay playsinline muted class="camera-box"></video>
+                    @if (permissions.camera != 'granted') {
+                        <div class="text-center position-absolute text-white fw-bold">
+                            Do you want people to see and hear you in the meeting?
+                            @if (permissions.microphone != 'granted' && permissions.camera != 'denied'){
+                                <div class="text-center">Allow microphone</div>
+                            } @else if (permissions.microphone != 'granted') {
+                                <div class="text-center">Allow microphone and camera</div>
+                            } @else {
+                                <div class="text-center">Allow camera</div>
+                            }
+                        </div>
+                    } @else if(!isCameraOn) {
+                        <div class="text-center position-absolute text-white fw-bold">
+                            Camera off
+                        </div>
+                    }
                     <div class="d-flex align-items-center justify-content-center position-absolute" style="bottom: 8px;">
                         @if (permissions.microphone == 'granted') {
                         <a href="javascript:void(0)" class="text-decoration-none ms-3 mic-video-button bg-dark rounded-circle shadow" (click)="toggleMic()"

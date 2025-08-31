@@ -37,3 +37,11 @@
         aspect-ratio: 9/16;
     }
 }
+
+.video-mirror {
+  transform: scaleX(-1); /* flips horizontally */
+}
+
+.video-normal {
+  transform: scaleX(1); /* normal view */
+}

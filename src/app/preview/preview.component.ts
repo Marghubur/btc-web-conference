@@ -2,15 +2,13 @@ import { Component, ElementRef, OnDestroy, signal, ViewChild } from '@angular/co
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LocalVideoTrack, Room } from 'livekit-client';
-import { VideoComponent } from '../video/video.component';
-import { AudioComponent } from '../audio/audio.component';
 import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
 import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-preview',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, VideoComponent],
+    imports: [FormsModule, ReactiveFormsModule],
     templateUrl: './preview.component.html',
     styleUrl: './preview.component.css'
 })
@@ -44,6 +42,16 @@ export class PreviewComponent implements OnDestroy {
     ) { }
 
     joinRoom() {
+        if (this.permissions.camera != 'granted') {
+            alert("Please allow camera.");
+            return;
+        }
+
+        if (this.permissions.microphone != 'granted') {
+            alert("Please allow microphone.");
+            return;
+        }
+
         this.saveUser();
         this.route.navigate(["/meeting", this.meetingId]);
     }
