@@ -4,39 +4,47 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { LocalVideoTrack, Room } from 'livekit-client';
 import { VideoComponent } from '../video/video.component';
 import { AudioComponent } from '../audio/audio.component';
+import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
+import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-preview',
-  standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent],
-  templateUrl: './preview.component.html',
-  styleUrl: './preview.component.css'
+    selector: 'app-preview',
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, VideoComponent],
+    templateUrl: './preview.component.html',
+    styleUrl: './preview.component.css'
 })
 export class PreviewComponent implements OnDestroy {
     @ViewChild('previewVideo') previewVideo!: ElementRef<HTMLVideoElement>;
-
     cameras: MediaDeviceInfo[] = [];
     microphones: MediaDeviceInfo[] = [];
     speakers: MediaDeviceInfo[] = [];
-
     roomForm = new FormGroup({
         roomName: new FormControl('Test Room', Validators.required),
         participantName: new FormControl('Participant' + Math.floor(Math.random() * 100), Validators.required),
     });
-
     room = signal<Room | undefined>(undefined);
     localTrack = signal<LocalVideoTrack | undefined>(undefined);
-
     selectedCamera: string | null = null;
     selectedMic: string | null = null;
     selectedSpeaker: string | null = null;
     meetingId: string | null = null;
-
     private previewStream?: MediaStream;
+    private subscription?: Subscription;
+    permissions: MediaPermissions = {
+        camera: 'unknown',
+        microphone: 'unknown',
+    };
+    isMicOn: boolean = true;
+    isCameraOn: boolean = true;
 
-    constructor(private route: Router, private router: ActivatedRoute) { }
+    constructor(private route: Router,
+        private router: ActivatedRoute,
+        private mediaPerm: MediaPermissionsService
+    ) { }
 
-    joinRoom(){
+    joinRoom() {
+        this.saveUser();
         this.route.navigate(["/meeting", this.meetingId]);
     }
 
@@ -44,10 +52,15 @@ export class PreviewComponent implements OnDestroy {
         // Using snapshot (loads once)
         this.meetingId = this.router.snapshot.paramMap.get('id');
         await this.loadDevices();
-        await this.startPreview();        
+        await this.startPreview();
+        this.subscription = this.mediaPerm.permissions$.subscribe(
+            permissions => {
+                this.permissions = permissions;
+            }
+        );
     }
 
-    
+
     /** Load available media devices */
     async loadDevices() {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -81,6 +94,17 @@ export class PreviewComponent implements OnDestroy {
         }
     }
 
+    async stopPreview() {
+        try {
+            this.previewStream?.getTracks().forEach(track => track.stop());
+            if (this.previewVideo?.nativeElement) {
+                this.previewVideo.nativeElement.srcObject = null;
+            }
+        } catch (err) {
+            console.error('Error accessing media devices', err);
+        }
+    }
+
     /** Switch camera */
     async onCameraChange(event: any) {
         this.selectedCamera = event.target.value;
@@ -104,6 +128,37 @@ export class PreviewComponent implements OnDestroy {
     /** Stop preview when leaving */
     ngOnDestroy() {
         this.previewStream?.getTracks().forEach(track => track.stop());
+        if (this.subscription) {
+            this.subscription.unsubscribe();
+        }
+        this.mediaPerm.destroy();
+    }
+
+    private saveUser() {
+        let user = {
+            isMicOn: this.isMicOn,
+            isCameraOn: this.isCameraOn,
+            Name: this.roomForm.get('participantName')?.value
+        }
+        sessionStorage.setItem(this.meetingId!, JSON.stringify(user))
+    }
+
+    async toggleCamera() {
+        if (this.isCameraOn) {
+            await this.stopPreview()
+        } else {
+            await this.startPreview();
+        }
+        this.isCameraOn = !this.isCameraOn;
+    }
+
+    toggleMic() {
+        this.isMicOn = !this.isMicOn;
     }
 }
 
+export interface User {
+    isMicOn: boolean;
+    isCameraOn: boolean;
+    Name: string
+}

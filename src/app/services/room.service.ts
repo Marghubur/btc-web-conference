@@ -80,8 +80,8 @@ export class RoomService {
     room.on(
       RoomEvent.TrackSubscribed,
       (_track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+        // 'Ignoring screen share track in remoteTracksMap
         if (publication.source === Track.Source.ScreenShare) {
-          console.log('Ignoring screen share track in remoteTracksMap');
           this.remoteSharescreenTrack.set({
             trackSid: publication.trackSid, 
             trackPublication: publication,
