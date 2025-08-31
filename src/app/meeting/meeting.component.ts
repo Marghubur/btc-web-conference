@@ -169,6 +169,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async joinRoom() {
         try {
+            this.isCameraOn.set(!this.user?.isCameraOn!);
+            this.isMicOn.set(!this.user?.isMicOn!);
             // const roomName = this.roomForm.value.roomName!;
             const participantName = this.user?.Name; //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
             const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
@@ -177,12 +179,11 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
             // Enable default camera & mic
             //await this.cameraService.enableMic(joinedRoom);
-            this.isMicOn.set(!this.user?.isMicOn!);
-            await this.toggleMic();
             await this.cameraService.enableCamera(joinedRoom);
-            this.isCameraOn.set(!this.user?.isCameraOn!);
-            await this.toggleCamera();
-
+            setTimeout(async () => {
+                await this.toggleCamera();
+            }, 90);
+            await this.toggleMic();
             // Set the local video track for disroomFormplay
             const videoPub = joinedRoom.localParticipant.videoTrackPublications.values().next().value;
             if (videoPub?.videoTrack) {
