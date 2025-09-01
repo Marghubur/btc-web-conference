@@ -188,7 +188,10 @@
             </div>
             } @else {
             <a class="text-decoration-none ms-3" href="javascript:void(0)" (click)="shareScreen()"
-                data-bs-toggle="tooltip" data-bs-placement="top" title="Share screen">
+                appTooltip
+  data-bs-toggle="tooltip"
+  data-bs-placement="top"
+  title="Share screen">
                 <video class="d-none" #screenPreview autoplay playsinline muted
                     style="width: 100%; border: 2px solid #007bff; border-radius: 8px;"></video>
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
@@ -228,7 +231,10 @@
             }
 
             @if (permissions.camera == 'granted') {
-            <a href="javascript:void(0)" class="text-decoration-none ms-3" (click)="toggleCamera()">
+            <a href="javascript:void(0)" class="text-decoration-none ms-3" (click)="toggleCamera()" appTooltip
+  data-bs-toggle="tooltip"
+  data-bs-placement="top"
+  [title]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'">
                 @if(isCameraOn()) {
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#FFFFFF">
