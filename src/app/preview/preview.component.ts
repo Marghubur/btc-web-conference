@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { LocalVideoTrack, Room } from 'livekit-client';
 import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
 import { Subscription } from 'rxjs';
+import { LocalService } from '../services/local.service';
 
 @Component({
     selector: 'app-preview',
@@ -38,7 +39,8 @@ export class PreviewComponent implements OnDestroy {
 
     constructor(private route: Router,
         private router: ActivatedRoute,
-        private mediaPerm: MediaPermissionsService
+        private mediaPerm: MediaPermissionsService,
+        private local: LocalService
     ) { }
 
     joinRoom() {
@@ -143,12 +145,12 @@ export class PreviewComponent implements OnDestroy {
     }
 
     private saveUser() {
-        let user = {
+        let user: User = {
             isMicOn: this.isMicOn,
             isCameraOn: this.isCameraOn,
-            Name: this.roomForm.get('participantName')?.value
+            Name: this.roomForm.get('participantName')?.value!
         }
-        sessionStorage.setItem(this.meetingId!, JSON.stringify(user))
+        this.local.setUser(this.meetingId!, user)
     }
 
     async toggleCamera() {
@@ -168,5 +170,5 @@ export class PreviewComponent implements OnDestroy {
 export interface User {
     isMicOn: boolean;
     isCameraOn: boolean;
-    Name: string
+    Name?: string
 }

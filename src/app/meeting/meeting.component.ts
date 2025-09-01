@@ -11,11 +11,13 @@ import { interval, Subscription } from 'rxjs';
 import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
 import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../services/video-background.service';
 import { User } from '../preview/preview.component';
+import { LocalService } from '../services/local.service';
+import { TooltipDirective } from '../../directive/tooltip.directive';
 
 @Component({
     selector: 'app-meeting',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule],
+    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, TooltipDirective],
     templateUrl: './meeting.component.html',
     styleUrl: './meeting.component.css'
 })
@@ -82,7 +84,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
         private roomService: RoomService,
         private route: Router,
         private mediaPerm: MediaPermissionsService,
-        public videoBackgroundService: VideoBackgroundService
+        public videoBackgroundService: VideoBackgroundService,
+        private local: LocalService
     ) {
         // Initialize virtual background service
         this.videoBackgroundService.initialize().catch(console.error);
@@ -90,7 +93,9 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async ngOnInit() {
         this.meetingId = this.router.snapshot.paramMap.get('id');
-        this.user = JSON.parse(sessionStorage.getItem(this.meetingId!)!);
+        this.user = this.local.getUser(this.meetingId!);
+        this.isCameraOn.set(this.user?.isCameraOn!);
+        this.isMicOn.set(this.user?.isMicOn!);
         this.roomForm.get('participantName')?.setValue(this.user?.Name!);
         this.timerSubscription = interval(60 * 1000).subscribe(() => {
             this.currentTime = new Date();
@@ -176,13 +181,13 @@ export class MeetingComponent implements OnDestroy, OnInit {
             this.room.set(joinedRoom);
 
             // Enable default camera & mic
-            //await this.cameraService.enableMic(joinedRoom);
-            this.isMicOn.set(!this.user?.isMicOn!);
-            await this.toggleMic();
+            if (this.user?.isMicOn) {
+                await this.cameraService.enableMic(joinedRoom);
+            }
             await this.cameraService.enableCamera(joinedRoom);
-            this.isCameraOn.set(!this.user?.isCameraOn!);
-            await this.toggleCamera();
-
+            setTimeout(async () => {
+                this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
+            }, 100);
             // Set the local video track for disroomFormplay
             const videoPub = joinedRoom.localParticipant.videoTrackPublications.values().next().value;
             if (videoPub?.videoTrack) {
@@ -209,6 +214,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         if (!this.isCameraOn()) {
             await this.videoBackgroundService.removeBackground(this.localTrack()!)
         }
+        this.local.setCameraStatus(this.meetingId!, this.isCameraOn())
     }
 
     async toggleMic() {
@@ -222,6 +228,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
             this.isMicOn.set(true);
         }
         this.room()?.localParticipant.setMicrophoneEnabled(this.isMicOn());
+        this.local.setMicStatus(this.meetingId!, this.isMicOn())
     }
 
     async shareScreen() {
