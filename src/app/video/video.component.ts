@@ -15,7 +15,7 @@ export class VideoComponent implements AfterViewInit, OnDestroy {
     track = input.required<LocalVideoTrack | RemoteVideoTrack>();
     participantIdentity = input.required<string>();
     local = input(false);
-
+    isMute = input(false);
     ngAfterViewInit() {
         if (this.videoElement()) {
             this.track().attach(this.videoElement()!.nativeElement);

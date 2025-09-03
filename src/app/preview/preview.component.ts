@@ -20,7 +20,7 @@ export class PreviewComponent implements OnDestroy {
     speakers: MediaDeviceInfo[] = [];
     roomForm = new FormGroup({
         roomName: new FormControl('Test Room', Validators.required),
-        participantName: new FormControl('Participant' + Math.floor(Math.random() * 100), Validators.required),
+        participantName: new FormControl(null, Validators.required),
     });
     room = signal<Room | undefined>(undefined);
     localTrack = signal<LocalVideoTrack | undefined>(undefined);

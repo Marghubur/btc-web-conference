@@ -2,21 +2,22 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import {
   Participant,
-    RemoteParticipant,
-    RemoteTrack,
-    RemoteTrackPublication,
-    Room,
-    RoomEvent,
-    Track,
-    TrackPublication,
+  RemoteParticipant,
+  RemoteTrack,
+  RemoteTrackPublication,
+  RemoteVideoTrack,
+  Room,
+  RoomEvent,
+  Track,
+  TrackPublication,
 } from 'livekit-client';
 import { BehaviorSubject, lastValueFrom } from 'rxjs';
 import { HttpHandlerService } from './http-handler.service';
 import { environment } from '../../environments/environment';
 
 type TrackInfo = {
-    trackPublication: RemoteTrackPublication;
-    participantIdentity: string;
+  trackPublication: RemoteTrackPublication;
+  participantIdentity: string;
 };
 
 @Injectable({
@@ -34,8 +35,7 @@ export class RoomService {
   remoteTracksMap = signal<Map<string, any>>(new Map());
   remoteSharescreenTrack = signal<any>(null);
   participantMediaStatus = signal<Map<string, any>>(new Map());
-  private screenShareSource = new BehaviorSubject<boolean | false>(false);
-  screenShare$ = this.screenShareSource.asObservable();
+  latestScreenShare = new BehaviorSubject<{ participant: Participant; track: RemoteVideoTrack; } | null>(null);
   constructor(private httpClient: HttpClient, private http: HttpHandlerService) {
     http.setSFUProdEnabled(true);
     this.sfuProdEnabled = http.getSFUProdEnabled();
@@ -43,7 +43,7 @@ export class RoomService {
     this.configureUrls();
   }
 
-  private configureUrls() {    
+  private configureUrls() {
     if (!this.APPLICATION_SERVER_URL) {
       if (environment.production) {
         this.APPLICATION_SERVER_URL = 'https://' + environment.appServerBaseUrl;
@@ -81,9 +81,22 @@ export class RoomService {
       RoomEvent.TrackSubscribed,
       (_track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
         // 'Ignoring screen share track in remoteTracksMap
+        if (publication.trackSid && publication.source === Track.Source.ScreenShare) {
+          this.latestScreenShare.next({ participant, track: _track as RemoteVideoTrack });
+        }
+        if (_track.kind === 'audio') {
+        // create a MediaStream from the LiveKit track's MediaStreamTrack
+        try {
+          const mediaTrack = _track.mediaStreamTrack; // LiveKit RemoteTrack exposes mediaStreamTrack
+          const ms = new MediaStream([mediaTrack]);
+          //this.whisperService._attachStreamSource(ms, `remote-${participant.identity ?? participant.sid}`);
+        } catch (err) {
+          console.warn('Could not create MediaStream from LiveKit track', err);
+        }
+      }
         if (publication.source === Track.Source.ScreenShare) {
           this.remoteSharescreenTrack.set({
-            trackSid: publication.trackSid, 
+            trackSid: publication.trackSid,
             trackPublication: publication,
             participantIdentity: participant.identity,
           });
@@ -104,13 +117,18 @@ export class RoomService {
 
     // Remove unsubscribed tracks
     room.on(RoomEvent.TrackUnsubscribed, (_track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+      if (publication.source === Track.Source.ScreenShare) {
+        const current = this.latestScreenShare.getValue();
+        if (current && current.participant.identity === participant.identity)
+          this.latestScreenShare.next(null);
+      }
       this.remoteTracksMap.update((map) => {
         map.delete(publication.trackSid);
         return map;
       });
 
       // Update participant media status
-        this.updateParticipantMediaStatus(participant);
+      this.updateParticipantMediaStatus(participant);
     });
 
     // Handle track muted/unmuted
@@ -126,21 +144,9 @@ export class RoomService {
       }
     });
 
-    // Handle screenshare
-    room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-      if (publication.trackSid && publication.source === Track.Source.ScreenShare) {
-        this.screenShareSource.next(true);
-      }
-    });
-
-    room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-      if (publication.source === Track.Source.ScreenShare) {
-        this.screenShareSource.next(false); // reset when stop sharing
-      }
-    });
-
     // Handle participant connected
     room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+      //this.whisperService._attachParticipantAudio(participant);
       this.updateParticipantMediaStatus(participant);
     });
 
@@ -203,7 +209,7 @@ export class RoomService {
     });
 
   }
-  
+
   getParticipantMediaStatus(participantIdentity: string): any | undefined {
     return this.participantMediaStatus().get(participantIdentity);
   }

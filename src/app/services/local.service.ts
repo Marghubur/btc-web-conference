@@ -32,4 +32,24 @@ export class LocalService {
       this.setUser(meetingId, user);
     }
   }
+
+  getBrowserName(): string {
+        const userAgent = navigator.userAgent;
+
+        if (/edg/i.test(userAgent)) {
+        return 'Edge';
+        } else if (/chrome|chromium|crios/i.test(userAgent)) {
+        return 'Chrome';
+        } else if (/firefox|fxios/i.test(userAgent)) {
+        return 'Firefox';
+        } else if (/safari/i.test(userAgent) && !/chrome|crios|android/i.test(userAgent)) {
+        return 'Safari';
+        } else if (/opr\//i.test(userAgent)) {
+        return 'Opera';
+        } else if (/msie|trident/i.test(userAgent)) {
+        return 'Internet Explorer';
+        } else {
+        return 'Unknown';
+        }
+    }
 }
