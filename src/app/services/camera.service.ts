@@ -53,19 +53,37 @@ export class CameraService {
   }
 
   async enableMic(room: Room, deviceId?: string) {
-    const tracks = await createLocalTracks({
-      audio: { deviceId: deviceId || undefined },
-    });
-    const audioTrack = tracks.find((t) => t.kind === 'audio');
-    if (audioTrack) {
-      await room.localParticipant.publishTrack(audioTrack);
+    // First check if we already have an audio track published
+    const existingAudioTrack = room.localParticipant.audioTrackPublications.values().next().value?.track;
+  
+    if (existingAudioTrack) {
+    // If track exists but is muted, unmute it
+      await existingAudioTrack.unmute();
+    } else {
+      // If no audio track exists, create and publish one
+      const tracks = await createLocalTracks({
+        audio: { deviceId: deviceId || undefined },
+      });
+      const audioTrack = tracks.find((t) => t.kind === 'audio');
+      if (audioTrack) {
+        await room.localParticipant.publishTrack(audioTrack);
+      }
     }
+
+    // const tracks = await createLocalTracks({
+    //   audio: { deviceId: deviceId || undefined },
+    // });
+    // const audioTrack = tracks.find((t) => t.kind === 'audio');
+    // if (audioTrack) {
+    //   await room.localParticipant.publishTrack(audioTrack);
+    // }
   }
 
   async disableMic(room: Room) {
     room.localParticipant.audioTrackPublications.forEach((trackPub) => {
-      trackPub.track?.stop();
-      room.localParticipant.unpublishTrack(trackPub.track!);
+      trackPub.track?.mute();
+      // trackPub.track?.stop();
+      // room.localParticipant.unpublishTrack(trackPub.track!);
     });
   }
   
