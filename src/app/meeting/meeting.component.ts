@@ -474,14 +474,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         await this.recorder.startRecording({ video: false, audio: true });
     }
 
-    async stop() {
-        // try {
-        //     const blob = await this.recorder.stopRecording();
-        // let transcript = await this.whisperService.transcribeAudio(this.recorder.recordedChunks);
-        // this.whisperService.downloadFormattedTranscript(transcript);
-        // } catch (err) {
-        // console.error('Transcription error', err);
-        // }
+    async stopRecording() {
         try {
             const blob = await this.recorder.stopRecording();
             const name = `recording_${crypto.randomUUID()}`;
