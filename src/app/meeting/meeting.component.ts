@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { createLocalScreenTracks, LocalTrackPublication, LocalVideoTrack, Room } from 'livekit-client';
+import { createLocalScreenTracks, LocalTrackPublication, LocalVideoTrack, RemoteVideoTrack, Room } from 'livekit-client';
 import { CameraService } from '../services/camera.service';
 import { RoomService } from '../services/room.service';
 import { AudioComponent } from '../audio/audio.component';
@@ -13,6 +13,7 @@ import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../ser
 import { User } from '../preview/preview.component';
 import { LocalService } from '../services/local.service';
 import { TooltipDirective } from '../../directive/tooltip.directive';
+import { ScreenRecorderService } from '../services/screen-recorder.service';
 
 @Component({
     selector: 'app-meeting',
@@ -41,7 +42,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
     selectedMic: string | null = null;
     selectedSpeaker: string | null = null;
     meetingId: string | null = null;
-    enableScreenSharing = signal(false);
+    currentScreenTrack: RemoteVideoTrack | null = null;
+    private subs: Subscription[] = [];
     isCameraOn = signal(true);
     isMicOn = signal(true);
     currentTime: Date = new Date();
@@ -57,6 +59,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
     private modalInstance: any;
     private videoModalInstance: any;
     private shareLinkModalInstance: any;
+    currentBrowser: string = "";
     get remoteUsersCount(): number {
         const map = this.remoteTracksMap();
         const uniqueParticipants = new Set(
@@ -78,6 +81,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
     tweetUrl: string = "";
     linkedInUrl: string = "";
     user: User | null = null;
+    remoteAudio!: HTMLAudioElement;
+    isRecording: boolean = false;
     constructor(
         private cameraService: CameraService,
         private router: ActivatedRoute,
@@ -85,41 +90,20 @@ export class MeetingComponent implements OnDestroy, OnInit {
         private route: Router,
         private mediaPerm: MediaPermissionsService,
         public videoBackgroundService: VideoBackgroundService,
-        private local: LocalService
+        private local: LocalService,
+        private recorder: ScreenRecorderService,
     ) {
         // Initialize virtual background service
         this.videoBackgroundService.initialize().catch(console.error);
     }
 
     async ngOnInit() {
-        this.meetingId = this.router.snapshot.paramMap.get('id');
-        this.user = this.local.getUser(this.meetingId!);
-        this.isCameraOn.set(this.user?.isCameraOn!);
-        this.isMicOn.set(this.user?.isMicOn!);
-        this.roomForm.get('participantName')?.setValue(this.user?.Name!);
-        this.timerSubscription = interval(60 * 1000).subscribe(() => {
-            this.currentTime = new Date();
-        });
-        this.subscription = this.mediaPerm.permissions$.subscribe(
-            permissions => {
-                this.permissions = permissions;
-            }
-        );
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        this.cameras = devices.filter(d => d.kind === 'videoinput');
-        this.microphones = devices.filter(d => d.kind === 'audioinput');
-        this.speakers = devices.filter(d => d.kind === 'audiooutput');
-
-        this.selectedCamera = this.cameras[0]?.deviceId || null;
-        this.selectedMic = this.microphones[0]?.deviceId || null;
-        this.selectedSpeaker = this.speakers[0]?.deviceId || null;
+        this.setInitialDetail();
+        await this.getDeviceDetail();
         // Using snapshot (loads once)
         if (this.meetingId) {
             this.joinRoom();
         }
-
-        // Load default backgrounds
-        this.backgroundOptions = this.videoBackgroundService.getBackgrounds();
 
         // Subscribe to current background
         this.subscriptions.add(
@@ -135,9 +119,47 @@ export class MeetingComponent implements OnDestroy, OnInit {
             })
         );
 
-        this.roomService.screenShare$.subscribe(value => {
-            this.enableScreenSharing.set(value);
+        // Subscribe to screen share updates
+        this.subs.push(
+            this.roomService.latestScreenShare.subscribe(share => {
+                if (share) {
+                    this.attachScreen(share.track);
+                } else {
+                    this.detachScreen();
+                }
+            })
+        );
+    }
+
+    private setInitialDetail() {
+        this.currentBrowser = this.local.getBrowserName();
+        this.meetingId = this.router.snapshot.paramMap.get('id');
+        this.user = this.local.getUser(this.meetingId!);
+        this.isCameraOn.set(this.user?.isCameraOn!);
+        this.isMicOn.set(this.user?.isMicOn!);
+        this.roomForm.get('participantName')?.setValue(this.user?.Name!);
+        this.timerSubscription = interval(60 * 1000).subscribe(() => {
+            this.currentTime = new Date();
         });
+        this.subscription = this.mediaPerm.permissions$.subscribe(
+            permissions => {
+                this.permissions = permissions;
+            }
+        );
+
+        // Load default backgrounds
+        this.backgroundOptions = this.videoBackgroundService.getBackgrounds();
+    }
+
+    private async getDeviceDetail() {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        this.cameras = devices.filter(d => d.kind === 'videoinput');
+        this.microphones = devices.filter(d => d.kind === 'audioinput');
+        this.speakers = devices.filter(d => d.kind === 'audiooutput');
+
+        this.selectedCamera = this.cameras[0]?.deviceId || null;
+        this.selectedMic = this.microphones[0]?.deviceId || null;
+        this.selectedSpeaker = this.speakers[0]?.deviceId || null;
     }
 
     ngAfterViewInit() {
@@ -240,7 +262,11 @@ export class MeetingComponent implements OnDestroy, OnInit {
                 resolution: { width: 1920, height: 1080 },
             });
 
-            this.enableScreenSharing.set(true);
+            if (screenTrack.mediaStreamTrack.readyState === 'ended') {
+                console.warn('User cancelled screen share');
+                return;
+            }
+
             this.isMyshareScreen = true;
             // Detect when user presses "Stop sharing" in browser UI
             screenTrack.mediaStreamTrack.onended = () => {
@@ -250,14 +276,12 @@ export class MeetingComponent implements OnDestroy, OnInit {
             await this.room()?.localParticipant.publishTrack(screenTrack);
             screenTrack.attach(this.screenPreview.nativeElement);
         } catch (error) {
-            this.enableScreenSharing.set(false);
         }
     }
 
     async stopScreenShare() {
         if (!this.room) return;
 
-        this.enableScreenSharing.set(false);
         this.isMyshareScreen = false;
         const publications = this.room()?.localParticipant.videoTrackPublications;
         publications?.forEach((pub: LocalTrackPublication) => {
@@ -271,6 +295,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         if (this.screenPreview?.nativeElement) {
             this.screenPreview.nativeElement.srcObject = null;
         }
+        this.roomService.latestScreenShare.next(null);
     }
 
     showUserMicActivePopup() {
@@ -330,6 +355,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
         }
         this.mediaPerm.destroy();
         this.subscriptions.unsubscribe();
+        this.subs.forEach(s => s.unsubscribe());
+        this.detachScreen();
     }
 
     async selectBackground(option: BackgroundOption) {
@@ -392,5 +419,84 @@ export class MeetingComponent implements OnDestroy, OnInit {
                 topic: 'hand_signal'
             }
         );
+    }
+
+    async changeMicrophone(deviceId: string) {
+        if (!this.room) return;
+
+        try {
+            // Replace mic with the new selected device
+            await this.room()?.localParticipant.setMicrophoneEnabled(true, { deviceId });
+        } catch (err) {
+            console.error('Failed to change microphone', err);
+        }
+    }
+
+    async changeSpeaker(deviceId: string) {
+        if (this.remoteAudio && (this.remoteAudio as any).setSinkId) {
+            try {
+                await (this.remoteAudio as any).setSinkId(deviceId);
+                console.log('Speaker switched to:', deviceId);
+            } catch (err) {
+                console.error('Error switching speaker', err);
+            }
+        } else {
+            console.warn('setSinkId not supported in this browser');
+        }
+    }
+
+    private attachScreen(track: RemoteVideoTrack) {
+        this.detachScreen(); // clean up previous
+        this.currentScreenTrack = track;
+        if (this.screenPreview?.nativeElement) {
+            track.attach(this.screenPreview.nativeElement);
+        }
+    }
+
+    private detachScreen() {
+        if (this.currentScreenTrack && this.screenPreview?.nativeElement) {
+            this.currentScreenTrack.detach(this.screenPreview.nativeElement);
+            this.screenPreview.nativeElement.srcObject = null;
+            this.currentScreenTrack = null;
+            this.isMyshareScreen = false;
+        }
+    }
+
+    async startVideoAudio() {
+        await this.recorder.startRecording({ video: true, audio: true });
+    }
+
+    async startVideo() {
+        await this.recorder.startRecording({ video: true, audio: false });
+    }
+
+    async startAudio() {
+        await this.recorder.startRecording({ video: false, audio: true });
+    }
+
+    async stopRecording() {
+        try {
+            const blob = await this.recorder.stopRecording();
+            const name = `recording_${crypto.randomUUID()}`;
+            this.recorder.downloadRecording(blob, name);
+            this.isRecording = false;
+        } catch (err) {
+            alert('Error stopping recording: ' + err);
+        }
+    }
+
+    getUserInitiaLetter(name: string): string {
+        if (!name)
+            return "";
+
+        const words = name.split(' ').slice(0, 2);
+        const initials = words.map(x => {
+            if (x.length > 0) {
+                return x.charAt(0).toUpperCase();
+            }
+            return '';
+        }).join('');
+
+        return initials;
     }
 }

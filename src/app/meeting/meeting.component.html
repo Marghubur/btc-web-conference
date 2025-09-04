@@ -4,22 +4,36 @@
         <div>Joining Please wait ...</div>
         } @else {
         <div id="room" class="w-100">
-            @if(enableScreenSharing()) {
+            @if(currentScreenTrack != null || isMyshareScreen) {
             <div class="row col-md-12 justify-content-center pt-3">
                 <div class="col-md-2">
                     <div class="col adjest-p-list">
-                        <div class="card participant-list bg-dark fw-semibold" [attr.data-count]="1">
+                        <div class="card participant-list bg-transparent fw-semibold" [attr.data-count]="1">
                             @if (localTrack()) {
                             @if (isCameraOn()) {
-                            <video-component [track]="localTrack()!"
-                                [participantIdentity]="roomForm.value.participantName!"
-                                [local]="true"></video-component>
+                            <div class="vh-19 d-flex align-items-center justify-content-center">
+                                <video-component [track]="localTrack()!"
+                                    [participantIdentity]="roomForm.value.participantName!" [local]="true"
+                                    [isMute]="!isMicOn()"></video-component>
+                            </div>
                             } @else {
                             <div
-                                class="d-flex align-items-center justify-content-center h-97 bg-light rounded w-100 py-2 position-relative">
+                                class="d-flex align-items-center justify-content-center vh-19 bg-light rounded w-100 py-2 position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
                                     [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{roomForm.value.participantName! | slice: 0:2}}
+                                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
+                                </div>
+                                @if (!isMicOn()) {
+                                <div class="position-absolute user-mute-mic">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                        width="24px" fill="#000">
+                                        <path
+                                            d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
+                                    </svg>
+                                </div>
+                                }
+                                <div class="text-dark position-absolute fw-semibold" style="bottom: 5px; left: 5px;">
+                                    {{roomForm.value.participantName!}}
                                 </div>
                             </div>
                             }
@@ -28,16 +42,17 @@
                             remoteTrack.trackPublication.trackSid; let index=$index) {
                             @if (remoteTrack.trackPublication.kind==='video' ) {
                             @if(isParticipantCameraEnabled(remoteTrack.participantIdentity)) {
-                            <div class="mt-3">
+                            <div class="mt-3 vh-19 d-flex align-items-center justify-content-center">
                                 <video-component [track]="remoteTrack.trackPublication.videoTrack!"
-                                    [participantIdentity]="remoteTrack.participantIdentity"></video-component>
+                                    [participantIdentity]="remoteTrack.participantIdentity"
+                                    [isMute]="!isParticipantAudioEnabled(remoteTrack.participantIdentity!)"></video-component>
                             </div>
                             } @else {
                             <div
-                                class="mt-2 d-flex align-items-center justify-content-center h-97 bg-light rounded w-100 py-2 position-relative">
+                                class="mt-2 d-flex align-items-center justify-content-center vh-19 bg-light rounded w-100 py-2 position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
                                     [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity)}">
-                                    {{remoteTrack.participantIdentity! | slice: 0:2}}
+                                    {{getUserInitiaLetter(remoteTrack.participantIdentity!)}}
                                 </div>
                                 @if (!isParticipantAudioEnabled(remoteTrack.participantIdentity!)) {
                                 <div class="position-absolute user-mute-mic">
@@ -48,6 +63,9 @@
                                     </svg>
                                 </div>
                                 }
+                                <div class="text-dark position-absolute fw-semibold" style="bottom: 5px; left: 5px;">
+                                    {{remoteTrack.participantIdentity!}}
+                                </div>
                             </div>
                             }
                             } @else {
@@ -66,7 +84,7 @@
                     } @else if (remoteSharescreenTrack() != null) {
                     <div class="meet-container">
                         <video-component [track]="remoteSharescreenTrack().trackPublication.videoTrack!"
-                            [participantIdentity]="remoteSharescreenTrack().participantIdentity"></video-component>
+                            [participantIdentity]="''"></video-component>
                     </div>
                     }
 
@@ -80,13 +98,14 @@
                             @if (localTrack()) {
                             @if (isCameraOn()) {
                             <video-component [track]="localTrack()!"
-                                [participantIdentity]="roomForm.value.participantName!" [local]="true"></video-component>
+                                [participantIdentity]="roomForm.value.participantName!" [local]="true"
+                                [isMute]="!isMicOn()"></video-component>
                             } @else {
                             <div
                                 class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
                                     [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{roomForm.value.participantName! | slice: 0:2}}
+                                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
                                 </div>
                                 @if (!isMicOn()) {
                                 <div class="position-absolute user-mute-mic">
@@ -97,6 +116,9 @@
                                     </svg>
                                 </div>
                                 }
+                                <div class="text-dark position-absolute fw-semibold" style="bottom: 5px; left: 5px;">
+                                    {{roomForm.value.participantName!}}
+                                </div>
                             </div>
                             }
                             }
@@ -105,13 +127,14 @@
                             @if (remoteTrack.trackPublication.kind === 'video') {
                             @if (isParticipantCameraEnabled(remoteTrack.participantIdentity)) {
                             <video-component [track]="remoteTrack.trackPublication.videoTrack!"
-                                [participantIdentity]="remoteTrack.participantIdentity"></video-component>
+                                [participantIdentity]="remoteTrack.participantIdentity"
+                                [isMute]="!isParticipantAudioEnabled(remoteTrack.participantIdentity!)"></video-component>
                             } @else {
                             <div
                                 class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
-                                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{remoteTrack.participantIdentity! | slice: 0:2}}
+                                    [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity!)}">
+                                    {{getUserInitiaLetter(remoteTrack.participantIdentity!)}}
                                 </div>
                                 @if (!isParticipantAudioEnabled(remoteTrack.participantIdentity!)) {
                                 <div class="position-absolute user-mute-mic">
@@ -122,6 +145,9 @@
                                     </svg>
                                 </div>
                                 }
+                                <div class="text-dark position-absolute fw-semibold" style="bottom: 5px; left: 5px;">
+                                    {{remoteTrack.participantIdentity!}}
+                                </div>
                             </div>
                             }
                             } @else {
@@ -150,7 +176,7 @@
                 </svg>
                 Leave
             </button>
-            @if (this.enableScreenSharing() && isMyshareScreen) {
+            @if (isMyshareScreen) {
             <div class="btn-group dropdown ms-3">
                 <a href="javascript:void(0)" class="text-decoration-none" data-bs-toggle="dropdown"
                     aria-expanded="false">
@@ -187,11 +213,8 @@
                 </ul>
             </div>
             } @else {
-            <a class="text-decoration-none ms-3" href="javascript:void(0)" (click)="shareScreen()"
-                appTooltip
-  data-bs-toggle="tooltip"
-  data-bs-placement="top"
-  title="Share screen">
+            <a class="text-decoration-none ms-3" href="javascript:void(0)" (click)="shareScreen()" appTooltip
+                data-bs-toggle="tooltip" data-bs-placement="top" title="Share screen">
                 <video class="d-none" #screenPreview autoplay playsinline muted
                     style="width: 100%; border: 2px solid #007bff; border-radius: 8px;"></video>
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
@@ -232,9 +255,8 @@
 
             @if (permissions.camera == 'granted') {
             <a href="javascript:void(0)" class="text-decoration-none ms-3" (click)="toggleCamera()" appTooltip
-  data-bs-toggle="tooltip"
-  data-bs-placement="top"
-  [title]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'">
+                data-bs-toggle="tooltip" data-bs-placement="top"
+                [title]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'">
                 @if(isCameraOn()) {
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#FFFFFF">
@@ -267,14 +289,14 @@
                         d="M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z" />
                 </svg>
             </a>
-            <a href="javascript:void(0)" class="text-decoration-none ms-3">
+            <a href="javascript:void(0)" class="text-decoration-none ms-3" (click)="startAudio()">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#FFFFFF">
                     <path
                         d="M0-240v-63q0-43 44-70t116-27q13 0 25 .5t23 2.5q-14 21-21 44t-7 48v65H0Zm240 0v-65q0-32 17.5-58.5T307-410q32-20 76.5-30t96.5-10q53 0 97.5 10t76.5 30q32 20 49 46.5t17 58.5v65H240Zm540 0v-65q0-26-6.5-49T754-397q11-2 22.5-2.5t23.5-.5q72 0 116 26.5t44 70.5v63H780Zm-455-80h311q-10-20-55.5-35T480-370q-55 0-100.5 15T325-320ZM160-440q-33 0-56.5-23.5T80-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T160-440Zm640 0q-33 0-56.5-23.5T720-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T800-440Zm-320-40q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-600q0 50-34.5 85T480-480Zm0-80q17 0 28.5-11.5T520-600q0-17-11.5-28.5T480-640q-17 0-28.5 11.5T440-600q0 17 11.5 28.5T480-560Zm1 240Zm-1-280Z" />
                 </svg>
             </a>
-            <a href="javascript:void(0)" class="text-decoration-none ms-3" (click)="toggleHandRaise()">
+            <a href="javascript:void(0)" class="text-decoration-none ms-3" (click)="stopRecording()">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#FFFFFF">
                     <path
@@ -291,7 +313,11 @@
             </a>
             <a class="text-decoration-none ms-3" href="javascript:voi(0)" data-bs-toggle="offcanvas"
                 data-bs-target="#virtualBackgroundOffcanvas" aria-controls="virtualBackgroundOffcanvas">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m176-120-56-56 301-302-181-45 198-123-17-234 179 151 216-88-87 217 151 178-234-16-124 198-45-181-301 301Zm24-520-80-80 80-80 80 80-80 80Zm355 197 48-79 93 7-60-71 35-86-86 35-71-59 7 92-79 49 90 22 23 90Zm165 323-80-80 80-80 80 80-80 80ZM569-570Z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFFFF">
+                    <path
+                        d="m176-120-56-56 301-302-181-45 198-123-17-234 179 151 216-88-87 217 151 178-234-16-124 198-45-181-301 301Zm24-520-80-80 80-80 80 80-80 80Zm355 197 48-79 93 7-60-71 35-86-86 35-71-59 7 92-79 49 90 22 23 90Zm165 323-80-80 80-80 80 80-80 80ZM569-570Z" />
+                </svg>
             </a>
             <a class="text-decoration-none ms-3" href="javascript:voi(0)" (click)="sharePopupModal()">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
@@ -308,6 +334,14 @@
                 </svg>
             </a>
         </div>
+        <div style="display:none">
+            <div #audioContainer></div>
+        </div>
+        @if (remoteSharescreenTrack() != null) {
+        <div class="col-auto text-center bg-white text-dark rounded border px-2 fw-semibold">
+            {{remoteSharescreenTrack().participantIdentity}} (presenting)
+        </div>
+        }
         <div class="footer-center fw-semibold text-white">
             <span class="time">{{currentTime | date:'shortTime'}}</span>
             <span class="room-code">| {{meetingId}}</span>
@@ -399,7 +433,8 @@
                                     <path
                                         d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z" />
                                 </svg>
-                                <select class="form-control border-0 p-0 mb-0 ms-1">
+                                <select #microphoneSelect class="form-control border-0 p-0 mb-0 ms-1"
+                                    (change)="changeMicrophone(microphoneSelect.value)">
                                     @for (mic of microphones; track $index) {
                                     <option [value]="mic.deviceId">{{ mic.label || "Microphone" }}</option>
                                     }
@@ -423,11 +458,16 @@
                                     <path
                                         d="M560-131v-82q90-26 145-100t55-168q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 127-78 224.5T560-131ZM120-360v-240h160l200-200v640L280-360H120Zm440 40v-322q47 22 73.5 66t26.5 96q0 51-26.5 94.5T560-320ZM400-606l-86 86H200v80h114l86 86v-252ZM300-480Z" />
                                 </svg>
-                                <select class="form-control border-0 p-0 mb-0 ms-1">
+                                <select #speakerSelect class="form-control border-0 p-0 mb-0 ms-1"
+                                    [disabled]="(currentBrowser != 'Chrome' && currentBrowser != 'Edge')"
+                                    (change)="changeSpeaker(speakerSelect.value)">
                                     @for (sp of speakers; track $index) {
                                     <option [value]="sp.deviceId">{{ sp.label || "Speaker" }}</option>
                                     }
                                 </select>
+                            </div>
+                            <div class="col-md-12">
+                                Speaker selection is controlled by you system or browser setting.
                             </div>
                         </div>
                     </div>
@@ -514,7 +554,8 @@
             <div class="modal-body">
                 <div class="col-md-12 form-control mb-2">
                     <div class="d-flex align-items-center">
-                        <input type="text" class="form-control border-0 p-0 m-0 w-75 fw-normal text-dark" readonly [value]="meetingUrl">
+                        <input type="text" class="form-control border-0 p-0 m-0 w-75 fw-normal text-dark" readonly
+                            [value]="meetingUrl">
                         <a href="javascript:void(0)" class="text-decoration-none ms-2" (click)="copyLink()">
                             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                                 fill="#000000">
