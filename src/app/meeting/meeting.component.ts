@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { createLocalScreenTracks, LocalTrackPublication, LocalVideoTrack, RemoteVideoTrack, Room } from 'livekit-client';
 import { CameraService } from '../services/camera.service';
@@ -12,13 +12,14 @@ import { MediaPermissions, MediaPermissionsService } from '../services/media-per
 import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../services/video-background.service';
 import { User } from '../preview/preview.component';
 import { LocalService } from '../services/local.service';
-import { TooltipDirective } from '../../directive/tooltip.directive';
 import { ScreenRecorderService } from '../services/screen-recorder.service';
+import { hand_down, hand_raise } from '../services/constant';
+import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-meeting',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, TooltipDirective],
+    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule],
     templateUrl: './meeting.component.html',
     styleUrl: './meeting.component.css'
 })
@@ -60,6 +61,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
     private videoModalInstance: any;
     private shareLinkModalInstance: any;
     currentBrowser: string = "";
+    textMessage: string = "";
     get remoteUsersCount(): number {
         const map = this.remoteTracksMap();
         const uniqueParticipants = new Set(
@@ -82,11 +84,16 @@ export class MeetingComponent implements OnDestroy, OnInit {
     linkedInUrl: string = "";
     user: User | null = null;
     remoteAudio!: HTMLAudioElement;
-    isRecording: boolean = false;
+    recordingAndType: RecordingAndType = {isAudioRecording: false, isReacording: false ,isTranscribe: false, isVideoRecording: false};
+    timeInSeconds: number = 0;
+    private watchSubscription: Subscription | null = null;
+    private timer$ = interval(1000);
+    handRaised: boolean = false;
+    private notified = new Set<string>(); // tracks who is already raised
     constructor(
         private cameraService: CameraService,
         private router: ActivatedRoute,
-        private roomService: RoomService,
+        public roomService: RoomService,
         private route: Router,
         private mediaPerm: MediaPermissionsService,
         public videoBackgroundService: VideoBackgroundService,
@@ -95,6 +102,22 @@ export class MeetingComponent implements OnDestroy, OnInit {
     ) {
         // Initialize virtual background service
         this.videoBackgroundService.initialize().catch(console.error);
+        effect(() => {
+            const list = this.roomService.handChnageStatus();
+
+            // Collect current raised hands
+            const currentlyRaised = new Set(list.filter(u => u.isHandRaise).map(u => u.name));
+
+            // Find newly raised (in current but not in notified)
+            currentlyRaised.forEach(name => {
+            if (!this.notified.has(name)) {
+                this.showNotification(`${name} raised hand ✋`);
+            }
+            });
+
+            // Update our tracking set
+            this.notified = currentlyRaised;
+        });
     }
 
     async ngOnInit() {
@@ -357,6 +380,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         this.subscriptions.unsubscribe();
         this.subs.forEach(s => s.unsubscribe());
         this.detachScreen();
+        this.stopTimer();
     }
 
     async selectBackground(option: BackgroundOption) {
@@ -404,21 +428,31 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     toggleHandRaise() {
-        //this.handRaised = !this.handRaised;
-
+        this.handRaised = !this.handRaised;
         const message = JSON.stringify({
-            type: 'hand_raise',
-            raised: true
+            type: this.handRaised ? hand_raise : hand_down,
+            raised: this.handRaised
         });
-
-        // Send to all participants
+        
         this.room()?.localParticipant.publishData(
-            new TextEncoder().encode('hand_raise'),
+            new TextEncoder().encode(message),
             {
                 reliable: true,
                 topic: 'hand_signal'
             }
         );
+    }
+
+    sendReaction(emoji: string) {
+        this.roomService.sendReaction(emoji, 'You')
+    }
+
+    sendChat(event: any) {
+        event.preventDefault();
+        if (this.textMessage) {
+            this.roomService.sendChat(this.textMessage, this.roomForm.value.participantName!, true);
+            this.textMessage = "";
+        }
     }
 
     async changeMicrophone(deviceId: string) {
@@ -463,23 +497,41 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     async startVideoAudio() {
+        this.startTimer();
+        this.recordingAndType = {isReacording: true,  isAudioRecording: false, isTranscribe: false, isVideoRecording: true};
         await this.recorder.startRecording({ video: true, audio: true });
     }
 
     async startVideo() {
+        this.startTimer();
+        this.recordingAndType = {isReacording: true,  isAudioRecording: false, isTranscribe: false, isVideoRecording: true};
         await this.recorder.startRecording({ video: true, audio: false });
     }
 
     async startAudio() {
+        this.startTimer();
+        this.recordingAndType = {isReacording: true,  isAudioRecording: true, isTranscribe: false, isVideoRecording: false};
+        await this.recorder.startRecording({ video: false, audio: true });
+    }
+
+    async startTranscribe() {
+        this.startTimer();
+        this.recordingAndType = {isReacording: true,  isAudioRecording: true, isTranscribe: true, isVideoRecording: false};
         await this.recorder.startRecording({ video: false, audio: true });
     }
 
     async stopRecording() {
         try {
+            this.stopTimer();
+            this.recordingAndType.isReacording = false;
             const blob = await this.recorder.stopRecording();
             const name = `recording_${crypto.randomUUID()}`;
-            this.recorder.downloadRecording(blob, name);
-            this.isRecording = false;
+            if (this.recordingAndType.isTranscribe) {
+                this.recorder.downloadAudioToText(blob, name);
+            } else {
+                this.recorder.downloadRecording(blob, name);
+            }
+            this.recordingAndType = {isReacording: false,  isAudioRecording: false, isTranscribe: false, isVideoRecording: false};
         } catch (err) {
             alert('Error stopping recording: ' + err);
         }
@@ -499,4 +551,58 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
         return initials;
     }
+
+     private startTimer(): void {
+        this.timeInSeconds = 0;
+        this.watchSubscription = this.timer$.subscribe(() => {
+        this.timeInSeconds++;
+        });
+    }
+    
+    private stopTimer(): void {
+        if (this.watchSubscription) {
+            this.watchSubscription.unsubscribe();
+            this.watchSubscription = null;
+        }
+        this.timeInSeconds = 0;
+    }
+
+    public formatTime(totalSeconds: number): string {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        // Use String.padStart() to ensure two digits
+        const formattedMinutes = String(minutes).padStart(2, '0');
+        const formattedSeconds = String(seconds).padStart(2, '0');
+
+        return `${formattedMinutes}:${formattedSeconds}`;
+    }
+
+    private showNotification(message: string) {
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-bg-primary border-0 show position-fixed top-0 end-0 m-3';
+        toast.style.zIndex = '1055';
+        toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"></button>
+        </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+}
+
+
+interface RecordingAndType {
+    isReacording: boolean;
+    isAudioRecording: boolean;
+    isVideoRecording: boolean;
+    isTranscribe: boolean;
+}
+
+export interface Reaction {
+  id: number;
+  emoji: string;
+  name: string;
 }
