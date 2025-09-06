@@ -347,7 +347,11 @@
 }
 
 .dropdown-menu.show {
-    width: 15rem !important;
+    min-width: 15rem !important;
+}
+
+.emoji-dropdown {
+    width: 25rem !important;
 }
 
 ::-webkit-scrollbar {
@@ -442,4 +446,66 @@
 
 .bg-transparent {
     background-color: transparent !important;
+}
+
+/* meeting.component.css */
+.reaction-container {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.reaction {
+  position: absolute;
+  font-size: 3rem;
+  animation: floatUp 4s ease forwards;
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  60% {
+    opacity: 0.8;
+  }
+  75% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-70vh) scale(1);
+  }
+}
+
+.user-caht-name-icon {
+    width: 2rem;
+    height: 2rem;
+}
+
+.own-message {
+    background-color: #5b5fc7 !important;
+}
+
+.message-bottom-box {
+    height: 17vh !important;
+}
+
+.message-top-box {
+    height: 8vh !important;
+}
+
+.message-body-box {
+    height: 75vh !important;
+    overflow-y: auto;
+}
+
+.small-font {
+    font-size: 0.8rem !important;
+}
+
+textarea {
+    resize: none;
 }

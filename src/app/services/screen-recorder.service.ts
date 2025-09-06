@@ -1,3 +1,4 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 @Injectable({
@@ -6,6 +7,7 @@ import { Injectable } from '@angular/core';
 export class ScreenRecorderService {
   private mediaRecorder?: MediaRecorder;
   recordedChunks: Blob[] = [];
+  constructor(private http: HttpClient) {}
 
   async startRecording(options: { video: boolean, audio: boolean }) {
     try {
@@ -93,7 +95,6 @@ export class ScreenRecorderService {
       })
       .then(renderedBuffer => {
         const wavBlob = this.audioBufferToWavBlob(renderedBuffer);
-
         // Trigger download
         const url = URL.createObjectURL(wavBlob);
         const a = document.createElement('a');
@@ -101,6 +102,53 @@ export class ScreenRecorderService {
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
+      });
+  }
+
+  downloadAudioToText(blob: Blob, filename: string = 'recording.wav') {
+    const audioCtx = new AudioContext({ sampleRate: 16000 });
+
+    blob.arrayBuffer()
+      .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
+      .then(audioBuffer => {
+        // Convert stereo → mono for Whisper
+        const offlineCtx = new OfflineAudioContext(1, audioBuffer.duration * 16000, 16000);
+        const source = offlineCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(offlineCtx.destination);
+        source.start(0);
+
+        return offlineCtx.startRendering();
+      })
+      .then(renderedBuffer => {
+        const wavBlob = this.audioBufferToWavBlob(renderedBuffer);
+
+        let formData = new FormData();
+        formData.append('file', wavBlob);
+        this.http.post("https://www.axilcorps.com/stt/transcribe/audio-to-text", formData).subscribe({
+            next: (res: any) => {
+                if (res && res._response_body) {
+                  // Trigger download
+                  const text = res._response_body;
+                  const blob = new Blob([text], { type: 'text/plain' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = filename;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }
+            },
+            error: (err: HttpErrorResponse) => {
+                if (err.error instanceof ErrorEvent) {
+                    console.error('An error occurred:', err.error.message);
+                } else {
+                    console.error(
+                        `Backend returned code ${err.status}, ` +
+                        `body was: ${err.error}`);
+                }
+            }
+        })
       });
   }
 
