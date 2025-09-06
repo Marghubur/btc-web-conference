@@ -11,9 +11,10 @@ import {
   Track,
   TrackPublication,
 } from 'livekit-client';
-import { BehaviorSubject, lastValueFrom } from 'rxjs';
+import { BehaviorSubject, lastValueFrom, Subject } from 'rxjs';
 import { HttpHandlerService } from './http-handler.service';
 import { environment } from '../../environments/environment';
+import { Chat, ClappingHands, CryingFace, FacewithOpenMouth, FacewithTearsofJoy, hand_down, hand_raise, PartyPopper, reaction, SparklingHeart, ThinkingFace, ThumbsDown, ThumbsUp } from './constant';
 
 type TrackInfo = {
   trackPublication: RemoteTrackPublication;
@@ -36,6 +37,11 @@ export class RoomService {
   remoteSharescreenTrack = signal<any>(null);
   participantMediaStatus = signal<Map<string, any>>(new Map());
   latestScreenShare = new BehaviorSubject<{ participant: Participant; track: RemoteVideoTrack; } | null>(null);
+  // Expose reactions as observable
+  reactions = signal<{ id: string; emoji: string, name: string }[]>([]);
+  chatsMessage = signal<{ id: string; message: string, name: string, isSender: boolean, time: Date }[]>([]);
+  handChnageStatus = signal<{ id: string; isHandRaise: boolean, name: string}[]>([]);
+  private counter = 0;
   constructor(private httpClient: HttpClient, private http: HttpHandlerService) {
     http.setSFUProdEnabled(true);
     this.sfuProdEnabled = http.getSFUProdEnabled();
@@ -167,16 +173,32 @@ export class RoomService {
 
     // Handle hand raise
     room.on(RoomEvent.DataReceived, (payload, participant, _) => {
-      const message = new TextDecoder().decode(payload);
-      if (message === "hand_raise") {
-        console.log(`${participant?.identity} raised hand ✋`);
-        // you can trigger a UI change here
+      const msg = JSON.parse(new TextDecoder().decode(payload));
+      if (msg.type === hand_raise) {
+        this.updateHandStatus(participant?.identity!, true);
+      } else if(msg.type == hand_down) {
+        this.updateHandStatus(participant?.identity!, false);
+      } else if (msg.type === reaction) {
+        this.addReaction(msg.emoji, participant?.identity!);
+      } else if (msg.type === Chat) {
+        this.addMessage(msg.message, participant?.identity!);
       }
     });
 
     const token = await this.getToken(roomName, participantName);
     await room.connect(this.LIVEKIT_URL, token);
     return room;
+  }
+
+  private updateHandStatus(name: string, isRaised: boolean) {
+    this.handChnageStatus.update((list) => {
+      const existing = list.find(x => x.name === name);
+      if (existing) {
+        return list.map(x => x.name === name ? { ...x, isHandRaise: isRaised } : x);
+      } else {
+        return [...list, { id: crypto.randomUUID(), name, isHandRaise: isRaised }];
+      }
+    });
   }
 
   private updateParticipantMediaStatus(participant: RemoteParticipant) {
@@ -222,6 +244,82 @@ export class RoomService {
       map.set(participantIdentity, mediaStatus);
       return map;
     });
+  }
+
+  sendReaction(emoji: string, name: string) {
+    if (this.room) {
+      const payload = JSON.stringify({ type: reaction, emoji });
+      this.room()?.localParticipant.publishData(
+        new TextEncoder().encode(payload),
+            {
+                reliable: true,
+                topic: 'emoji_signal'
+            }
+      );
+
+      // Also show locally
+      this.addReaction(emoji, name);
+    }
+  }
+
+  private addReaction(emoji: string, name: string) {
+    const id = crypto.randomUUID();
+    var emojiFile = "";
+    switch (emoji) {
+      case SparklingHeart:
+        emojiFile = "assets/9.png"
+        break;
+      case ThumbsUp:
+        emojiFile = "assets/8.png"
+        break;
+      case PartyPopper:
+        emojiFile = "assets/7.png"
+        break;
+      case ClappingHands:
+        emojiFile = "assets/6.png"
+        break;
+      case FacewithTearsofJoy:
+        emojiFile = "assets/5.png"
+        break;
+      case FacewithOpenMouth:
+        emojiFile = "assets/4.png"
+        break;
+      case CryingFace:
+        emojiFile = "assets/3.png"
+        break;
+      case ThinkingFace:
+        emojiFile = "assets/2.png"
+        break;
+      case ThumbsDown:
+        emojiFile = "assets/1.png"
+        break;
+    }
+    this.reactions.update((list) => [...list, { id: id, emoji: emojiFile, name: name }]);
+
+    setTimeout(() => {
+      this.reactions.update((list) => list.filter((r) => r.id !== id));
+    }, 3000);
+  }
+
+  sendChat(message: string, name: string, isSender: boolean) {
+    if (this.room) {
+      const payload = JSON.stringify({ type: Chat, message });
+      this.room()?.localParticipant.publishData(
+        new TextEncoder().encode(payload),
+            {
+                reliable: true,
+                topic: 'chat_signal'
+            }
+      );
+
+      // Also show locally
+      this.addMessage(message, name, isSender);
+    }
+  }
+
+  private addMessage(message: string, name: string, isSender: boolean = false) {
+    const id = ++this.counter;
+    this.chatsMessage.update((list) => [...list, { id: crypto.randomUUID(), message: message, name: name, isSender: isSender, time: new Date() }]);
   }
 
   async leaveRoom() {
