@@ -14,12 +14,11 @@ import { User } from '../preview/preview.component';
 import { LocalService } from '../services/local.service';
 import { ScreenRecorderService } from '../services/screen-recorder.service';
 import { hand_down, hand_raise } from '../services/constant';
-import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-meeting',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule],
+    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule],
     templateUrl: './meeting.component.html',
     styleUrl: './meeting.component.css'
 })
