@@ -146,8 +146,8 @@ export class PreviewComponent implements OnDestroy {
 
     private saveUser() {
         let user: User = {
-            isMicOn: this.isMicOn,
-            isCameraOn: this.isCameraOn,
+            isMicOn: this.selectedMic != null ?  this.isMicOn : false,
+            isCameraOn: this.selectedCamera != null ? this.isCameraOn: false,
             Name: this.roomForm.get('participantName')?.value!
         }
         this.local.setUser(this.meetingId!, user)
