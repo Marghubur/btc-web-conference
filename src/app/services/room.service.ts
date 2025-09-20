@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import {
+  ChatMessage,
   Participant,
   RemoteParticipant,
   RemoteTrack,
@@ -40,8 +41,10 @@ export class RoomService {
   // Expose reactions as observable
   reactions = signal<{ id: string; emoji: string, name: string }[]>([]);
   chatsMessage = signal<{ id: string; message: string, name: string, isSender: boolean, time: Date }[]>([]);
-  handChnageStatus = signal<{ id: string; isHandRaise: boolean, name: string}[]>([]);
+  handChnageStatus = signal<{ id: string; isHandRaise: boolean, name: string }[]>([]);
   private counter = 0;
+  private _newMessage = signal<{ id: string, message: string } | null>(null);
+  newMessage = this._newMessage.asReadonly(); // expose readonly signal
   constructor(private httpClient: HttpClient, private http: HttpHandlerService) {
     http.setSFUProdEnabled(true);
     this.sfuProdEnabled = http.getSFUProdEnabled();
@@ -91,23 +94,33 @@ export class RoomService {
           this.latestScreenShare.next({ participant, track: _track as RemoteVideoTrack });
         }
         if (_track.kind === 'audio') {
-        // create a MediaStream from the LiveKit track's MediaStreamTrack
-        try {
-          const mediaTrack = _track.mediaStreamTrack; // LiveKit RemoteTrack exposes mediaStreamTrack
-          const ms = new MediaStream([mediaTrack]);
-          //this.whisperService._attachStreamSource(ms, `remote-${participant.identity ?? participant.sid}`);
-        } catch (err) {
-          console.warn('Could not create MediaStream from LiveKit track', err);
+          // create a MediaStream from the LiveKit track's MediaStreamTrack
+          try {
+            const mediaTrack = _track.mediaStreamTrack; // LiveKit RemoteTrack exposes mediaStreamTrack
+            const ms = new MediaStream([mediaTrack]);
+            //this.whisperService._attachStreamSource(ms, `remote-${participant.identity ?? participant.sid}`);
+          } catch (err) {
+            console.warn('Could not create MediaStream from LiveKit track', err);
+          }
         }
-      }
         if (publication.source === Track.Source.ScreenShare) {
           this.remoteSharescreenTrack.set({
             trackSid: publication.trackSid,
             trackPublication: publication,
             participantIdentity: participant.identity,
           });
+
+          const msg = { message: `${participant.identity} is presenting now`, id: crypto.randomUUID() };
+          this._newMessage.set(msg);
+          this.clearAfterDelay();
           return;
         }
+
+        const msg = { message: `${participant.identity} joined the meeting`, id: crypto.randomUUID()};
+        this._newMessage.set(msg);
+        this.clearAfterDelay();
+        const audio = new Audio('/assets/notification-tone.wav');
+        audio.play().catch(() => {});
         this.remoteTracksMap.update((map) => {
           map.set(publication.trackSid, {
             trackPublication: publication,
@@ -128,6 +141,18 @@ export class RoomService {
         if (current && current.participant.identity === participant.identity)
           this.latestScreenShare.next(null);
       }
+
+      if (publication.source === Track.Source.ScreenShare) {
+        this.remoteSharescreenTrack.set(null);
+        return;
+      }
+
+      const msg = { message: `${participant.identity} left the meeting`, id: crypto.randomUUID()};
+      this._newMessage.set(msg);
+      this.clearAfterDelay();
+      const audio = new Audio('/assets/notification-tone.wav');
+      audio.play().catch(() => {});
+
       this.remoteTracksMap.update((map) => {
         map.delete(publication.trackSid);
         return map;
@@ -176,7 +201,7 @@ export class RoomService {
       const msg = JSON.parse(new TextDecoder().decode(payload));
       if (msg.type === hand_raise) {
         this.updateHandStatus(participant?.identity!, true);
-      } else if(msg.type == hand_down) {
+      } else if (msg.type == hand_down) {
         this.updateHandStatus(participant?.identity!, false);
       } else if (msg.type === reaction) {
         this.addReaction(msg.emoji, participant?.identity!);
@@ -251,10 +276,10 @@ export class RoomService {
       const payload = JSON.stringify({ type: reaction, emoji });
       this.room()?.localParticipant.publishData(
         new TextEncoder().encode(payload),
-            {
-                reliable: true,
-                topic: 'emoji_signal'
-            }
+        {
+          reliable: true,
+          topic: 'emoji_signal'
+        }
       );
 
       // Also show locally
@@ -306,10 +331,10 @@ export class RoomService {
       const payload = JSON.stringify({ type: Chat, message });
       this.room()?.localParticipant.publishData(
         new TextEncoder().encode(payload),
-            {
-                reliable: true,
-                topic: 'chat_signal'
-            }
+        {
+          reliable: true,
+          topic: 'chat_signal'
+        }
       );
 
       // Also show locally
@@ -326,6 +351,10 @@ export class RoomService {
     await this.room()?.disconnect();
     this.room.set(undefined);
     this.remoteTracksMap.set(new Map());
+  }
+
+  private clearAfterDelay() {
+    setTimeout(() => this._newMessage.set(null), 3000);
   }
 }
 

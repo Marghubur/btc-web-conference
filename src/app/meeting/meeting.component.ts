@@ -239,14 +239,14 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
             if (hasCam) {
                 await this.cameraService.enableCamera(joinedRoom);
-                setTimeout(async () => {
-                    this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
-                }, 100);
                 // Set the local video track for disroomFormplay
                 const videoPub = joinedRoom.localParticipant.videoTrackPublications.values().next().value;
                 if (videoPub?.videoTrack) {
                     this.localTrack.set(videoPub.videoTrack);
                 }
+                setTimeout(async () => {
+                    this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
+                }, 100);
             } else {
                 console.warn("No camera detected, showing avatar placeholder");
                 this.localTrack.set(undefined); // explicitly mark no video
@@ -465,6 +465,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
         if (this.textMessage) {
             this.roomService.sendChat(this.textMessage, this.roomForm.value.participantName!, true);
             this.textMessage = "";
+            const audio = new Audio('/assets/message-pop-alert.mp3');
+            audio.play().catch(() => {});
         }
     }
 
