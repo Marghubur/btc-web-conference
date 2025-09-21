@@ -20,7 +20,7 @@ export class LoginComponent {
   isEmailValid: boolean = true;
   passwordType: string = "password";
   password: string = '12345678';
-  private basUrl: string = environment.appServerBaseUrl;
+  private basUrl: string ="http://" + environment.appServerBaseUrl;
   constructor(private local: LocalService,
               private router: Router,
               private http: HttpClient
@@ -37,7 +37,7 @@ export class LoginComponent {
       email: this.email,
       password: this.password
     }
-    this.http.post(this.basUrl + "auth/authenticateUser/", user).subscribe({
+    this.http.post(this.basUrl + "auth/authenticateUser", user).subscribe({
       next: (res: any) => {
         this.local.setUser(this.email, res);
         this.router.navigate(['/dashboard'])
