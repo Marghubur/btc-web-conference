@@ -13,7 +13,7 @@ import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../ser
 import { User } from '../preview/preview.component';
 import { LocalService } from '../services/local.service';
 import { ScreenRecorderService } from '../services/screen-recorder.service';
-import { hand_down, hand_raise } from '../services/constant';
+import { Dashboard, hand_down, hand_raise } from '../services/constant';
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { NetworkService } from '../services/network.service';
 
@@ -261,7 +261,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         await this.roomService.leaveRoom();
         this.room.set(undefined);
         this.localTrack.set(undefined);
-        this.route.navigate(["/", this.meetingId])
+        this.route.navigate(['/dashboard'])
     }
 
     async toggleCamera() {

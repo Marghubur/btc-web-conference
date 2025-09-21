@@ -170,5 +170,6 @@ export class PreviewComponent implements OnDestroy {
 export interface User {
     isMicOn: boolean;
     isCameraOn: boolean;
-    Name?: string
+    Name?: string;
+    Email?: string;
 }

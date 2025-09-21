@@ -15,3 +15,8 @@ export const reaction = "reaction";
 export const hand_raise = "hand_raise";
 export const hand_down = "hand_down";
 export const Chat = "chat";
+
+// ------------------ ROUTES -----------------------------
+export const Dashboard = "dashboard";
+export const Preview = "preview";
+export const Meeting = "meeting";
