@@ -150,10 +150,10 @@ export class DashboardComponent implements OnDestroy {
   }
 
   private saveUser() {
-    let user = this.local.getUser("CurrentUser");
+    let user = this.local.getUser();
     user.isMicOn= this.selectedMic != null ? this.isMicOn : false;
     user.isCameraOn= this.selectedCamera != null ? this.isCameraOn : false; 
-    this.local.setUser(this.meetingId!, user)
+    this.local.setUser(user)
   }
 
   async toggleCamera() {

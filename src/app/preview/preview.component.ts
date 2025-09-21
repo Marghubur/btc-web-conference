@@ -145,12 +145,12 @@ export class PreviewComponent implements OnDestroy {
     }
 
     private saveUser() {
-        let user: User = {
+        let user = {
             isMicOn: this.selectedMic != null ?  this.isMicOn : false,
             isCameraOn: this.selectedCamera != null ? this.isCameraOn: false,
-            Name: this.roomForm.get('participantName')?.value!
+            name: this.roomForm.get('participantName')?.value!
         }
-        this.local.setUser(this.meetingId!, user)
+        this.local.setUser(user)
     }
 
     async toggleCamera() {
@@ -170,6 +170,9 @@ export class PreviewComponent implements OnDestroy {
 export interface User {
     isMicOn: boolean;
     isCameraOn: boolean;
-    Name?: string;
-    Email?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    userId?: number;
+    token?: string;
 }

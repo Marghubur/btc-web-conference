@@ -159,10 +159,10 @@ export class MeetingComponent implements OnDestroy, OnInit {
     private setInitialDetail() {
         this.currentBrowser = this.local.getBrowserName();
         this.meetingId = this.router.snapshot.paramMap.get('id');
-        this.user = this.local.getUser(this.meetingId!);
+        this.user = this.local.getUser();
         this.isCameraOn.set(this.user?.isCameraOn!);
         this.isMicOn.set(this.user?.isMicOn!);
-        this.roomForm.get('participantName')?.setValue(this.user?.Name!);
+        this.roomForm.get('participantName')?.setValue(this.user?.firstName! + this.user?.lastName!);
         this.timerSubscription = interval(60 * 1000).subscribe(() => {
             this.currentTime = new Date();
         });
@@ -227,7 +227,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
             const hasCam = devices.some(d => d.kind === "videoinput");
             
             // const roomName = this.roomForm.value.roomName!;
-            const participantName = this.user?.Name; //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
+            const participantName = this.user?.firstName! + this.user?.lastName!; //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
             const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
 
             this.room.set(joinedRoom);
@@ -272,7 +272,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         if (!this.isCameraOn()) {
             await this.videoBackgroundService.removeBackground(this.localTrack()!)
         }
-        this.local.setCameraStatus(this.meetingId!, this.isCameraOn())
+        this.local.setCameraStatus(this.isCameraOn())
     }
 
     async toggleMic() {
@@ -286,7 +286,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
             this.isMicOn.set(true);
         }
         this.room()?.localParticipant.setMicrophoneEnabled(this.isMicOn());
-        this.local.setMicStatus(this.meetingId!, this.isMicOn())
+        this.local.setMicStatus(this.isMicOn())
     }
 
     async shareScreen() {

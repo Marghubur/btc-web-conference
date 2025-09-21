@@ -14,7 +14,10 @@
                     <input type="passwordType" placeholder="Password" class="form-control" [(ngModel)]="password" (keyup.enter)="login()"
                     [ngClass]="{'error-field': isSubmitted && password== ''}">
                 </div>
-                <button class="btn btn-success mt-3" (click)="login()">Login</button>
+                <button class="btn btn-success mt-3" [disabled]="isLoading" (click)="login()">
+                    <i class="fa-solid" [ngClass]="{'fa-spinner fa-spin': isLoading, 'fa-arrow-right-to-bracket': !isLoading}"></i>
+                    <span class="ps-2">{{ isLoading ? "Wait" : "Login"}}</span>
+                </button>
             </div>
         </div>
     </div>

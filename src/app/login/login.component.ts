@@ -15,12 +15,13 @@ import { environment } from '../../environments/environment';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  email: string = "bottomhalf.dev@gmail.com";
+  email: string = "";
   isSubmitted: boolean = false;
   isEmailValid: boolean = true;
   passwordType: string = "password";
-  password: string = '12345678';
+  password: string = '';
   private basUrl: string ="http://" + environment.appServerBaseUrl;
+  isLoading: boolean = false;
   constructor(private local: LocalService,
               private router: Router,
               private http: HttpClient
@@ -33,16 +34,20 @@ export class LoginComponent {
     if (!this.password)
       return;
 
+    this.isLoading = true;
     let user = {
       email: this.email,
       password: this.password
     }
     this.http.post(this.basUrl + "auth/authenticateUser", user).subscribe({
       next: (res: any) => {
-        this.local.setUser(this.email, res);
-        this.router.navigate(['/dashboard'])
+        const userDetail: User = res.ResponseBody;
+        this.local.setUser(userDetail);
+        this.isLoading = false;
+        this.router.navigate(['/dashboard']);
       },
-      error(err) {
+      error: err => {
+        this.isLoading = false;
         console.error(err);
       },
     })
