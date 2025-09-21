@@ -15,6 +15,7 @@ import { LocalService } from '../services/local.service';
 import { ScreenRecorderService } from '../services/screen-recorder.service';
 import { hand_down, hand_raise } from '../services/constant';
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
+import { NetworkService } from '../services/network.service';
 
 @Component({
     selector: 'app-meeting',
@@ -99,6 +100,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         public videoBackgroundService: VideoBackgroundService,
         private local: LocalService,
         private recorder: ScreenRecorderService,
+        public network: NetworkService
     ) {
         // Initialize virtual background service
         this.videoBackgroundService.initialize().catch(console.error);
@@ -219,6 +221,11 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async joinRoom() {
         try {
+            // Detect available devices
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const hasMic = devices.some(d => d.kind === "audioinput");
+            const hasCam = devices.some(d => d.kind === "videoinput");
+            
             // const roomName = this.roomForm.value.roomName!;
             const participantName = this.user?.Name; //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
             const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
@@ -226,17 +233,23 @@ export class MeetingComponent implements OnDestroy, OnInit {
             this.room.set(joinedRoom);
 
             // Enable default camera & mic
-            if (this.user?.isMicOn) {
+            if (this.user?.isMicOn && hasMic) {
                 await this.cameraService.enableMic(joinedRoom);
             }
-            await this.cameraService.enableCamera(joinedRoom);
-            setTimeout(async () => {
-                this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
-            }, 100);
-            // Set the local video track for disroomFormplay
-            const videoPub = joinedRoom.localParticipant.videoTrackPublications.values().next().value;
-            if (videoPub?.videoTrack) {
-                this.localTrack.set(videoPub.videoTrack);
+
+            if (hasCam) {
+                await this.cameraService.enableCamera(joinedRoom);
+                // Set the local video track for disroomFormplay
+                const videoPub = joinedRoom.localParticipant.videoTrackPublications.values().next().value;
+                if (videoPub?.videoTrack) {
+                    this.localTrack.set(videoPub.videoTrack);
+                }
+                setTimeout(async () => {
+                    this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
+                }, 100);
+            } else {
+                console.warn("No camera detected, showing avatar placeholder");
+                this.localTrack.set(undefined); // explicitly mark no video
             }
         } catch (error: any) {
             console.error('Error joining room:', error);
@@ -452,6 +465,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
         if (this.textMessage) {
             this.roomService.sendChat(this.textMessage, this.roomForm.value.participantName!, true);
             this.textMessage = "";
+            const audio = new Audio('/assets/message-pop-alert.mp3');
+            audio.play().catch(() => {});
         }
     }
 
