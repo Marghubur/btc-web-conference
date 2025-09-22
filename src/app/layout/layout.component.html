@@ -1,0 +1,12 @@
+<div class="d-flex vh-100 bg-light justify-content-between">
+    @if (isLoggedIn) {
+        <div class="right-panel bg-white">
+            <router-outlet></router-outlet>
+        </div>
+        <div class="left-panel bg-white">
+            <app-sidemenu></app-sidemenu>
+        </div>
+    } @else { 
+        <router-outlet></router-outlet>
+    }
+</div>

@@ -1,0 +1,17 @@
+.active {
+    background: #d7f2ff !important;
+    border-radius: 6px !important;
+}
+
+.user-container {
+    width: 2.3rem;
+    height: 2.3rem;
+}
+
+.dropdown-toggle::after {
+  display: none !important;
+}
+
+.c-width{
+    width: 20rem !important;
+}

@@ -2,9 +2,12 @@ import { Component, ElementRef, OnDestroy, signal, ViewChild } from '@angular/co
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LocalVideoTrack, Room } from 'livekit-client';
-import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
+import { MediaPermissions, MediaPermissionsService } from '../providers/services/media-permission.service';
 import { Subscription } from 'rxjs';
-import { LocalService } from '../services/local.service';
+import { LocalService } from '../providers/services/local.service';
+import { iNavigation } from '../providers/services/iNavigation';
+import { Dashboard, Meeting, MeetingId } from '../providers/constant';
+import { MeetingDetail, User } from '../providers/model';
 
 @Component({
     selector: 'app-preview',
@@ -18,10 +21,6 @@ export class PreviewComponent implements OnDestroy {
     cameras: MediaDeviceInfo[] = [];
     microphones: MediaDeviceInfo[] = [];
     speakers: MediaDeviceInfo[] = [];
-    roomForm = new FormGroup({
-        roomName: new FormControl('Test Room', Validators.required),
-        participantName: new FormControl(null, Validators.required),
-    });
     room = signal<Room | undefined>(undefined);
     localTrack = signal<LocalVideoTrack | undefined>(undefined);
     selectedCamera: string | null = null;
@@ -36,14 +35,25 @@ export class PreviewComponent implements OnDestroy {
     };
     isMicOn: boolean = true;
     isCameraOn: boolean = true;
-
-    constructor(private route: Router,
-        private router: ActivatedRoute,
+    isLoggedIn: boolean = false;
+    meetingTitle: string = "";
+    userName: string = "";
+    passCode: string = "";
+    isSubmitted: boolean = false;
+    constructor(private nav: iNavigation,
+        private route: ActivatedRoute,
+        private router: Router,
         private mediaPerm: MediaPermissionsService,
         private local: LocalService
-    ) { }
+    ) { 
+        this.isLoggedIn = local.isLoggedIn();
+        this.route.queryParamMap.subscribe(paramm => {
+            this.meetingId = paramm.get(MeetingId);
+        });
+    }
 
     joinRoom() {
+        this.isSubmitted = true;
         if (this.permissions.camera != 'granted') {
             alert("Please allow camera.");
             return;
@@ -54,15 +64,30 @@ export class PreviewComponent implements OnDestroy {
             return;
         }
 
-        this.saveUser();
-        this.route.navigate(["/meeting", this.meetingId]);
+        if (!this.isLoggedIn) {
+            if (!this.userName) {
+                alert("Please add your name");
+                return;
+            }
+
+            if (!this.passCode) {
+                alert("Please add meeting pass code");
+                return;
+            }
+            this.saveUser();
+        }
+        this.router.navigate(['/ems/meeting', this.meetingId]);
     }
 
     async ngOnInit() {
-        // Using snapshot (loads once)
-        this.meetingId = this.router.snapshot.paramMap.get('id');
+        if (this.isLoggedIn) {
+            let meetingDetail = this.nav.getValue();
+            this.meetingId = meetingDetail.meetingId;
+            this.meetingTitle = meetingDetail.title;
+        }
         await this.loadDevices();
-        await this.startPreview();
+        this.toggleCamera();
+        //await this.startPreview();
         this.subscription = this.mediaPerm.permissions$.subscribe(
             permissions => {
                 this.permissions = permissions;
@@ -145,10 +170,12 @@ export class PreviewComponent implements OnDestroy {
     }
 
     private saveUser() {
-        let user = {
+        let user:User = {
             isMicOn: this.selectedMic != null ?  this.isMicOn : false,
             isCameraOn: this.selectedCamera != null ? this.isCameraOn: false,
-            name: this.roomForm.get('participantName')?.value!
+            firstName: this.userName,
+            isLogin: false,
+            passCode: this.passCode
         }
         this.local.setUser(user)
     }
@@ -165,14 +192,8 @@ export class PreviewComponent implements OnDestroy {
     toggleMic() {
         this.isMicOn = !this.isMicOn;
     }
-}
 
-export interface User {
-    isMicOn: boolean;
-    isCameraOn: boolean;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    userId?: number;
-    token?: string;
+    navToDahsboard() {
+        this.nav.navigate(Dashboard, null);
+    }
 }

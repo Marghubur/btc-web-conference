@@ -1,21 +1,22 @@
 import { AfterViewInit, Component, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { createLocalScreenTracks, LocalTrackPublication, LocalVideoTrack, RemoteVideoTrack, Room } from 'livekit-client';
-import { CameraService } from '../services/camera.service';
-import { RoomService } from '../services/room.service';
+import { CameraService } from '../providers/services/camera.service';
+import { RoomService } from '../providers/services/room.service';
 import { AudioComponent } from '../audio/audio.component';
 import { VideoComponent } from '../video/video.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
-import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
-import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../services/video-background.service';
-import { User } from '../preview/preview.component';
-import { LocalService } from '../services/local.service';
-import { ScreenRecorderService } from '../services/screen-recorder.service';
-import { Dashboard, hand_down, hand_raise } from '../services/constant';
+import { MediaPermissions, MediaPermissionsService } from '../providers/services/media-permission.service';
+import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../providers/services/video-background.service';
+import { LocalService } from '../providers/services/local.service';
+import { ScreenRecorderService } from '../providers/services/screen-recorder.service';
+import { Dashboard, hand_down, hand_raise, Login } from '../providers/constant';
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
-import { NetworkService } from '../services/network.service';
+import { NetworkService } from '../providers/services/network.service';
+import { User } from '../providers/model';
+import { iNavigation } from '../providers/services/iNavigation';
 
 @Component({
     selector: 'app-meeting',
@@ -93,9 +94,10 @@ export class MeetingComponent implements OnDestroy, OnInit {
     private notified = new Set<string>(); // tracks who is already raised
     constructor(
         private cameraService: CameraService,
-        private router: ActivatedRoute,
+        private route: ActivatedRoute,
         public roomService: RoomService,
-        private route: Router,
+        private nav: iNavigation,
+        private router: Router,
         private mediaPerm: MediaPermissionsService,
         public videoBackgroundService: VideoBackgroundService,
         private local: LocalService,
@@ -123,6 +125,10 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     async ngOnInit() {
+        this.meetingId = this.route.snapshot.paramMap.get('id');
+        if (!this.local.isValidUser()) {
+            this.router.navigate(['/ems/preview'], {queryParams: {meetingid: this.meetingId}});
+        }
         this.setInitialDetail();
         await this.getDeviceDetail();
         // Using snapshot (loads once)
@@ -158,11 +164,10 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     private setInitialDetail() {
         this.currentBrowser = this.local.getBrowserName();
-        this.meetingId = this.router.snapshot.paramMap.get('id');
         this.user = this.local.getUser();
         this.isCameraOn.set(this.user?.isCameraOn!);
         this.isMicOn.set(this.user?.isMicOn!);
-        this.roomForm.get('participantName')?.setValue(this.user?.firstName! + this.user?.lastName!);
+        this.roomForm.get('participantName')?.setValue(this.getFullName());
         this.timerSubscription = interval(60 * 1000).subscribe(() => {
             this.currentTime = new Date();
         });
@@ -227,7 +232,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
             const hasCam = devices.some(d => d.kind === "videoinput");
             
             // const roomName = this.roomForm.value.roomName!;
-            const participantName = this.user?.firstName! + this.user?.lastName!; //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
+            const participantName = this.getFullName(); //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
             const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
 
             this.room.set(joinedRoom);
@@ -261,7 +266,10 @@ export class MeetingComponent implements OnDestroy, OnInit {
         await this.roomService.leaveRoom();
         this.room.set(undefined);
         this.localTrack.set(undefined);
-        this.route.navigate(['/dashboard'])
+        if (this.local.isLoggedIn())
+            this.nav.navigate(Dashboard, null);
+        else
+            this.nav.navigate(Login, null);
     }
 
     async toggleCamera() {
@@ -605,6 +613,14 @@ export class MeetingComponent implements OnDestroy, OnInit {
         `;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 4000);
+    }
+
+    private getFullName(): string {
+        let fullName = this.user?.firstName;
+        if (this.user.lastName)
+            fullName = fullName + " " + this.user.lastName;
+
+        return fullName;
     }
 }
 

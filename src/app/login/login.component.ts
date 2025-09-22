@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LocalService } from '../services/local.service';
-import { User } from '../preview/preview.component';
+import { LocalService } from '../providers/services/local.service';
+import { ResponseModel } from '../providers/model';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment';
+import { AjaxService } from '../providers/services/ajax.service';
+import { iNavigation } from '../providers/services/iNavigation';
+import { Dashboard } from '../providers/constant';
 
 @Component({
   selector: 'app-login',
@@ -20,11 +21,9 @@ export class LoginComponent {
   isEmailValid: boolean = true;
   passwordType: string = "password";
   password: string = '';
-  private basUrl: string ="http://" + environment.appServerBaseUrl;
   isLoading: boolean = false;
-  constructor(private local: LocalService,
-              private router: Router,
-              private http: HttpClient
+  constructor(private nav: iNavigation,
+              private http: AjaxService
   ) {}
   login() {
     this.isSubmitted = true;
@@ -39,17 +38,13 @@ export class LoginComponent {
       email: this.email,
       password: this.password
     }
-    this.http.post(this.basUrl + "auth/authenticateUser", user).subscribe({
-      next: (res: any) => {
-        const userDetail: User = res.ResponseBody;
-        this.local.setUser(userDetail);
+    this.http.login("auth/authenticateUser", user).then((res: ResponseModel) => {
+      if (res.ResponseBody) {
         this.isLoading = false;
-        this.router.navigate(['/dashboard']);
-      },
-      error: err => {
-        this.isLoading = false;
-        console.error(err);
-      },
+        this.nav.navigate(Dashboard, null);
+      }
+    }).catch(e => {
+      this.isLoading = false;
     })
   }
 

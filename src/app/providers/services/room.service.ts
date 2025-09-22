@@ -14,8 +14,8 @@ import {
 } from 'livekit-client';
 import { BehaviorSubject, lastValueFrom, Subject } from 'rxjs';
 import { HttpHandlerService } from './http-handler.service';
-import { environment } from '../../environments/environment';
-import { Chat, ClappingHands, CryingFace, FacewithOpenMouth, FacewithTearsofJoy, hand_down, hand_raise, PartyPopper, reaction, SparklingHeart, ThinkingFace, ThumbsDown, ThumbsUp } from './constant';
+import { environment } from '../../../environments/environment';
+import { Chat, ClappingHands, CryingFace, FacewithOpenMouth, FacewithTearsofJoy, hand_down, hand_raise, PartyPopper, reaction, SparklingHeart, ThinkingFace, ThumbsDown, ThumbsUp } from '../constant';
 
 type TrackInfo = {
   trackPublication: RemoteTrackPublication;
