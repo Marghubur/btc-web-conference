@@ -1,4 +1,5 @@
-<div class="d-flex flex-column h-100 overflow-hidden">
+@if (!roomService.isMinimized) {
+<div class="d-flex flex-column vh-100 overflow-hidden" [ngClass]="{'container-border': isMyshareScreen}">
     <div class="conference-section flex-grow-1">
         @if (!room()) {
         <div>Joining Please wait ...</div>
@@ -11,6 +12,7 @@
         <div id="room" class="w-100">
             @if(currentScreenTrack != null || isMyshareScreen) {
             <div class="row col-md-12 justify-content-center pt-3">
+                @if (isViewParticipant) {
                 <div class="col-md-2">
                     <div class="col adjest-p-list">
                         <div class="card participant-list bg-transparent fw-semibold" [attr.data-count]="1">
@@ -37,7 +39,8 @@
                                     </svg>
                                 </div>
                                 }
-                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate" style="bottom: 5px; left: 5px;">
+                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
+                                    style="bottom: 5px; left: 5px;">
                                     {{roomForm.value.participantName!}}
                                 </div>
                             </div>
@@ -80,9 +83,9 @@
                             }
                         </div>
                     </div>
-                    <!-- New screen sharing video container -->
                 </div>
-                <div class="col-md-10">
+                }
+                <div class="" [ngClass]="{'col-md-12': !isViewParticipant, 'col-md-10': isViewParticipant, }">
                     @if (isMyshareScreen) {
                     <video #screenPreview autoplay playsinline muted
                         style="width: 100%; border: 2px solid #007bff; border-radius: 8px; height: 86vh;"></video>
@@ -121,7 +124,8 @@
                                     </svg>
                                 </div>
                                 }
-                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate" style="bottom: 5px; left: 5px;">
+                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
+                                    style="bottom: 5px; left: 5px;">
                                     {{roomForm.value.participantName!}}
                                 </div>
                             </div>
@@ -142,7 +146,8 @@
                                     </svg>
                                 </div>
                                 }
-                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate" style="bottom: 5px; left: 5px;">
+                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
+                                    style="bottom: 5px; left: 5px;">
                                     {{roomForm.value.participantName!}}
                                 </div>
                             </div>
@@ -170,7 +175,8 @@
                                     </svg>
                                 </div>
                                 }
-                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate" style="bottom: 5px; left: 5px;">
+                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
+                                    style="bottom: 5px; left: 5px;">
                                     {{remoteTrack.participantIdentity!}}
                                 </div>
                             </div>
@@ -193,7 +199,7 @@
     <!-- Bottom 10% Area: Controls -->
     <div class="footer-section justify-content-between px-3 py-2">
         <div class="footer-left">
-            <button class="btn btn-danger btn-sm" (click)="leaveRoom()" placement="top" ngbTooltip="Leave">
+            <button class="btn btn-danger btn-sm" (click)="leaveRoom(true)" placement="top" ngbTooltip="Leave">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#FFFFFF">
                     <path
@@ -305,7 +311,18 @@
             </a>
             }
             <span class="mx-3">|</span>
-            <a href="javascript:void(0)" class="text-decoration-none" data-bs-toggle="offcanvas" placement="top"
+            <a href="javascript:void(0)" class="text-decoration-none position-relative" placement="top"
+                ngbTooltip="Participants" (click)="isViewParticipant = !isViewParticipant">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#FFFFFF">
+                    <path
+                        d="M0-240v-63q0-43 44-70t116-27q13 0 25 .5t23 2.5q-14 21-21 44t-7 48v65H0Zm240 0v-65q0-32 17.5-58.5T307-410q32-20 76.5-30t96.5-10q53 0 97.5 10t76.5 30q32 20 49 46.5t17 58.5v65H240Zm540 0v-65q0-26-6.5-49T754-397q11-2 22.5-2.5t23.5-.5q72 0 116 26.5t44 70.5v63H780Zm-455-80h311q-10-20-55.5-35T480-370q-55 0-100.5 15T325-320ZM160-440q-33 0-56.5-23.5T80-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T160-440Zm640 0q-33 0-56.5-23.5T720-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T800-440Zm-320-40q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-600q0 50-34.5 85T480-480Zm0-80q17 0 28.5-11.5T520-600q0-17-11.5-28.5T480-640q-17 0-28.5 11.5T440-600q0 17 11.5 28.5T480-560Zm1 240Zm-1-280Z" />
+                </svg>
+                <span class="position-absolute badge rounded-circle bg-danger user-count">
+                    {{remoteUsersCount + 1}}
+                </span>
+            </a>
+            <a href="javascript:void(0)" class="text-decoration-none ms-3" data-bs-toggle="offcanvas" placement="top"
                 ngbTooltip="Chat with everyone" data-bs-target="#chatOffCanvas" aria-controls="chatOffCanvas">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#FFFFFF">
@@ -313,13 +330,6 @@
                         d="M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z" />
                 </svg>
             </a>
-            <!-- <a href="javascript:void(0)" class="text-decoration-none ms-3" placement="top" ngbTooltip="Participants">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
-                    fill="#FFFFFF">
-                    <path
-                        d="M0-240v-63q0-43 44-70t116-27q13 0 25 .5t23 2.5q-14 21-21 44t-7 48v65H0Zm240 0v-65q0-32 17.5-58.5T307-410q32-20 76.5-30t96.5-10q53 0 97.5 10t76.5 30q32 20 49 46.5t17 58.5v65H240Zm540 0v-65q0-26-6.5-49T754-397q11-2 22.5-2.5t23.5-.5q72 0 116 26.5t44 70.5v63H780Zm-455-80h311q-10-20-55.5-35T480-370q-55 0-100.5 15T325-320ZM160-440q-33 0-56.5-23.5T80-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T160-440Zm640 0q-33 0-56.5-23.5T720-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T800-440Zm-320-40q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-600q0 50-34.5 85T480-480Zm0-80q17 0 28.5-11.5T520-600q0-17-11.5-28.5T480-640q-17 0-28.5 11.5T440-600q0 17 11.5 28.5T480-560Zm1 240Zm-1-280Z" />
-                </svg>
-            </a> -->
             <a href="javascript:void(0)" class="text-decoration-none ms-3"
                 [ngClass]="{'bg-body-tertiary rounded p-1': handRaised}" (click)="toggleHandRaise()" placement="top"
                 [ngbTooltip]="handRaised ? 'Lower hand' : 'Raise hand'">
@@ -504,6 +514,76 @@
         </div>
     </div>
 </div>
+} @else {
+<div class="positiion-fixed" style="top: 0; width: 19rem; height: 12rem; background-color: red;">
+    <div id="room" class="w-100">
+        @if(currentScreenTrack != null || isMyshareScreen) {
+        <div class="row col-md-12 justify-content-center pt-3">
+            @if (isMyshareScreen) {
+            <video #screenPreview autoplay playsinline muted
+                style="width: 100%; border: 2px solid #007bff; border-radius: 8px; height: 86vh;"></video>
+            } @else if (remoteSharescreenTrack() != null) {
+            <div class="meet-container">
+                <video-component [track]="remoteSharescreenTrack().trackPublication.videoTrack!"
+                    [participantIdentity]="''"></video-component>
+            </div>
+            }
+        </div>
+        } @else {
+        <div class="row col-md-12 justify-content-center">
+            @if (localTrack()) {
+            @if (isCameraOn()) {
+            <video-component [track]="localTrack()!" [participantIdentity]="roomForm.value.participantName!"
+                [local]="true" [isMute]="!isMicOn()"></video-component>
+            } @else {
+            <div class="d-flex align-items-center justify-content-center bg-light rounded position-relative" style="height: 12rem;">
+                <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
+                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
+                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
+                </div>
+                @if (!isMicOn()) {
+                <div class="position-absolute user-mute-mic">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                        fill="#000">
+                        <path
+                            d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
+                    </svg>
+                </div>
+                }
+                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
+                    style="bottom: 5px; left: 5px;">
+                    {{roomForm.value.participantName!}}
+                </div>
+            </div>
+            }
+            } @else {
+            <div class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
+                <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
+                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
+                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
+                </div>
+                @if (!isMicOn()) {
+                <div class="position-absolute user-mute-mic">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                        fill="#000">
+                        <path
+                            d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
+                    </svg>
+                </div>
+                }
+                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
+                    style="bottom: 5px; left: 5px;">
+                    {{roomForm.value.participantName!}}
+                </div>
+            </div>
+            }
+            <div id="layout-container" class="video-preview-container">
+            </div>
+        </div>
+        }
+    </div>
+</div>
+}
 
 
 <!-- Micro phone Permission Modal -->
@@ -872,8 +952,7 @@
     </div>
 </div>
 
-<div
-    *ngIf="roomService.newMessage() as msg" style="top: 6px; right: 6px;"
+<div *ngIf="roomService.newMessage() as msg" style="top: 6px; right: 6px;"
     class="position-fixed text-darak p-2 rounded shadow-lg bg-body-tertiary animate-fadeIn">
     {{ msg.message }}
-  </div>
+</div>

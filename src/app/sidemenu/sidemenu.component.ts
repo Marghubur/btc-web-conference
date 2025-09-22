@@ -39,8 +39,8 @@ export class SidemenuComponent {
     private config: NgbDropdownConfig,
     private jwtService: JwtService
   ) {
-    config.placement = 'top-start';
-		config.autoClose = false;
+    config.placement = 'top-end';
+		config.autoClose = true;
     this.currentUser = this.local.getUser();
 
     let currentPage = this.router.url;
@@ -49,7 +49,7 @@ export class SidemenuComponent {
     });
     if (currentPage.includes(ChatPage))
       this.sideMenu[0].IsActive = true;
-    else
+    else if (currentPage.includes(Dashboard))
       this.sideMenu[1].IsActive = true;
   }
 
@@ -59,7 +59,7 @@ export class SidemenuComponent {
     });
     if (link.includes(ChatPage))
       this.sideMenu[0].IsActive = true;
-    else
+    else if (link.includes(Dashboard))
       this.sideMenu[1].IsActive = true;
 
     this.nav.navigate(link, null);
@@ -81,7 +81,7 @@ export class SidemenuComponent {
 
   getFullName(): string {
     let fullName = this.currentUser?.firstName;
-    if (this.currentUser.lastName)
+    if (this.currentUser?.lastName)
       fullName = fullName + " " + this.currentUser.lastName;
 
     return fullName

@@ -92,6 +92,9 @@ export class MeetingComponent implements OnDestroy, OnInit {
     private timer$ = interval(1000);
     handRaised: boolean = false;
     private notified = new Set<string>(); // tracks who is already raised
+    isViewParticipant: boolean = false;
+    private _inMeeting = signal(false);
+    inMeeting = this._inMeeting.asReadonly();
     constructor(
         private cameraService: CameraService,
         private route: ActivatedRoute,
@@ -236,7 +239,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
             const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
 
             this.room.set(joinedRoom);
-
+            this._inMeeting.set(true);
             // Enable default camera & mic
             if (this.user?.isMicOn && hasMic) {
                 await this.cameraService.enableMic(joinedRoom);
@@ -262,14 +265,17 @@ export class MeetingComponent implements OnDestroy, OnInit {
         }
     }
 
-    async leaveRoom() {
+    async leaveRoom(isNavigate: boolean = false) {
         await this.roomService.leaveRoom();
         this.room.set(undefined);
         this.localTrack.set(undefined);
-        if (this.local.isLoggedIn())
-            this.nav.navigate(Dashboard, null);
-        else
-            this.nav.navigate(Login, null);
+        this._inMeeting.set(false);
+        if (isNavigate) {
+            if (this.local.isLoggedIn())
+                this.nav.navigate(Dashboard, null);
+            else
+                this.nav.navigate(Login, null);
+        }
     }
 
     async toggleCamera() {
@@ -616,8 +622,9 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     private getFullName(): string {
+
         let fullName = this.user?.firstName;
-        if (this.user.lastName)
+        if (this.user?.lastName)
             fullName = fullName + " " + this.user.lastName;
 
         return fullName;

@@ -1,0 +1,108 @@
+<!-- <div class="position-fixed" style="top: 0px; width: 15rem; height: 12rem;">
+    <div class="card participant-list bg-transparent fw-semibold" [attr.data-count]="1">
+        <div style="height: 9rem;"
+            class="d-flex align-items-center justify-content-center bg-light rounded w-100 py-2 flex-column">
+            <div class="col-md-12 d-flex align-items-center">
+                <div class="col-auto">
+                    <button class="btn btn-danger btn-sm" (click)="leaveRoom(true)" placement="top" ngbTooltip="Leave">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="#FFFFFF">
+                            <path
+                                d="m136-304-92-90q-12-12-12-28t12-28q88-95 203-142.5T480-640q118 0 232.5 47.5T916-450q12 12 12 28t-12 28l-92 90q-11 11-25.5 12t-26.5-8l-116-88q-8-6-12-14t-4-18v-114q-38-12-78-19t-82-7q-42 0-82 7t-78 19v114q0 10-4 18t-12 14l-116 88q-12 9-26.5 8T136-304Zm104-198q-29 15-56 34.5T128-424l40 40 72-56v-62Zm480 2v60l72 56 40-38q-29-26-56-45t-56-33Zm-480-2Zm480 2Z" />
+                        </svg>
+                    </button>
+                    @if (isMyshareScreen) {
+                    <div class="btn-group dropdown ms-3">
+                        <a href="javascript:void(0)" class="text-decoration-none" data-bs-toggle="dropdown"
+                            aria-expanded="false" placement="top" ngbTooltip="You are presenting">
+                            <video class="d-none" #screenPreview autoplay playsinline muted
+                                style="width: 100%; border: 2px solid #007bff; border-radius: 8px;"></video>
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                                fill="#FFFFFF">
+                                <path
+                                    d="M320-400h80v-80q0-17 11.5-28.5T440-520h80v80l120-120-120-120v80h-80q-50 0-85 35t-35 85v80ZM160-240q-33 0-56.5-23.5T80-320v-440q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v440q0 33-23.5 56.5T800-240H160Zm0-80h640v-440H160v440Zm0 0v-440 440ZM40-120v-80h880v80H40Z" />
+                            </svg>
+                        </a>
+                        <ul class="dropdown-menu bg-dark text-white w-50 px-3">
+                            <li class="pt-2 pb-3">
+                                <a href="javascript:void(0)" class="text-decoration-none text-white"
+                                    (click)="stopScreenShare()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                        width="24px" fill="#FFFFFF">
+                                        <path
+                                            d="m376-320 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56ZM160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z" />
+                                    </svg>
+                                    Stop presenting
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0)" class="text-decoration-none text-white"
+                                    (click)="shareScreen()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                        width="24px" fill="#FFFFFF">
+                                        <path
+                                            d="M80-320v-480q0-33 23.5-56.5T160-880h560v80H160v480H80ZM440-80v-80H320q-33 0-56.5-23.5T240-240v-400q0-33 23.5-56.5T320-720h520q33 0 56.5 23.5T920-640v400q0 33-23.5 56.5T840-160H720v80H440ZM320-240h520v-400H320v400Zm260-200Z" />
+                                    </svg>
+                                    Present something else
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    } @else {
+                    <a class="text-decoration-none ms-3" href="javascript:void(0)" (click)="shareScreen()"
+                        placement="top" ngbTooltip="Share screen">
+                        <video class="d-none" #screenPreview autoplay playsinline muted
+                            style="width: 100%; border: 2px solid #007bff; border-radius: 8px;"></video>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="#FFFFFF">
+                            <path
+                                d="M440-320h80v-166l64 63 57-57-161-160-160 160 57 56 63-63v167ZM160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z" />
+                        </svg>
+                    </a>
+                    }
+                    @if (permissions.microphone == 'granted') {
+                        <a href="javascript:void(0)" class="text-decoration-none ms-3" (click)="toggleMic()" placement="top"
+                            [ngbTooltip]="isMicOn() ? 'Turn off microphone' : 'Turn on microphone'">
+                            @if (isMicOn()) {
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                                fill="#FFFFFF">
+                                <path
+                                    d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z" />
+                            </svg>
+                            } @else {
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                                fill="#FFFFFF">
+                                <path
+                                    d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
+                            </svg>
+                            }
+                        </a>
+                    } 
+
+                    @if (permissions.camera == 'granted') {
+                    <a href="javascript:void(0)" class="text-decoration-none ms-3" (click)="toggleCamera()"
+                        placement="top" [ngbTooltip]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'">
+                        @if(isCameraOn()) {
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="#FFFFFF">
+                            <path
+                                d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Zm0-80h480v-480H160v480Zm0 0v-480 480Z" />
+                        </svg>
+                        } @else {
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="#FFFFFF">
+                            <path
+                                d="M880-260 720-420v67l-80-80v-287H353l-80-80h367q33 0 56.5 23.5T720-720v180l160-160v440ZM822-26 26-822l56-56L878-82l-56 56ZM498-575ZM382-464ZM160-800l80 80h-80v480h480v-80l80 80q0 33-23.5 56.5T640-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800Z" />
+                        </svg>
+                        }
+                    </a>
+                    } 
+                </div>
+            </div>
+            <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
+                [ngStyle]="{'background-color': getColorFromName()}">
+                {{getUserInitiaLetter()}}
+            </div>
+        </div>
+    </div>
+</div> -->
