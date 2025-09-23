@@ -8,6 +8,7 @@ import { LocalService } from '../providers/services/local.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { Dashboard, Meeting, MeetingId } from '../providers/constant';
 import { MeetingDetail, User } from '../providers/model';
+import { MeetingService } from '../providers/services/meeting.service';
 
 @Component({
     selector: 'app-preview',
@@ -44,7 +45,8 @@ export class PreviewComponent implements OnDestroy {
         private route: ActivatedRoute,
         private router: Router,
         private mediaPerm: MediaPermissionsService,
-        private local: LocalService
+        private local: LocalService,
+        private meetingService: MeetingService
     ) { 
         this.isLoggedIn = local.isLoggedIn();
         this.route.queryParamMap.subscribe(paramm => {
@@ -76,7 +78,9 @@ export class PreviewComponent implements OnDestroy {
             }
             this.saveUser();
         }
-        this.router.navigate(['/ems/meeting', this.meetingId]);
+        this.meetingService.meetingId = this.meetingId;
+        this.meetingService.joinRoom();
+        //this.router.navigate(['/ems/meeting', this.meetingId]);
     }
 
     async ngOnInit() {

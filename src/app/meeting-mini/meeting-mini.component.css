@@ -1,0 +1,11 @@
+.mini-player {
+    cursor: grab;
+    user-select: none;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.mini-player:active {
+    cursor: grabbing;
+}

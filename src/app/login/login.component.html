@@ -11,8 +11,13 @@
                 </div>
                 <div class="mt-3">
                     <label class="form-label">Password <span class="text-danger">*</span></label>
-                    <input type="passwordType" placeholder="Password" class="form-control" [(ngModel)]="password" (keyup.enter)="login()"
-                    [ngClass]="{'error-field': isSubmitted && password== ''}">
+                    <div class="position-relative">
+                        <input [type]="passwordType" placeholder="Password" class="form-control" [(ngModel)]="password" (keyup.enter)="login()"
+                        [ngClass]="{'error-field': isSubmitted && password== ''}">
+                        <a href="javascript:void(0)" class="text-decoration-none" (click)="viewPassword()">
+                            <i class="text-dark position-absolute fa-solid view-password" [ngClass]="{'fa-eye-slash': passwordType == 'password', 'fa-eye': passwordType == 'text'}"></i>
+                        </a>
+                    </div>
                 </div>
                 <button class="btn btn-success mt-3" [disabled]="isLoading" (click)="login()">
                     <i class="fa-solid" [ngClass]="{'fa-spinner fa-spin': isLoading, 'fa-arrow-right-to-bracket': !isLoading}"></i>

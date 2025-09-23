@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { FloatingWindowComponent } from './floating-window.component';
+import { MeetingMiniComponent } from './meeting-mini.component';
 
-describe('FloatingWindowComponent', () => {
-  let component: FloatingWindowComponent;
-  let fixture: ComponentFixture<FloatingWindowComponent>;
+describe('MeetingMiniComponent', () => {
+  let component: MeetingMiniComponent;
+  let fixture: ComponentFixture<MeetingMiniComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FloatingWindowComponent]
+      imports: [MeetingMiniComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(FloatingWindowComponent);
+    fixture = TestBed.createComponent(MeetingMiniComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

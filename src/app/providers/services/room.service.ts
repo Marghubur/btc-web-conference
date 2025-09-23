@@ -45,8 +45,7 @@ export class RoomService {
   private counter = 0;
   private _newMessage = signal<{ id: string, message: string } | null>(null);
   newMessage = this._newMessage.asReadonly(); // expose readonly signal
-  private _isMinimized = signal(true);
-  isMinimized = this._isMinimized.asReadonly();
+  
   constructor(private httpClient: HttpClient, private http: HttpHandlerService) {
     http.setSFUProdEnabled(true);
     this.sfuProdEnabled = http.getSFUProdEnabled();
@@ -358,8 +357,5 @@ export class RoomService {
   private clearAfterDelay() {
     setTimeout(() => this._newMessage.set(null), 3000);
   }
-
-  minimize() { this._isMinimized.set(true); }
-  maximize() { this._isMinimized.set(false); }
 }
 

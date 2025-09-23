@@ -17,6 +17,7 @@ import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { NetworkService } from '../providers/services/network.service';
 import { User } from '../providers/model';
 import { iNavigation } from '../providers/services/iNavigation';
+import { MeetingService } from '../providers/services/meeting.service';
 
 @Component({
     selector: 'app-meeting',
@@ -47,8 +48,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
     meetingId: string | null = null;
     currentScreenTrack: RemoteVideoTrack | null = null;
     private subs: Subscription[] = [];
-    isCameraOn = signal(true);
-    isMicOn = signal(true);
+    // isCameraOn = signal(true);
+    // isMicOn = signal(true);
     currentTime: Date = new Date();
     private timerSubscription: Subscription | undefined;
     permissions: MediaPermissions = {
@@ -93,8 +94,6 @@ export class MeetingComponent implements OnDestroy, OnInit {
     handRaised: boolean = false;
     private notified = new Set<string>(); // tracks who is already raised
     isViewParticipant: boolean = false;
-    private _inMeeting = signal(false);
-    inMeeting = this._inMeeting.asReadonly();
     constructor(
         private cameraService: CameraService,
         private route: ActivatedRoute,
@@ -105,7 +104,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
         public videoBackgroundService: VideoBackgroundService,
         private local: LocalService,
         private recorder: ScreenRecorderService,
-        public network: NetworkService
+        public network: NetworkService,
+        public meetingService: MeetingService
     ) {
         // Initialize virtual background service
         this.videoBackgroundService.initialize().catch(console.error);
@@ -128,15 +128,20 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     async ngOnInit() {
-        this.meetingId = this.route.snapshot.paramMap.get('id');
+        //this.meetingId = this.route.snapshot.paramMap.get('id');
+        this.meetingId =  this.meetingService.meetingId;
         if (!this.local.isValidUser()) {
             this.router.navigate(['/ems/preview'], {queryParams: {meetingid: this.meetingId}});
         }
         this.setInitialDetail();
+        // Load default backgrounds
+        this.backgroundOptions = this.videoBackgroundService.getBackgrounds();
         await this.getDeviceDetail();
         // Using snapshot (loads once)
         if (this.meetingId) {
-            this.joinRoom();
+            await this.meetingService.joinRoom();
+            this.room.set(this.meetingService.room());
+            this.localTrack.set(this.meetingService.localTrack());
         }
 
         // Subscribe to current background
@@ -168,8 +173,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
     private setInitialDetail() {
         this.currentBrowser = this.local.getBrowserName();
         this.user = this.local.getUser();
-        this.isCameraOn.set(this.user?.isCameraOn!);
-        this.isMicOn.set(this.user?.isMicOn!);
+        // this.isCameraOn.set(this.user?.isCameraOn!);
+        // this.isMicOn.set(this.user?.isMicOn!);
         this.roomForm.get('participantName')?.setValue(this.getFullName());
         this.timerSubscription = interval(60 * 1000).subscribe(() => {
             this.currentTime = new Date();
@@ -179,9 +184,6 @@ export class MeetingComponent implements OnDestroy, OnInit {
                 this.permissions = permissions;
             }
         );
-
-        // Load default backgrounds
-        this.backgroundOptions = this.videoBackgroundService.getBackgrounds();
     }
 
     private async getDeviceDetail() {
@@ -227,80 +229,72 @@ export class MeetingComponent implements OnDestroy, OnInit {
         }
     }
 
-    async joinRoom() {
-        try {
-            // Detect available devices
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const hasMic = devices.some(d => d.kind === "audioinput");
-            const hasCam = devices.some(d => d.kind === "videoinput");
+    // async joinRoom() {
+    //     try {
+    //         // Detect available devices
+    //         const devices = await navigator.mediaDevices.enumerateDevices();
+    //         const hasMic = devices.some(d => d.kind === "audioinput");
+    //         const hasCam = devices.some(d => d.kind === "videoinput");
             
-            // const roomName = this.roomForm.value.roomName!;
-            const participantName = this.getFullName(); //`User-${new Date().getMilliseconds()}`; // this.roomForm.value.participantName!;
-            const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
+    //         // const roomName = this.roomForm.value.roomName!;
+    //         const participantName = this.getFullName();
+    //         const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
 
-            this.room.set(joinedRoom);
-            this._inMeeting.set(true);
-            // Enable default camera & mic
-            if (this.user?.isMicOn && hasMic) {
-                await this.cameraService.enableMic(joinedRoom);
-            }
+    //         this.room.set(joinedRoom);
+    //         // Enable default camera & mic
+    //         if (this.user?.isMicOn && hasMic) {
+    //             await this.cameraService.enableMic(this.room());
+    //         }
 
-            if (hasCam) {
-                await this.cameraService.enableCamera(joinedRoom);
-                // Set the local video track for disroomFormplay
-                const videoPub = joinedRoom.localParticipant.videoTrackPublications.values().next().value;
-                if (videoPub?.videoTrack) {
-                    this.localTrack.set(videoPub.videoTrack);
-                }
-                setTimeout(async () => {
-                    this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
-                }, 100);
-            } else {
-                console.warn("No camera detected, showing avatar placeholder");
-                this.localTrack.set(undefined); // explicitly mark no video
-            }
-        } catch (error: any) {
-            console.error('Error joining room:', error);
-            await this.leaveRoom();
-        }
-    }
+    //         if (hasCam) {
+    //             await this.cameraService.enableCamera(this.room());
+    //             // Set the local video track for disroomFormplay
+    //             const videoPub = this.room().localParticipant.videoTrackPublications.values().next().value;
+    //             if (videoPub?.videoTrack) {
+    //                 this.localTrack.set(videoPub.videoTrack);
+    //             }
+    //             setTimeout(async () => {
+    //                 this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
+    //             }, 100);
+    //         } else {
+    //             console.warn("No camera detected, showing avatar placeholder");
+    //             this.localTrack.set(undefined); // explicitly mark no video
+    //         }
+    //     } catch (error: any) {
+    //         console.error('Error joining room:', error);
+    //         await this.leaveRoom();
+    //     }
+    // }
 
     async leaveRoom(isNavigate: boolean = false) {
-        await this.roomService.leaveRoom();
-        this.room.set(undefined);
-        this.localTrack.set(undefined);
-        this._inMeeting.set(false);
-        if (isNavigate) {
-            if (this.local.isLoggedIn())
-                this.nav.navigate(Dashboard, null);
-            else
-                this.nav.navigate(Login, null);
-        }
+        await this.meetingService.leaveRoom(isNavigate);
     }
 
     async toggleCamera() {
-        if (!this.room()) return;
+        // if (!this.room()) return;
 
-        this.isCameraOn.set(!this.isCameraOn());
-        this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
-        if (!this.isCameraOn()) {
-            await this.videoBackgroundService.removeBackground(this.localTrack()!)
-        }
-        this.local.setCameraStatus(this.isCameraOn())
+        // this.isCameraOn.set(!this.isCameraOn());
+        // this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
+        // if (!this.isCameraOn()) {
+        //     await this.videoBackgroundService.removeBackground(this.localTrack()!)
+        // }
+        // this.local.setCameraStatus(this.isCameraOn())
+        await this.meetingService.toggleCamera();
     }
 
     async toggleMic() {
-        if (!this.room()) return;
+        // if (!this.room()) return;
 
-        if (this.isMicOn()) {
-            await this.cameraService.disableMic(this.room()!);
-            this.isMicOn.set(false);
-        } else {
-            await this.cameraService.enableMic(this.room()!);
-            this.isMicOn.set(true);
-        }
-        this.room()?.localParticipant.setMicrophoneEnabled(this.isMicOn());
-        this.local.setMicStatus(this.isMicOn())
+        // if (this.isMicOn()) {
+        //     await this.cameraService.disableMic(this.room()!);
+        //     this.isMicOn.set(false);
+        // } else {
+        //     await this.cameraService.enableMic(this.room()!);
+        //     this.isMicOn.set(true);
+        // }
+        // this.room()?.localParticipant.setMicrophoneEnabled(this.isMicOn());
+        // this.local.setMicStatus(this.isMicOn())
+        await this.meetingService.toggleMic()
     }
 
     async shareScreen() {
@@ -396,7 +390,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     @HostListener('window:beforeunload')
     async ngOnDestroy() {
-        await this.leaveRoom();
+        //await this.leaveRoom();
         if (this.timerSubscription) {
             this.timerSubscription.unsubscribe();
         }
@@ -622,7 +616,6 @@ export class MeetingComponent implements OnDestroy, OnInit {
     }
 
     private getFullName(): string {
-
         let fullName = this.user?.firstName;
         if (this.user?.lastName)
             fullName = fullName + " " + this.user.lastName;

@@ -1,0 +1,24 @@
+.mini-container {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    width: 20rem;
+    height: 12rem;
+    z-index: 2000;
+}
+
+.full-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.full-container {
+    width: calc(100% - 7.7rem);
+    position: fixed;
+    top: 0;
+}

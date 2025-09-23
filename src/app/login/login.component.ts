@@ -52,4 +52,11 @@ export class LoginComponent {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     this.isEmailValid =  regex.test(this.email);
   }
+
+  viewPassword() {
+    if (this.passwordType == 'password')
+      this.passwordType = "text";
+    else
+      this.passwordType = "password";
+  }
 }

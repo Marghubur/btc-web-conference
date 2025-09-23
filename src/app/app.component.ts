@@ -1,13 +1,15 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { NavigationStart, Router, RouterOutlet } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { NavigationEnd, NavigationStart, Router, RouterOutlet } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 import { CommonService } from './providers/services/common.service';
 import { iNavigation } from './providers/services/iNavigation';
+import { MeetingContainerComponent } from "./meeting-container/meeting-container.component";
+import { MeetingService } from './providers/services/meeting.service';
 
 @Component({
     selector: 'app-root',
     standalone: true,
-    imports: [RouterOutlet],
+    imports: [RouterOutlet, MeetingContainerComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.css',
 })
@@ -15,7 +17,8 @@ export class AppComponent implements OnInit, OnDestroy {
     navRouter: Subscription = null;
     constructor(private common: CommonService,
         private nav: iNavigation,
-        private router: Router
+        private router: Router,
+        private meetingService: MeetingService
     ) {
         this.navRouter = this.router.events.subscribe((event: any) => {
             if (event instanceof NavigationStart) {
@@ -23,6 +26,17 @@ export class AppComponent implements OnInit, OnDestroy {
                 this.common.SetCurrentPageName(pageName);
                 this.nav.manageLocalSessionKey(pageName);
                 this.nav.pushRoute(pageName);
+            }
+        });
+
+        this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((ev: any) => {
+            const url = ev.urlAfterRedirects ?? ev.url;
+            if (this.meetingService.inMeeting() && url.startsWith('/meeting')) {
+                // on meeting route -> maximize
+                this.meetingService.maximize();
+            } else if (this.meetingService.inMeeting()) {
+                // any other route -> minimize
+                this.meetingService.minimize();
             }
         });
     }
