@@ -18,13 +18,21 @@ import { MeetingService } from '../providers/services/meeting.service';
 import { NetworkService } from '../providers/services/network.service';
 import { CameraService } from '../providers/services/camera.service';
 import { iNavigation } from '../providers/services/iNavigation';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 
 @Component({
     selector: 'app-meeting',
     standalone: true,
     imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule],
     templateUrl: './meeting.component.html',
-    styleUrl: './meeting.component.css'
+    styleUrl: './meeting.component.css',
+    animations: [
+    trigger('slideFade', [
+      state('hidden', style({ opacity: 0, height: '0px', overflow: 'hidden', width: '0px' })),
+      state('visible', style({ opacity: 1, height: '*', overflow: 'hidden', width: '16.66666667%' })),
+      transition('hidden <=> visible', animate('300ms ease'))
+    ])
+  ]
 })
 export class MeetingComponent implements OnDestroy, OnInit {
     // Reference to the dedicated <video> element for screen sharing

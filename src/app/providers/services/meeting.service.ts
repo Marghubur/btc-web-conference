@@ -106,7 +106,7 @@ export class MeetingService {
     if (!this.isCameraOn()) {
       await this.videoBackgroundService.removeBackground(this.localTrack()!)
     }
-    this.local.setCameraStatus(this.isCameraOn())
+    this.local.setCameraStatus(this.isCameraOn());
   }
 
   async toggleMic() {
