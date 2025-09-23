@@ -20,8 +20,9 @@ export class MeetingService {
   user: User | null = null;
   isCameraOn = signal(true);
   isMicOn = signal(true);
+  private _loading = signal(false);
   meetingId: string = "";
-
+  isLoading = this._loading.asReadonly();
   constructor(private roomService: RoomService,
     private local: LocalService,
     private nav: iNavigation,
@@ -54,6 +55,7 @@ export class MeetingService {
 
   async joinRoom() {
     try {
+      this._loading.set(true);
       // Detect available devices
       const devices = await navigator.mediaDevices.enumerateDevices();
       const hasMic = devices.some(d => d.kind === "audioinput");
@@ -66,12 +68,13 @@ export class MeetingService {
       this.room.set(joinedRoom);
       this.maximize();
       this.userJoinRoom();
+
       // Enable default camera & mic
       if (this.user?.isMicOn && hasMic) {
         await this.cameraService.enableMic(joinedRoom);
       }
 
-      if (hasCam) {
+      if (hasCam && this.room) {
         await this.cameraService.enableCamera(joinedRoom);
         // Set the local video track for disroomFormplay
         const videoPub = joinedRoom.localParticipant.videoTrackPublications.values().next().value;
@@ -88,6 +91,8 @@ export class MeetingService {
     } catch (error: any) {
       console.error('Error joining room:', error);
       await this.leaveRoom();
+    } finally {
+      this._loading.set(false);
     }
   }
 

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnDestroy, input, viewChild } from '@angular/core';
 import { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client';
+import { MeetingService } from '../providers/services/meeting.service';
 
 @Component({
     selector: 'video-component',
@@ -16,6 +17,7 @@ export class VideoComponent implements AfterViewInit, OnDestroy {
     participantIdentity = input.required<string>();
     local = input(false);
     isMute = input(false);
+    constructor(public meetingService: MeetingService) {}
     ngAfterViewInit() {
         if (this.videoElement()) {
             this.track().attach(this.videoElement()!.nativeElement);
@@ -24,5 +26,9 @@ export class VideoComponent implements AfterViewInit, OnDestroy {
 
     ngOnDestroy() {
         this.track().detach();
+    }
+
+    getkey() {
+        return crypto.randomUUID();
     }
 }

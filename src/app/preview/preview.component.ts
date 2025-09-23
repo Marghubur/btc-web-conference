@@ -54,7 +54,7 @@ export class PreviewComponent implements OnDestroy {
         });
     }
 
-    joinRoom() {
+    async joinRoom() {
         this.isSubmitted = true;
         if (this.permissions.camera != 'granted') {
             alert("Please allow camera.");
@@ -76,10 +76,11 @@ export class PreviewComponent implements OnDestroy {
                 alert("Please add meeting pass code");
                 return;
             }
-            this.saveUser();
         }
+        this.saveUser();
         this.meetingService.meetingId = this.meetingId;
-        this.meetingService.joinRoom();
+        this.meetingService.maximize();
+        this.meetingService.userJoinRoom();
         //this.router.navigate(['/ems/meeting', this.meetingId]);
     }
 
@@ -174,12 +175,19 @@ export class PreviewComponent implements OnDestroy {
     }
 
     private saveUser() {
-        let user:User = {
-            isMicOn: this.selectedMic != null ?  this.isMicOn : false,
-            isCameraOn: this.selectedCamera != null ? this.isCameraOn: false,
-            firstName: this.userName,
-            isLogin: false,
-            passCode: this.passCode
+        var user: User = null;
+        if (this.local.isLoggedIn()) {
+            user = this.local.getUser();
+            user.isCameraOn = this.selectedCamera != null ? this.isCameraOn: false,
+            user.isMicOn = this.selectedMic != null ?  this.isMicOn : false;
+        } else {
+            user = {
+                isMicOn: this.selectedMic != null ?  this.isMicOn : false,
+                isCameraOn: this.selectedCamera != null ? this.isCameraOn: false,
+                firstName: this.userName,
+                isLogin: false,
+                passCode: this.passCode
+            }
         }
         this.local.setUser(user)
     }
