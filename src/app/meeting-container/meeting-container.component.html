@@ -6,7 +6,7 @@
   </div>
 
   <!-- Full-screen modal style (shown when not minimized) -->
-  <div *ngIf="!meetingService.isMinimized()" class="full-container">
+  <div *ngIf="!meetingService.isMinimized()" class="full-container" [ngClass]="{'w-100': !isLoggedIn}">
     <app-meeting></app-meeting>
   </div>
 </ng-container>

@@ -48,10 +48,13 @@ export class MeetingService {
     this.userExitRoom();
     this.maximize();
     if (isNavigate) {
-      if (this.local.isLoggedIn())
+      if (this.local.isLoggedIn()) {
         this.nav.navigate(Dashboard, null);
-      else
+      }
+      else {
         this.nav.navigate(Login, null);
+        localStorage.clear();
+      }
     }
   }
 

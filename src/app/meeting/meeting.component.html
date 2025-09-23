@@ -12,8 +12,7 @@
             <div id="room" class="w-100">
                 @if(currentScreenTrack != null || isMyshareScreen) {
                 <div class="row col-md-12 justify-content-center pt-3">
-                    @if (isViewParticipant) {
-                    <div class="col-md-2">
+                    <div class="col-md-2" [@slideFade]="isViewParticipant ? 'visible' : 'hidden'">
                         <div class="col adjest-p-list">
                             <div class="card participant-list bg-transparent fw-semibold" [attr.data-count]="1">
                                 @if (localTrack()) {
@@ -84,7 +83,6 @@
                             </div>
                         </div>
                     </div>
-                    }
                     <div class="" [ngClass]="{'col-md-12': !isViewParticipant, 'col-md-10': isViewParticipant, }">
                         @if (isMyshareScreen) {
                         <video #screenPreview autoplay playsinline muted

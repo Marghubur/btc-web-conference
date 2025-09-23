@@ -133,7 +133,7 @@ export class DashboardComponent implements OnInit {
   }
 
   joinMeeting(item: MeetingDetail) {
-    //this.router.navigate(['/ems/preview'], {queryParams: {meetingid: item.meetingId}});
+    // this.router.navigate(['/ems/preview'], {queryParams: {meetingid: item.meetingId}});
     this.nav.navigate(Preview, item);
   }
 
@@ -179,7 +179,7 @@ export class DashboardComponent implements OnInit {
   }
 
   copyLink(item: MeetingDetail, tooltip: any) {
-    let url = environment.production ? `www.axilcorps.com/#/ems/meeting/${item.meetingId}` : `http://localhost:4200/#/ems/meeting/${item.meetingId}`;
+    let url = environment.production ? `www.axilcorps.com/#/ems/preview?meetingid=${item.meetingId}` : `http://localhost:4200/#/ems/preview?meetingid=${item.meetingId}`;
     navigator.clipboard.writeText(url).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();

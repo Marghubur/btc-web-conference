@@ -1,19 +1,19 @@
 import { Component, ElementRef, OnDestroy, signal, ViewChild } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LocalVideoTrack, Room } from 'livekit-client';
 import { MediaPermissions, MediaPermissionsService } from '../providers/services/media-permission.service';
 import { Subscription } from 'rxjs';
 import { LocalService } from '../providers/services/local.service';
 import { iNavigation } from '../providers/services/iNavigation';
-import { Dashboard, Meeting, MeetingId } from '../providers/constant';
-import { MeetingDetail, User } from '../providers/model';
+import { Dashboard, MeetingId } from '../providers/constant';
+import {  User } from '../providers/model';
 import { MeetingService } from '../providers/services/meeting.service';
 
 @Component({
     selector: 'app-preview',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule],
+    imports: [FormsModule],
     templateUrl: './preview.component.html',
     styleUrl: './preview.component.css'
 })
