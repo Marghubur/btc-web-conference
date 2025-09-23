@@ -6,6 +6,7 @@ import { Dashboard, Login } from '../constant';
 import { LocalVideoTrack, Room } from 'livekit-client';
 import { User } from '../model';
 import { CameraService } from './camera.service';
+import { VideoBackgroundService } from './video-background.service';
 
 @Injectable({
   providedIn: 'root'
@@ -27,6 +28,7 @@ export class MeetingService {
     private local: LocalService,
     private nav: iNavigation,
     private cameraService: CameraService,
+    private videoBackgroundService: VideoBackgroundService
   ) {
     this.user = local.getUser();
     this.isCameraOn.set(this.user?.isCameraOn!);
@@ -102,7 +104,7 @@ export class MeetingService {
     this.isCameraOn.set(!this.isCameraOn());
     this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
     if (!this.isCameraOn()) {
-      //await this.videoBackgroundService.removeBackground(this.localTrack()!)
+      await this.videoBackgroundService.removeBackground(this.localTrack()!)
     }
     this.local.setCameraStatus(this.isCameraOn())
   }

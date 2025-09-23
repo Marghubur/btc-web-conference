@@ -1,7 +1,6 @@
 import { AfterViewInit, Component, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { createLocalScreenTracks, LocalTrackPublication, LocalVideoTrack, RemoteVideoTrack, Room } from 'livekit-client';
-import { CameraService } from '../providers/services/camera.service';
 import { RoomService } from '../providers/services/room.service';
 import { AudioComponent } from '../audio/audio.component';
 import { VideoComponent } from '../video/video.component';
@@ -12,12 +11,13 @@ import { MediaPermissions, MediaPermissionsService } from '../providers/services
 import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../providers/services/video-background.service';
 import { LocalService } from '../providers/services/local.service';
 import { ScreenRecorderService } from '../providers/services/screen-recorder.service';
-import { Dashboard, hand_down, hand_raise, Login } from '../providers/constant';
+import { hand_down, hand_raise } from '../providers/constant';
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
-import { NetworkService } from '../providers/services/network.service';
 import { User } from '../providers/model';
-import { iNavigation } from '../providers/services/iNavigation';
 import { MeetingService } from '../providers/services/meeting.service';
+import { NetworkService } from '../providers/services/network.service';
+import { CameraService } from '../providers/services/camera.service';
+import { iNavigation } from '../providers/services/iNavigation';
 
 @Component({
     selector: 'app-meeting',
@@ -168,6 +168,12 @@ export class MeetingComponent implements OnDestroy, OnInit {
                 }
             })
         );
+
+        if (this.meetingService.inMeeting()) {
+            history.pushState(null, '', window.location.href);
+            window.addEventListener('popstate', this.popStateListener);
+        }
+
     }
 
     private setInitialDetail() {
@@ -621,6 +627,24 @@ export class MeetingComponent implements OnDestroy, OnInit {
             fullName = fullName + " " + this.user.lastName;
 
         return fullName;
+    }
+
+    private popStateListener = (event: PopStateEvent) => {
+        if (this.meetingService.inMeeting()) {
+        history.pushState(null, '', window.location.href); // push state back
+        alert('You cannot navigate back during a meeting.');
+        }
+    };
+
+    @HostListener('window:beforeunload', ['$event'])
+    handleBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.meetingService.inMeeting()) {
+            event.preventDefault();
+            // Modern browsers ignore custom text and show a generic confirm
+            event.returnValue = '';
+            return '';
+        }
+        return;
     }
 }
 

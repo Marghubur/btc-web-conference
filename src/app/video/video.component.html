@@ -1,4 +1,4 @@
-<div [id]="'camera-' + getkey()" class="video-container" >
+<div [id]="'camera-' + participantIdentity()" class="video-container" >
     <div class="participant-data z-3 col-md-12">
         <p class="text-truncate">{{ participantIdentity() + (local() ? " (You)" : "") }}</p>
     </div>

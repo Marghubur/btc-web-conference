@@ -27,8 +27,4 @@ export class VideoComponent implements AfterViewInit, OnDestroy {
     ngOnDestroy() {
         this.track().detach();
     }
-
-    getkey() {
-        return crypto.randomUUID();
-    }
 }

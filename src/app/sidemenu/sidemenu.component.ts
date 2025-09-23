@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { iNavigation } from '../providers/services/iNavigation';
-import { Chat, ChatPage, Dashboard, Login } from '../providers/constant';
+import { ChatPage, Dashboard, Login } from '../providers/constant';
 import { LocalService } from '../providers/services/local.service';
 import { NgbDropdownConfig, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { JwtService } from '../providers/services/jwt.service';
 import { User } from '../providers/model';
+import { MeetingService } from '../providers/services/meeting.service';
 
 @Component({
   selector: 'app-sidemenu',
@@ -37,7 +38,8 @@ export class SidemenuComponent {
     private nav: iNavigation,
     private local: LocalService,
     private config: NgbDropdownConfig,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private meetingService: MeetingService
   ) {
     config.placement = 'top-end';
 		config.autoClose = true;
@@ -89,6 +91,7 @@ export class SidemenuComponent {
 
   logout() {
     this.jwtService.removeJwtToken();
+    this.meetingService.leaveRoom()
     this.nav.navigate(Login, null);
   }
 }
