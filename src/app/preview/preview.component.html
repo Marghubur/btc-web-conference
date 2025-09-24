@@ -1,6 +1,6 @@
 <div class="vh-100 d-flex align-items-center justify-content-center">
     <div class="col-md-10">
-        @if (!room()) {
+        @if (!room() && isValidMeetingId) {
         <!-- <h3 class="text-center">BottomHalf Meeting</h3> -->
         <div class="row align-items-center">
             <div class="col-md-6 d-flex justify-content-center align-items-center flex-column">
@@ -206,5 +206,8 @@
                 </div>
             </div>
         </div>
+        } @else {
+            <h3 class="fw-bold text-center mb-3">Bottom<span class="color-green">Half</span> Meet</h3>
+            <h4 class="text-center fw-bold">Invalid meeting id. Please contact to admin</h4>
         }
     </div>

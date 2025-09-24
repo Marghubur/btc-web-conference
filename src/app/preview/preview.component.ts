@@ -7,8 +7,9 @@ import { Subscription } from 'rxjs';
 import { LocalService } from '../providers/services/local.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { Dashboard, MeetingId } from '../providers/constant';
-import {  User } from '../providers/model';
+import {  ResponseModel, User } from '../providers/model';
 import { MeetingService } from '../providers/services/meeting.service';
+import { AjaxService } from '../providers/services/ajax.service';
 
 @Component({
     selector: 'app-preview',
@@ -41,12 +42,14 @@ export class PreviewComponent implements OnDestroy {
     userName: string = "";
     passCode: string = "";
     isSubmitted: boolean = false;
+    isValidMeetingId: boolean = false;
     constructor(private nav: iNavigation,
         private route: ActivatedRoute,
         private router: Router,
         private mediaPerm: MediaPermissionsService,
         private local: LocalService,
-        private meetingService: MeetingService
+        private meetingService: MeetingService,
+        private http: AjaxService
     ) { 
         this.isLoggedIn = local.isLoggedIn();
         this.route.queryParamMap.subscribe(paramm => {
@@ -90,14 +93,33 @@ export class PreviewComponent implements OnDestroy {
             this.meetingId = meetingDetail.meetingId;
             this.meetingTitle = meetingDetail.title;
         }
-        await this.loadDevices();
-        this.toggleCamera();
-        //await this.startPreview();
-        this.subscription = this.mediaPerm.permissions$.subscribe(
-            permissions => {
-                this.permissions = permissions;
+        if (this.meetingId) {
+            this.isValidMeetingId = true;
+            //this.validateMeetingId();
+            await this.loadDevices();
+            this.toggleCamera();
+            //await this.startPreview();
+            this.subscription = this.mediaPerm.permissions$.subscribe(
+                permissions => {
+                    this.permissions = permissions;
+                }
+            );
+        } else {
+            this.isValidMeetingId = false;
+        }
+    }
+
+    validateMeetingId() {
+        let value = {
+            meetingId: this.meetingId
+        };
+        this.http.post("", value).then((res: ResponseModel) => {
+            if (res.ResponseBody) {
+                this.isValidMeetingId = res.ResponseBody;
             }
-        );
+        }).catch(e => {
+            this.isValidMeetingId = false;
+        })
     }
 
 

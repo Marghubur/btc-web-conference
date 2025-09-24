@@ -25,13 +25,14 @@ export class DashboardComponent implements OnInit {
   meetingEndDate!: NgbDateStruct;
   minEndPickerDate!: NgbDateStruct;
   meetingForm!: FormGroup;
-  meetingDetail: MeetingDetail = {agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: ''}
+  meetingDetail: MeetingDetail = { agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null }
   isSubmitted: boolean = false;
   isLoading: boolean = false;
   allMeetings: Array<MeetingDetail> = [];
   isPageReady: boolean = false;
   quickMeetingTitle: string = "";
   showAll: boolean = false;
+  duration: string = "00:00";
   constructor(private nav: iNavigation,
     private local: LocalService,
     private fb: FormBuilder,
@@ -82,21 +83,59 @@ export class DashboardComponent implements OnInit {
       title: new FormControl(this.meetingDetail.title, [Validators.required]),
       startDate: new FormControl(this.meetingDetail.startDate, [Validators.required]),
       durationInSecond: new FormControl(this.meetingDetail.durationInSecond),
-      endDate: new FormControl( this.meetingDetail.endDate, [Validators.required]),
-      startTime: new FormControl(this.meetingDetail.startTime),
-      endTime: new FormControl(this.meetingDetail.endTime)
+      endDate: new FormControl(this.meetingDetail.endDate, [Validators.required]),
+      startTime: new FormControl(this.meetingDetail.startTime, [Validators.required]),
+      endTime: new FormControl(this.meetingDetail.endTime, [Validators.required])
     });
   }
 
   onMeetingDateSelect(e: NgbDateStruct) {
-    let date = new Date(e.year, e.month - 1, e.day);
+    let startTime = this.meetingForm.get("startTime").value;
+    let date;
+    if (startTime) {
+      var time = this.convertTo24Hour(startTime);
+      date = new Date(e.year, e.month - 1, e.day, time[0], time[1]);
+    } else {
+      date = new Date(e.year, e.month - 1, e.day);
+    }
     this.meetingForm.get('startDate')?.setValue(date);
     this.minEndPickerDate = e;
+    this.calculateDuration();
+  }
+
+  onstartTimeSelect() {
+    let date = this.meetingForm.get('startDate').value;
+    if (date) {
+      let startTime = this.meetingForm.get("startTime").value;
+      var time = this.convertTo24Hour(startTime);
+      var selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), time[0], time[1]);
+      this.meetingForm.get('startDate')?.setValue(selectedDate);
+      this.calculateDuration();
+    }
   }
 
   onMeetingEndDateSelect(e: NgbDateStruct) {
-    let date = new Date(e.year, e.month - 1, e.day);
+    let startTime = this.meetingForm.get("endTime").value;
+    let date;
+    if (startTime) {
+      var time = this.convertTo24Hour(startTime);
+      date = new Date(e.year, e.month - 1, e.day, time[0], time[1]);
+    } else {
+      date = new Date(e.year, e.month - 1, e.day);
+    }
     this.meetingForm.get('endDate')?.setValue(date);
+    this.calculateDuration();
+  }
+
+  onEndTimeSelect() {
+    let date = this.meetingForm.get('endDate').value;
+    if (date) {
+      let startTime = this.meetingForm.get("endTime").value;
+      var time = this.convertTo24Hour(startTime);
+      var selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), time[0], time[1]);
+      this.meetingForm.get('endDate')?.setValue(selectedDate);
+      this.calculateDuration();
+    }
   }
 
   saveMeetingDetail() {
@@ -104,20 +143,19 @@ export class DashboardComponent implements OnInit {
     if (this.meetingForm.invalid) {
       return;
     }
-
-    this.isLoading = true;
-    let value = this.meetingForm.getRawValue();
-    value.durationInSecond = 5000;
-    this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
-      if (res.ResponseBody) {
-        this.allMeetings = res.ResponseBody;
-        HideModal("createMeeting");
-        this.isLoading = false;
-        this.isSubmitted = false;
-      }
-    }).catch(e => {
-      this.isLoading = false;
-    })
+    // this.isLoading = true;
+    // let value = this.meetingForm.getRawValue();
+    // value.durationInSecond = 5000;
+    // this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
+    //   if (res.ResponseBody) {
+    //     this.allMeetings = res.ResponseBody;
+    //     HideModal("createMeeting");
+    //     this.isLoading = false;
+    //     this.isSubmitted = false;
+    //   }
+    // }).catch(e => {
+    //   this.isLoading = false;
+    // })
   }
 
   private loadData() {
@@ -139,6 +177,9 @@ export class DashboardComponent implements OnInit {
 
   scheduleMeetingPopup() {
     this.isSubmitted = false;
+    this.meetingDetail = { agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null };
+    this.meetingDate = null;
+    this.meetingEndDate = null;
     ShowModal("createMeeting");
   }
 
@@ -146,7 +187,7 @@ export class DashboardComponent implements OnInit {
     let user = this.local?.getUser();
     let fullName = user.firstName;
     if (user.lastName)
-        fullName = fullName + " " + user.lastName;
+      fullName = fullName + " " + user.lastName;
 
     this.quickMeetingTitle = `Meeting with ${fullName}`;
     this.isSubmitted = false;
@@ -168,7 +209,7 @@ export class DashboardComponent implements OnInit {
         this.allMeetings = res.ResponseBody;
         this.isLoading = false;
         HideModal("quickMeetingModal");
-      } 
+      }
     }).catch(e => {
       this.isLoading = false;
     })
@@ -195,5 +236,47 @@ export class DashboardComponent implements OnInit {
 
   toggleView() {
     this.showAll = !this.showAll;
+  }
+
+  private convertTo24Hour(time: string): Array<number> {
+    const timeParts = time.split(' '); // Split into time and AM/PM
+    const timeArr = timeParts[0].split(':'); // Split hours and minutes
+    let hours = parseInt(timeArr[0], 10);
+    const minutes = timeArr[1];
+    const period = timeParts[1]; // AM or PM
+
+    if (period === 'A.M' && hours === 12) {
+      hours = 0; // Midnight case
+    }
+    if (period === 'P.M' && hours !== 12) {
+      hours += 12; // Convert PM times (except for 12 PM which is noon)
+    }
+
+    return [hours, Number(minutes)];
+  }
+
+  private calculateDuration() {
+    let startDate = this.meetingForm.get('startDate').value;
+    let endDate = this.meetingForm.get('endDate').value;
+    let startTime = this.meetingForm.get('startTime').value;
+    let endTime = this.meetingForm.get('endTime').value;
+
+    if (startDate && endDate && startTime && endTime) {
+      const timeDifferenceMs = endDate.getTime() - startDate.getTime();
+      if (timeDifferenceMs < 0) {
+        this.meetingForm.get("endDate").setValue(null);
+        console.error("Invalid end time selected")
+        return;
+      }
+      this.meetingForm.get("durationInSecond").setValue(timeDifferenceMs / 1000);
+      this.getDuration(timeDifferenceMs / 1000);
+    }
+  }
+
+  getDuration(duration: number) {
+    var totalMinutes = Math.floor(duration /  60);
+    var hours = Math.floor(totalMinutes / 60);
+
+    this.duration =  `${hours}:${totalMinutes%60}`;
   }
 }

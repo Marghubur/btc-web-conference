@@ -31,10 +31,10 @@ export class MeetingMiniComponent implements OnInit, OnDestroy {
   };
   private subscription?: Subscription;
   room = signal<Room | undefined>(undefined);
-  constructor(private elRef: ElementRef, 
-              public meetingService: MeetingService,
-              private mediaPerm: MediaPermissionsService,
-              private local: LocalService) { }
+  constructor(private elRef: ElementRef,
+    public meetingService: MeetingService,
+    private mediaPerm: MediaPermissionsService,
+    private local: LocalService) { }
   ngOnInit() {
     this.user = this.local.getUser();
     this.userName = this.getFullName();
@@ -42,7 +42,7 @@ export class MeetingMiniComponent implements OnInit, OnDestroy {
     this.localTrack.set(this.meetingService.localTrack());
     this.subscription = this.mediaPerm.permissions$.subscribe(
       permissions => {
-          this.permissions = permissions;
+        this.permissions = permissions;
       }
     );
   }
@@ -65,34 +65,34 @@ export class MeetingMiniComponent implements OnInit, OnDestroy {
   onMouseMove(e: MouseEvent) {
     if (!this.dragging) return;
 
-  const dx = e.clientX - this.startX;
-  const dy = e.clientY - this.startY;
+    const dx = e.clientX - this.startX;
+    const dy = e.clientY - this.startY;
 
-  const el = this.elRef.nativeElement as HTMLElement;
-  const childRect = el.getBoundingClientRect();
+    const el = this.elRef.nativeElement as HTMLElement;
+    const childRect = el.getBoundingClientRect();
 
-  // Use viewport dimensions as boundaries
-  const viewportWidth = document.documentElement.clientWidth;
-  const viewportHeight = document.documentElement.clientHeight;
+    // Use viewport dimensions as boundaries
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
 
-  // New position before clamping
-  let newLeft = this.origLeft + dx;
-  let newTop = this.origTop + dy;
+    // New position before clamping
+    let newLeft = this.origLeft + dx;
+    let newTop = this.origTop + dy;
 
-  // Clamp horizontally
-  const minLeft = 0;
-  const maxLeft = viewportWidth - childRect.width;
-  newLeft = Math.min(Math.max(newLeft, minLeft), maxLeft);
+    // Clamp horizontally
+    const minLeft = 0;
+    const maxLeft = viewportWidth - childRect.width;
+    newLeft = Math.min(Math.max(newLeft, minLeft), maxLeft);
 
-  // Clamp vertically
-  const minTop = 0;
-  const maxTop = viewportHeight - childRect.height;
-  newTop = Math.min(Math.max(newTop, minTop), maxTop);
+    // Clamp vertically
+    const minTop = 0;
+    const maxTop = viewportHeight - childRect.height;
+    newTop = Math.min(Math.max(newTop, minTop), maxTop);
 
-  // Apply relative to viewport
-  el.style.position = 'fixed'; // fixed keeps it inside viewport
-  el.style.left = `${newLeft}px`;
-  el.style.top = `${newTop}px`;
+    // Apply relative to viewport
+    el.style.position = 'fixed'; // fixed keeps it inside viewport
+    el.style.left = `${newLeft}px`;
+    el.style.top = `${newTop}px`;
   }
 
   @HostListener('document:mouseup')
