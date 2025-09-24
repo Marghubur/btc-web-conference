@@ -1,12 +1,12 @@
 <!-- meeting-container.component.html -->
 <ng-container *ngIf="meetingService.inMeeting()">
   <!-- Mini floating window -->
-  <div *ngIf="meetingService.isMinimized()" class="mini-container shadow rounded">
+  <div *ngIf="meetingService.isMinimized()" class="mini-container rounded" >
     <app-meeting-mini></app-meeting-mini>
   </div>
 
   <!-- Full-screen modal style (shown when not minimized) -->
-  <div *ngIf="!meetingService.isMinimized()" class="full-container" [ngClass]="{'w-100': !isLoggedIn}">
+  <div  class="full-container" [ngClass]="{'w-100': !isLoggedIn}" [@slideFade]="!meetingService.isMinimized() ? 'visible' : 'hidden'">
     <app-meeting></app-meeting>
   </div>
 </ng-container>

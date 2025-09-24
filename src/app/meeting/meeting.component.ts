@@ -139,7 +139,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
         //this.meetingId = this.route.snapshot.paramMap.get('id');
         this.meetingId =  this.meetingService.meetingId;
         if (!this.local.isValidUser()) {
-            this.router.navigate(['/ems/preview'], {queryParams: {meetingid: this.meetingId}});
+            this.router.navigate(['/btc/preview'], {queryParams: {meetingid: this.meetingId}});
         }
         this.setInitialDetail();
         // Load default backgrounds

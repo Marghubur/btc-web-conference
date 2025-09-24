@@ -81,7 +81,7 @@ export class PreviewComponent implements OnDestroy {
         this.meetingService.meetingId = this.meetingId;
         this.meetingService.maximize();
         this.meetingService.userJoinRoom();
-        //this.router.navigate(['/ems/meeting', this.meetingId]);
+        //this.router.navigate(['/btc/meeting', this.meetingId]);
     }
 
     async ngOnInit() {

@@ -30,7 +30,7 @@ export const routes: Routes = [
       import('./login/login.component').then(c => c.LoginComponent),
   },
   {
-    path: 'ems',
+    path: 'btc',
     loadComponent: () =>
       import('./layout/layout.component').then(c => c.LayoutComponent),
     children: [

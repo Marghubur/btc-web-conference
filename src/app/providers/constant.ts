@@ -28,8 +28,8 @@ export const Home = "home";
 export const MeetingId = "meetingid"
 
 // ------------------ ROUTES -----------------------------
-export const Dashboard = "ems/dashboard";
-export const Preview = "ems/preview";
-export const Meeting = "ems/meeting";
+export const Dashboard = "btc/dashboard";
+export const Preview = "btc/preview";
+export const Meeting = "btc/meeting";
 export const Login = "login";
-export const ChatPage = "ems/chat";
+export const ChatPage = "btc/chat";

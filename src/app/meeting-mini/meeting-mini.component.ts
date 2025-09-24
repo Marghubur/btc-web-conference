@@ -64,13 +64,35 @@ export class MeetingMiniComponent implements OnInit, OnDestroy {
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(e: MouseEvent) {
     if (!this.dragging) return;
-    const dx = e.clientX - this.startX;
-    const dy = e.clientY - this.startY;
-    const node = (this.elRef.nativeElement as HTMLElement).parentElement as HTMLElement;
-    if (!node) return;
-    node.style.right = 'auto';
-    node.style.left = `${this.origLeft + dx}px`;
-    node.style.top = `${this.origTop + dy}px`;
+
+  const dx = e.clientX - this.startX;
+  const dy = e.clientY - this.startY;
+
+  const el = this.elRef.nativeElement as HTMLElement;
+  const childRect = el.getBoundingClientRect();
+
+  // Use viewport dimensions as boundaries
+  const viewportWidth = document.documentElement.clientWidth;
+  const viewportHeight = document.documentElement.clientHeight;
+
+  // New position before clamping
+  let newLeft = this.origLeft + dx;
+  let newTop = this.origTop + dy;
+
+  // Clamp horizontally
+  const minLeft = 0;
+  const maxLeft = viewportWidth - childRect.width;
+  newLeft = Math.min(Math.max(newLeft, minLeft), maxLeft);
+
+  // Clamp vertically
+  const minTop = 0;
+  const maxTop = viewportHeight - childRect.height;
+  newTop = Math.min(Math.max(newTop, minTop), maxTop);
+
+  // Apply relative to viewport
+  el.style.position = 'fixed'; // fixed keeps it inside viewport
+  el.style.left = `${newLeft}px`;
+  el.style.top = `${newTop}px`;
   }
 
   @HostListener('document:mouseup')
