@@ -56,9 +56,9 @@ export class RoomService {
   private configureUrls() {
     if (!this.APPLICATION_SERVER_URL) {
       if (environment.production) {
-        this.APPLICATION_SERVER_URL = 'https://' + environment.appServerBaseUrl;
+        this.APPLICATION_SERVER_URL = environment.appServerBaseUrl;
       } else {
-        this.APPLICATION_SERVER_URL = 'http://' + environment.appServerBaseUrl;
+        this.APPLICATION_SERVER_URL = environment.appServerBaseUrl;
       }
     }
 
