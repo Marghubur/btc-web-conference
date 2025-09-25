@@ -1,192 +1,282 @@
-import { Component, ElementRef, OnDestroy, signal, ViewChild } from '@angular/core';
-import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
-import { Room, LocalVideoTrack } from 'livekit-client';
-import { Subscription } from 'rxjs';
-import { LocalService } from '../services/local.service';
-import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
+import { Component, OnInit } from '@angular/core';
+import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { NgbDatepickerModule, NgbDateStruct, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
+import { MeetingDetail, ResponseModel } from '../providers/model';
+import { AjaxService } from '../providers/services/ajax.service';
+import { HideModal, ShowModal, ToLocateDate } from '../providers/services/common.service';
+import { iNavigation } from '../providers/services/iNavigation';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { Preview } from '../providers/constant';
+import { LocalService } from '../providers/services/local.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbDatepickerModule, NgbTooltipModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent implements OnDestroy {
-  @ViewChild('previewVideo') previewVideo!: ElementRef<HTMLVideoElement>;
-  cameras: MediaDeviceInfo[] = [];
-  microphones: MediaDeviceInfo[] = [];
-  speakers: MediaDeviceInfo[] = [];
-  roomForm = new FormGroup({
-    roomName: new FormControl('Test Room', Validators.required),
-    participantName: new FormControl(null, Validators.required),
-  });
-  room = signal<Room | undefined>(undefined);
-  localTrack = signal<LocalVideoTrack | undefined>(undefined);
-  selectedCamera: string | null = null;
-  selectedMic: string | null = null;
-  selectedSpeaker: string | null = null;
-  meetingId: string | null = null;
-  private previewStream?: MediaStream;
-  private subscription?: Subscription;
-  permissions: MediaPermissions = {
-    camera: 'unknown',
-    microphone: 'unknown',
-  };
-  isMicOn: boolean = true;
-  isCameraOn: boolean = true;
-  isJoinMeeting: boolean = false;
-  constructor(private route: Router,
-    private router: ActivatedRoute,
-    private mediaPerm: MediaPermissionsService,
-    private local: LocalService
-  ) { }
-
-  joinRoom() {
-    if (this.permissions.camera != 'granted') {
-      alert("Please allow camera.");
-      return;
-    }
-
-    if (this.permissions.microphone != 'granted') {
-      alert("Please allow microphone.");
-      return;
-    }
-
-    if (!this.meetingId) {
-      alert("Please enter meeting id");
-      return;
-    }
-
-    this.saveUser();
-    this.route.navigate(["/meeting", this.meetingId]);
+export class DashboardComponent implements OnInit {
+  meetingDate!: NgbDateStruct;
+  meetingTimes: Array<string> = [];
+  minPickerDate!: NgbDateStruct;
+  meetingEndDate!: NgbDateStruct;
+  minEndPickerDate!: NgbDateStruct;
+  meetingForm!: FormGroup;
+  meetingDetail: MeetingDetail = { agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null }
+  isSubmitted: boolean = false;
+  isLoading: boolean = false;
+  allMeetings: Array<MeetingDetail> = [];
+  isPageReady: boolean = false;
+  quickMeetingTitle: string = "";
+  showAll: boolean = false;
+  duration: string = "00:00";
+  constructor(private nav: iNavigation,
+    private local: LocalService,
+    private fb: FormBuilder,
+    private http: AjaxService
+  ) {
+    const today = new Date();
+    this.minPickerDate = {
+      year: today.getFullYear(),
+      month: today.getMonth() + 1, // Month is 0-indexed in Date, 1-indexed in NgbDateStruct
+      day: today.getDate()
+    };
   }
+
 
   async ngOnInit() {
-    // Using snapshot (loads once)
-    await this.loadDevices();
-    this.toggleCamera();
-    this.subscription = this.mediaPerm.permissions$.subscribe(
-      permissions => {
-        this.permissions = permissions;
+    this.generateTimeSlots();
+    this.initForm();
+    this.loadData();
+  }
+
+  generateTimeSlots() {
+    this.meetingTimes = [];
+    let hour = 0;
+    let minute = 0;
+
+    while (hour < 24) {
+      let displayHour = hour % 12 === 0 ? 12 : hour % 12;
+      let ampm = hour < 12 ? "A.M" : "P.M";
+      let displayMinute = minute === 0 ? "00" : "30";
+      this.meetingTimes.push(`${displayHour}:${displayMinute} ${ampm}`);
+
+      if (minute === 0) {
+        minute = 30;
+      } else {
+        minute = 0;
+        hour++;
       }
-    );
-  }
-
-
-  /** Load available media devices */
-  async loadDevices() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    this.cameras = devices.filter(d => d.kind === 'videoinput');
-    this.microphones = devices.filter(d => d.kind === 'audioinput');
-    this.speakers = devices.filter(d => d.kind === 'audiooutput');
-
-    this.selectedCamera = this.cameras[0]?.deviceId || null;
-    this.selectedMic = this.microphones[0]?.deviceId || null;
-    this.selectedSpeaker = this.speakers[0]?.deviceId || null;
-  }
-
-  /** Start camera & mic preview */
-  async startPreview() {
-    try {
-      this.previewStream = await navigator.mediaDevices.getUserMedia({
-        video: this.selectedCamera ? { deviceId: this.selectedCamera } : true,
-        audio: this.selectedMic ? { deviceId: this.selectedMic } : true
-      });
-
-      if (this.previewVideo && this.previewStream) {
-        this.previewVideo.nativeElement.srcObject = this.previewStream;
-      }
-
-      const videoElement = this.previewVideo.nativeElement;
-      videoElement.srcObject = this.previewStream;
-      videoElement.muted = true; // ✅ Ensure no echo from preview video
-      videoElement.play();
-    } catch (err) {
-      console.error('Error accessing media devices', err);
     }
   }
 
-  async stopPreview() {
-    try {
-      this.previewStream?.getTracks().forEach(track => track.stop());
-      if (this.previewVideo?.nativeElement) {
-        this.previewVideo.nativeElement.srcObject = null;
-      }
-    } catch (err) {
-      console.error('Error accessing media devices', err);
-    }
+  private initForm() {
+    this.meetingForm = this.fb.group({
+      meetingDetailId: new FormControl(this.meetingDetail.meetingDetailId),
+      meetingId: new FormControl(this.meetingDetail.meetingId),
+      meetingPassword: new FormControl(this.meetingDetail.meetingPassword),
+      organizedBy: new FormControl(this.meetingDetail.organizedBy),
+      agenda: new FormControl(this.meetingDetail.agenda),
+      title: new FormControl(this.meetingDetail.title, [Validators.required]),
+      startDate: new FormControl(this.meetingDetail.startDate, [Validators.required]),
+      durationInSecond: new FormControl(this.meetingDetail.durationInSecond),
+      endDate: new FormControl(this.meetingDetail.endDate, [Validators.required]),
+      startTime: new FormControl(this.meetingDetail.startTime, [Validators.required]),
+      endTime: new FormControl(this.meetingDetail.endTime, [Validators.required])
+    });
   }
 
-  /** Switch camera */
-  async onCameraChange(event: any) {
-    this.selectedCamera = event.target.value;
-    await this.startPreview();
-  }
-
-  /** Switch microphone */
-  async onMicChange(event: any) {
-    this.selectedMic = event.target.value;
-    await this.startPreview();
-  }
-
-  /** Switch speaker */
-  onSpeakerChange(event: any) {
-    this.selectedSpeaker = event.target.value;
-    if (this.previewVideo?.nativeElement && typeof this.previewVideo.nativeElement.setSinkId === 'function') {
-      this.previewVideo.nativeElement.setSinkId(this.selectedSpeaker!);
-    }
-  }
-
-  /** Stop preview when leaving */
-  ngOnDestroy() {
-    this.previewStream?.getTracks().forEach(track => track.stop());
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
-    this.mediaPerm.destroy();
-  }
-
-  private saveUser() {
-    let user = this.local.getUser("CurrentUser");
-    user.isMicOn= this.selectedMic != null ? this.isMicOn : false;
-    user.isCameraOn= this.selectedCamera != null ? this.isCameraOn : false; 
-    this.local.setUser(this.meetingId!, user)
-  }
-
-  async toggleCamera() {
-    if (this.isCameraOn) {
-      await this.stopPreview()
+  onMeetingDateSelect(e: NgbDateStruct) {
+    let startTime = this.meetingForm.get("startTime").value;
+    let date;
+    if (startTime) {
+      var time = this.convertTo24Hour(startTime);
+      date = new Date(e.year, e.month - 1, e.day, time[0], time[1]);
     } else {
-      await this.startPreview();
+      date = new Date(e.year, e.month - 1, e.day);
     }
-    this.isCameraOn = !this.isCameraOn;
+    this.meetingForm.get('startDate')?.setValue(date);
+    this.minEndPickerDate = e;
+    this.calculateDuration();
   }
 
-  toggleMic() {
-    this.isMicOn = !this.isMicOn;
+  onstartTimeSelect() {
+    let date = this.meetingForm.get('startDate').value;
+    if (date) {
+      let startTime = this.meetingForm.get("startTime").value;
+      var time = this.convertTo24Hour(startTime);
+      var selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), time[0], time[1]);
+      this.meetingForm.get('startDate')?.setValue(selectedDate);
+      this.calculateDuration();
+    }
   }
 
-  createNewMeeting() {
-    this.isJoinMeeting = !this.isJoinMeeting;
-    this.meetingId = this.generateRandomString();
+  onMeetingEndDateSelect(e: NgbDateStruct) {
+    let startTime = this.meetingForm.get("endTime").value;
+    let date;
+    if (startTime) {
+      var time = this.convertTo24Hour(startTime);
+      date = new Date(e.year, e.month - 1, e.day, time[0], time[1]);
+    } else {
+      date = new Date(e.year, e.month - 1, e.day);
+    }
+    this.meetingForm.get('endDate')?.setValue(date);
+    this.calculateDuration();
   }
 
-  private generateRandomString(): string {
-       return `${this.randomLetters(3)}-${this.randomLetters(3)}-${this.randomLetters(6)}`;
+  onEndTimeSelect() {
+    let date = this.meetingForm.get('endDate').value;
+    if (date) {
+      let startTime = this.meetingForm.get("endTime").value;
+      var time = this.convertTo24Hour(startTime);
+      var selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), time[0], time[1]);
+      this.meetingForm.get('endDate')?.setValue(selectedDate);
+      this.calculateDuration();
+    }
+  }
+
+  saveMeetingDetail() {
+    this.isSubmitted = true;
+    if (this.meetingForm.invalid) {
+      return;
+    }
+    // this.isLoading = true;
+    // let value = this.meetingForm.getRawValue();
+    // value.durationInSecond = 5000;
+    // this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
+    //   if (res.ResponseBody) {
+    //     this.allMeetings = res.ResponseBody;
+    //     HideModal("createMeeting");
+    //     this.isLoading = false;
+    //     this.isSubmitted = false;
+    //   }
+    // }).catch(e => {
+    //   this.isLoading = false;
+    // })
+  }
+
+  private loadData() {
+    this.isPageReady = false;
+    this.http.get("meeting/getAllMeetingByOrganizer").then((res: ResponseModel) => {
+      if (res.ResponseBody) {
+        this.allMeetings = res.ResponseBody;
+        this.isPageReady = true;
+      }
+    }).catch(e => {
+      this.isPageReady = true;
+    })
+  }
+
+  joinMeeting(item: MeetingDetail) {
+    // this.router.navigate(['/btc/preview'], {queryParams: {meetingid: item.meetingId}});
+    this.nav.navigate(Preview, item);
+  }
+
+  scheduleMeetingPopup() {
+    this.isSubmitted = false;
+    this.meetingDetail = { agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null };
+    this.meetingDate = null;
+    this.meetingEndDate = null;
+    ShowModal("createMeeting");
+  }
+
+  quickMeetingModal() {
+    let user = this.local?.getUser();
+    let fullName = user.firstName;
+    if (user.lastName)
+      fullName = fullName + " " + user.lastName;
+
+    this.quickMeetingTitle = `Meeting with ${fullName}`;
+    this.isSubmitted = false;
+    ShowModal("quickMeetingModal");
+  }
+
+  generateQuickMeeting() {
+    this.isSubmitted = true;
+    if (!this.quickMeetingTitle) {
+      return;
     }
 
-    private randomLetters(len: number): string {
-        const letters = 'abcdefghijklmnopqrstuvwxyz';
-        return Array.from({ length: len }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
-    }
-}
+    this.isLoading = true;
+    let meetingDetal = {
+      title: this.quickMeetingTitle
+    };
+    this.http.post("meeting/generateQuickMeeting", meetingDetal).then((res: ResponseModel) => {
+      if (res.ResponseBody) {
+        this.allMeetings = res.ResponseBody;
+        this.isLoading = false;
+        HideModal("quickMeetingModal");
+      }
+    }).catch(e => {
+      this.isLoading = false;
+    })
+  }
 
-export interface User {
-  isMicOn: boolean;
-  isCameraOn: boolean;
-  Name?: string;
-  Email?: string;
+  convertedDate(date: any) {
+    return ToLocateDate(date);
+  }
+
+  copyLink(item: MeetingDetail, tooltip: any) {
+    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      console.log('Copied to clipboard:');
+      tooltip.open();
+      setTimeout(() => tooltip.close(), 1500); // Close tooltip after 1.5s
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+    });
+  }
+
+  get visibleRecords() {
+    return this.showAll ? this.allMeetings : this.allMeetings.slice(0, 7);
+  }
+
+  toggleView() {
+    this.showAll = !this.showAll;
+  }
+
+  private convertTo24Hour(time: string): Array<number> {
+    const timeParts = time.split(' '); // Split into time and AM/PM
+    const timeArr = timeParts[0].split(':'); // Split hours and minutes
+    let hours = parseInt(timeArr[0], 10);
+    const minutes = timeArr[1];
+    const period = timeParts[1]; // AM or PM
+
+    if (period === 'A.M' && hours === 12) {
+      hours = 0; // Midnight case
+    }
+    if (period === 'P.M' && hours !== 12) {
+      hours += 12; // Convert PM times (except for 12 PM which is noon)
+    }
+
+    return [hours, Number(minutes)];
+  }
+
+  private calculateDuration() {
+    let startDate = this.meetingForm.get('startDate').value;
+    let endDate = this.meetingForm.get('endDate').value;
+    let startTime = this.meetingForm.get('startTime').value;
+    let endTime = this.meetingForm.get('endTime').value;
+
+    if (startDate && endDate && startTime && endTime) {
+      const timeDifferenceMs = endDate.getTime() - startDate.getTime();
+      if (timeDifferenceMs < 0) {
+        this.meetingForm.get("endDate").setValue(null);
+        console.error("Invalid end time selected")
+        return;
+      }
+      this.meetingForm.get("durationInSecond").setValue(timeDifferenceMs / 1000);
+      this.getDuration(timeDifferenceMs / 1000);
+    }
+  }
+
+  getDuration(duration: number) {
+    var totalMinutes = Math.floor(duration /  60);
+    var hours = Math.floor(totalMinutes / 60);
+
+    this.duration =  `${hours}:${totalMinutes%60}`;
+  }
 }

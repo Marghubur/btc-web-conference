@@ -1,7 +1,7 @@
-<div class="container-fluid h-100">
+<div class="container-fluid vh-100">
     <div class="d-flex align-items-center justify-content-center h-100">
         <div class="col-md-4">
-            <div class="card px-3 py-4">
+            <div class="card p-4">
                 <img src="assets/logos.png" alt="logo" class="img-fluid mx-auto" width="70%">
                 <h3 class="text-center mt-3">Meeting</h3>
                 <div class="mt-3">
@@ -11,10 +11,18 @@
                 </div>
                 <div class="mt-3">
                     <label class="form-label">Password <span class="text-danger">*</span></label>
-                    <input type="passwordType" placeholder="Password" class="form-control" [(ngModel)]="password" (keyup.enter)="login()"
-                    [ngClass]="{'error-field': isSubmitted && password== ''}">
+                    <div class="position-relative">
+                        <input [type]="passwordType" placeholder="Password" class="form-control" [(ngModel)]="password" (keyup.enter)="login()"
+                        [ngClass]="{'error-field': isSubmitted && password== ''}">
+                        <a href="javascript:void(0)" class="text-decoration-none" (click)="viewPassword()">
+                            <i class="text-dark position-absolute fa-solid view-password" [ngClass]="{'fa-eye-slash': passwordType == 'password', 'fa-eye': passwordType == 'text'}"></i>
+                        </a>
+                    </div>
                 </div>
-                <button class="btn btn-success mt-3" (click)="login()">Login</button>
+                <button class="btn btn-success mt-3" [disabled]="isLoading" (click)="login()">
+                    <i class="fa-solid" [ngClass]="{'fa-spinner fa-spin': isLoading, 'fa-arrow-right-to-bracket': !isLoading}"></i>
+                    <span class="ps-2">{{ isLoading ? "Wait" : "Login"}}</span>
+                </button>
             </div>
         </div>
     </div>

@@ -1,15 +1,20 @@
 import { Component, ElementRef, OnDestroy, signal, ViewChild } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LocalVideoTrack, Room } from 'livekit-client';
-import { MediaPermissions, MediaPermissionsService } from '../services/media-permission.service';
+import { MediaPermissions, MediaPermissionsService } from '../providers/services/media-permission.service';
 import { Subscription } from 'rxjs';
-import { LocalService } from '../services/local.service';
+import { LocalService } from '../providers/services/local.service';
+import { iNavigation } from '../providers/services/iNavigation';
+import { Dashboard, MeetingId } from '../providers/constant';
+import {  ResponseModel, User } from '../providers/model';
+import { MeetingService } from '../providers/services/meeting.service';
+import { AjaxService } from '../providers/services/ajax.service';
 
 @Component({
     selector: 'app-preview',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule],
+    imports: [FormsModule],
     templateUrl: './preview.component.html',
     styleUrl: './preview.component.css'
 })
@@ -18,10 +23,6 @@ export class PreviewComponent implements OnDestroy {
     cameras: MediaDeviceInfo[] = [];
     microphones: MediaDeviceInfo[] = [];
     speakers: MediaDeviceInfo[] = [];
-    roomForm = new FormGroup({
-        roomName: new FormControl('Test Room', Validators.required),
-        participantName: new FormControl(null, Validators.required),
-    });
     room = signal<Room | undefined>(undefined);
     localTrack = signal<LocalVideoTrack | undefined>(undefined);
     selectedCamera: string | null = null;
@@ -36,14 +37,28 @@ export class PreviewComponent implements OnDestroy {
     };
     isMicOn: boolean = true;
     isCameraOn: boolean = true;
-
-    constructor(private route: Router,
-        private router: ActivatedRoute,
+    isLoggedIn: boolean = false;
+    meetingTitle: string = "";
+    userName: string = "";
+    passCode: string = "";
+    isSubmitted: boolean = false;
+    isValidMeetingId: boolean = false;
+    constructor(private nav: iNavigation,
+        private route: ActivatedRoute,
+        private router: Router,
         private mediaPerm: MediaPermissionsService,
-        private local: LocalService
-    ) { }
+        private local: LocalService,
+        private meetingService: MeetingService,
+        private http: AjaxService
+    ) { 
+        this.isLoggedIn = local.isLoggedIn();
+        this.route.queryParamMap.subscribe(paramm => {
+            this.meetingId = paramm.get(MeetingId);
+        });
+    }
 
-    joinRoom() {
+    async joinRoom() {
+        this.isSubmitted = true;
         if (this.permissions.camera != 'granted') {
             alert("Please allow camera.");
             return;
@@ -54,20 +69,57 @@ export class PreviewComponent implements OnDestroy {
             return;
         }
 
+        if (!this.isLoggedIn) {
+            if (!this.userName) {
+                alert("Please add your name");
+                return;
+            }
+
+            if (!this.passCode) {
+                alert("Please add meeting pass code");
+                return;
+            }
+        }
         this.saveUser();
-        this.route.navigate(["/meeting", this.meetingId]);
+        this.meetingService.meetingId = this.meetingId;
+        this.meetingService.maximize();
+        this.meetingService.userJoinRoom();
+        //this.router.navigate(['/btc/meeting', this.meetingId]);
     }
 
     async ngOnInit() {
-        // Using snapshot (loads once)
-        this.meetingId = this.router.snapshot.paramMap.get('id');
-        await this.loadDevices();
-        await this.startPreview();
-        this.subscription = this.mediaPerm.permissions$.subscribe(
-            permissions => {
-                this.permissions = permissions;
+        if (this.isLoggedIn) {
+            let meetingDetail = this.nav.getValue();
+            this.meetingId = meetingDetail.meetingId;
+            this.meetingTitle = meetingDetail.title;
+        }
+        if (this.meetingId) {
+            this.isValidMeetingId = true;
+            //this.validateMeetingId();
+            await this.loadDevices();
+            this.toggleCamera();
+            //await this.startPreview();
+            this.subscription = this.mediaPerm.permissions$.subscribe(
+                permissions => {
+                    this.permissions = permissions;
+                }
+            );
+        } else {
+            this.isValidMeetingId = false;
+        }
+    }
+
+    validateMeetingId() {
+        let value = {
+            meetingId: this.meetingId
+        };
+        this.http.post("", value).then((res: ResponseModel) => {
+            if (res.ResponseBody) {
+                this.isValidMeetingId = res.ResponseBody;
             }
-        );
+        }).catch(e => {
+            this.isValidMeetingId = false;
+        })
     }
 
 
@@ -145,12 +197,21 @@ export class PreviewComponent implements OnDestroy {
     }
 
     private saveUser() {
-        let user: User = {
-            isMicOn: this.selectedMic != null ?  this.isMicOn : false,
-            isCameraOn: this.selectedCamera != null ? this.isCameraOn: false,
-            Name: this.roomForm.get('participantName')?.value!
+        var user: User = null;
+        if (this.local.isLoggedIn()) {
+            user = this.local.getUser();
+            user.isCameraOn = this.selectedCamera != null ? this.isCameraOn: false,
+            user.isMicOn = this.selectedMic != null ?  this.isMicOn : false;
+        } else {
+            user = {
+                isMicOn: this.selectedMic != null ?  this.isMicOn : false,
+                isCameraOn: this.selectedCamera != null ? this.isCameraOn: false,
+                firstName: this.userName,
+                isLogin: false,
+                passCode: this.passCode
+            }
         }
-        this.local.setUser(this.meetingId!, user)
+        this.local.setUser(user)
     }
 
     async toggleCamera() {
@@ -165,11 +226,8 @@ export class PreviewComponent implements OnDestroy {
     toggleMic() {
         this.isMicOn = !this.isMicOn;
     }
-}
 
-export interface User {
-    isMicOn: boolean;
-    isCameraOn: boolean;
-    Name?: string;
-    Email?: string;
+    navToDahsboard() {
+        this.nav.navigate(Dashboard, null);
+    }
 }

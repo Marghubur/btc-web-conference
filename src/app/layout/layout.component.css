@@ -1,0 +1,12 @@
+.left-panel {
+    height: auto;
+    width: 6.8rem;
+}
+
+.right-panel {
+    width: calc(100% - 7.7rem);
+}
+
+.overflow-x-hidden {
+    overflow-x: hidden !important;
+}
