@@ -33,7 +33,7 @@ jobs:
       uses: mr-smithers-excellent/docker-build-push@v6      
       with:
         image: bottomhalflimited/conf.app.web
-        tags: latest
+        tags: dev-2509
         registry: docker.io
         dockerfile: Dockerfile
         buildArgs: BUILD_CONFIG=${{ matrix.build-config }}
