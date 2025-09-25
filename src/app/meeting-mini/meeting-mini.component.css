@@ -1,0 +1,14 @@
+.mini-player {
+    cursor: grab;
+    user-select: none;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    width: 20rem !important;
+    border: 2px solid red !important;
+}
+
+.mini-player:active {
+    cursor: grabbing;
+}
+

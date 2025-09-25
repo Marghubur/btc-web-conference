@@ -14,8 +14,8 @@ import {
 } from 'livekit-client';
 import { BehaviorSubject, lastValueFrom, Subject } from 'rxjs';
 import { HttpHandlerService } from './http-handler.service';
-import { environment } from '../../environments/environment';
-import { Chat, ClappingHands, CryingFace, FacewithOpenMouth, FacewithTearsofJoy, hand_down, hand_raise, PartyPopper, reaction, SparklingHeart, ThinkingFace, ThumbsDown, ThumbsUp } from './constant';
+import { environment } from '../../../environments/environment';
+import { Chat, ClappingHands, CryingFace, FacewithOpenMouth, FacewithTearsofJoy, hand_down, hand_raise, PartyPopper, reaction, SparklingHeart, ThinkingFace, ThumbsDown, ThumbsUp } from '../constant';
 
 type TrackInfo = {
   trackPublication: RemoteTrackPublication;
@@ -45,6 +45,7 @@ export class RoomService {
   private counter = 0;
   private _newMessage = signal<{ id: string, message: string } | null>(null);
   newMessage = this._newMessage.asReadonly(); // expose readonly signal
+  
   constructor(private httpClient: HttpClient, private http: HttpHandlerService) {
     http.setSFUProdEnabled(true);
     this.sfuProdEnabled = http.getSFUProdEnabled();

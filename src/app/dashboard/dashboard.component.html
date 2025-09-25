@@ -1,0 +1,191 @@
+@if (isPageReady) {
+<div class="container py-4">
+    <div class="col-md-10 mx-auto my-3">
+        <h3>Meet</h3>
+        <div class="col-md-12 mt-3 row">
+            <div class="col-md-4">
+                <button class="btn btn-primary px-5 py-2 w-100" (click)="quickMeetingModal()">
+                    <i class="fa-solid fa-plus fa-lg me-2"></i>
+                    Create a meeting</button>
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary px-4 py-2 w-100">
+                    <i class="fa-solid fa-link fa-lg me-2"></i>
+                    Join with a meeting id</button>
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary px-4 py-2 w-100" (click)="scheduleMeetingPopup()">
+                    <i class="fa-solid fa-link fa-lg me-2"></i>
+                    Schedule a meeting id</button>
+            </div>
+        </div>
+        <div class="mt-5 d-flex align-items-center justify-content-between">
+            <h4 class="">Meeting links</h4>
+            @if (allMeetings != null && allMeetings.length > 7) {
+                <a href="javascript:void(0)" class="text-decoration-none text-dark fw-semibold" (click)="toggleView()">{{showAll ? 'View less' : 'View all'}}</a>
+            }
+        </div>
+        <div class="row">
+            @for (item of visibleRecords; track $index) {
+            <div class="col-md-4 mt-3">
+                <div class="card p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="col-auto bg-primary-subtle rounded-circle rounded-icon">
+                            <i class="fa-solid fa-star fa-lg"></i>
+                        </div>
+                        <button class="btn btn-light btn-sm">
+                            <i class="fa-solid fa-ellipsis"></i>
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <h5>{{item.title}}</h5>
+                        Started On {{item.startDate | date}} {{item.startDate | date: "HH:mm a"}}
+                    </div>
+                    <div class="mt-3 d-flex justify-content-between align-items-center">
+                        <button class="btn btn-light py-1 w-50 px-4" (click)="joinMeeting(item)">Join</button>
+                        <button class="btn btn-light py-1 w-50 ms-3 px-4" (click)="copyLink(item, t)"
+                            [ngbTooltip]="'Copied!'" triggers="manual" #t="ngbTooltip">Share link</button>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</div>
+} @else {
+<div class="vh-100 d-flex align-items-center justify-content-center">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+}
+
+<!-- Modal -->
+<div class="modal fade" id="createMeeting" tabindex="-1" aria-labelledby="createMeetingLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content px-3">
+            <div class="modal-header border-bottom-0">
+                <h1 class="modal-title fs-5" id="createMeetingLabel">New meeting details</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="meetingForm">
+                    <div>
+                        <label class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" placeholder="Add title" class="form-control" formControlName="title"
+                            [ngClass]="{'error-field':isSubmitted && meetingForm.controls['title'].errors !== null && meetingForm.controls['title'].errors['required']}">
+                    </div>
+                    <div class="mt-3">
+                        <div class="row align-items-end justify-content-between">
+                            <div class="col-md-5">
+                                <label class="form-label">Meeting start date <span class="text-danger">*</span></label>
+                                <div class="row">
+                                    <div class="col-md-7">
+                                        <form class="row row-cols-sm-auto">
+                                            <div class="col-12">
+                                                <div class="input-group"
+                                                    [ngClass]="{'error-field':isSubmitted && meetingForm.controls['startDate'].errors !== null && meetingForm.controls['startDate'].errors['required']}">
+                                                    <input class="form-control" placeholder="yyyy-mm-dd" name="dp"
+                                                        [minDate]="minPickerDate" [(ngModel)]="meetingDate"
+                                                        ngbDatepicker #md="ngbDatepicker"
+                                                        (dateSelect)="onMeetingDateSelect($event)" />
+                                                    <button class="btn btn-outline-secondary" (click)="md.toggle()"
+                                                        type="button">
+                                                        <i class="fa-solid fa-calendar-days"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select" formControlName="startTime" [ngClass]="{'error-field':isSubmitted && meetingForm.controls['startTime'].errors !== null && meetingForm.controls['startTime'].errors['required']}"
+                                        (change)="onstartTimeSelect()">
+                                            <option [value]="null">Select</option>
+                                            @for (item of meetingTimes; track $index) {
+                                            <option [value]="item">{{item}}</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto mb-2">
+                                <p class="mb-0"><i class="fa-solid fa-arrow-left"></i> {{duration}} <i class="fa-solid fa-arrow-right"></i></p>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Meeting end date <span class="text-danger">*</span></label>
+                                <div class="row">
+                                    <div class="col-md-7">
+                                        <form class="row row-cols-sm-auto">
+                                            <div class="col-12">
+                                                <div class="input-group"
+                                                    [ngClass]="{'error-field':isSubmitted && meetingForm.controls['endDate'].errors !== null && meetingForm.controls['endDate'].errors['required']}">
+                                                    <input class="form-control" placeholder="yyyy-mm-dd" name="dp"
+                                                        [minDate]="minEndPickerDate"
+                                                        (dateSelect)="onMeetingEndDateSelect($event)"
+                                                        [(ngModel)]="meetingEndDate" ngbDatepicker
+                                                        #med="ngbDatepicker" />
+                                                    <button class="btn btn-outline-secondary" (click)="med.toggle()"
+                                                        type="button">
+                                                        <i class="fa-solid fa-calendar-days"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select" formControlName="endTime" [ngClass]="{'error-field':isSubmitted && meetingForm.controls['endTime'].errors !== null && meetingForm.controls['endTime'].errors['required']}"
+                                         (change)="onEndTimeSelect()">
+                                             <option [value]="null">Select</option>
+                                            @for (item of meetingTimes; track $index) {
+                                            <option [value]="item">{{item}}</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label">Description</label>
+                        <textarea rows="4" placeholder="Type details for this meeting" formControlName="agenda"
+                            class="form-control"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-success mx-2" [disabled]="isLoading" (click)="saveMeetingDetail()">
+                    <i class="" [ngClass]="{'fa-solid fa-spinner fa-spin': isLoading}"></i>
+                    {{ isLoading ? "Wait" : 'Save'}}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="quickMeetingModal" tabindex="-1" aria-labelledby="quickMeetingModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content px-3">
+            <div class="modal-header border-bottom-0">
+                <h1 class="modal-title fs-5" id="quickMeetingModalLabel">New meeting details</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <label class="form-label">Title <span class="text-danger">*</span></label>
+                    <input type="text" placeholder="Add title" class="form-control" [(ngModel)]="quickMeetingTitle"
+                        [ngClass]="{'error-field':isSubmitted && quickMeetingTitle == ''}">
+                </div>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-success mx-2" [disabled]="isLoading" (click)="generateQuickMeeting()">
+                    <i class="" [ngClass]="{'fa-solid fa-spinner fa-spin': isLoading}"></i>
+                    {{ isLoading ? "Wait" : 'Save'}}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

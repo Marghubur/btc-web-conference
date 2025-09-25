@@ -15,3 +15,21 @@ export const reaction = "reaction";
 export const hand_raise = "hand_raise";
 export const hand_down = "hand_down";
 export const Chat = "chat";
+export const BTCUSer = "BTCUser";
+export const ServerError = 500;
+export const ServerNotAvailable = 503;
+export const BadRequest = 400;
+export const Success = 200;
+export const UnAuthorize = 401;
+export const NotFound = 404;
+export const Forbidden = 403;
+export const AccessToken = "btc_access_token";
+export const Home = "home";
+export const MeetingId = "meetingid"
+
+// ------------------ ROUTES -----------------------------
+export const Dashboard = "btc/dashboard";
+export const Preview = "btc/preview";
+export const Meeting = "btc/meeting";
+export const Login = "login";
+export const ChatPage = "btc/chat";
