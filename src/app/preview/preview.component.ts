@@ -93,33 +93,40 @@ export class PreviewComponent implements OnDestroy {
             this.meetingId = meetingDetail.meetingId;
             this.meetingTitle = meetingDetail.title;
         }
-        if (this.meetingId) {
-            this.isValidMeetingId = true;
-            //this.validateMeetingId();
+
+        this.validatMeetingId();
+        if (this.isValidMeetingId) {
             await this.loadDevices();
             this.toggleCamera();
-            //await this.startPreview();
             this.subscription = this.mediaPerm.permissions$.subscribe(
                 permissions => {
                     this.permissions = permissions;
                 }
             );
+        } 
+    }
+
+    validatMeetingId() {
+        if (this.meetingId) {
+            const match  = this.meetingId.match(/_(\d+)$/);
+            let meetingDetailId = match ? +match[1] : null;
+            const updatedId = this.meetingId.replace(/_\d+$/, "");
+            this.meetingId
+            let value = {
+                meetingId: updatedId,
+                meetingDetailId: meetingDetailId
+            };
+            this.http.post(`meeting/validateMeeting`, value).then((res: ResponseModel) => {
+                if (res.ResponseBody) {
+                    this.isValidMeetingId = true;
+                    this.meetingTitle = res.ResponseBody.title;
+                }
+            }).catch(e => {
+                this.isValidMeetingId = false;
+            })
         } else {
             this.isValidMeetingId = false;
         }
-    }
-
-    validateMeetingId() {
-        let value = {
-            meetingId: this.meetingId
-        };
-        this.http.post("", value).then((res: ResponseModel) => {
-            if (res.ResponseBody) {
-                this.isValidMeetingId = res.ResponseBody;
-            }
-        }).catch(e => {
-            this.isValidMeetingId = false;
-        })
     }
 
 
