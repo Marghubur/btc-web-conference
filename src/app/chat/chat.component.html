@@ -1,35 +1,57 @@
 @if (isPageReady) {
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-4 bg-light">
-                @for (item of alluser; track $index) {
-                    <a href="javascript:void(0)" class="text-decoration-none text-dark" [ngClass]="{'selected-user': item.userId == selectedUserId}">
-                        <div class="row py-2 px-4">
-                            <div class="col-md-2">
-                                <div class="user-name-icon rounded-circle d-flex align-items-center justify-content-center fw-semibold" [ngStyle]="{'background-color': getColorFromName(item.firstName, item.lastName)}">
-                                    {{getUserInitiaLetter(item.firstName, item.lastName)}}
-                                </div>
+<div class="container-fluid h-100">
+    <div class="row vh-100">
+        <div class="col-md-4 bg-light main-container overflow-hidden me-0 px-0">
+            <div class="col-md-12" style="height: 3rem;">
+                <div class="card border-0 py-2 px-3">
+                    <div class="col py-1">
+                        <div class="d-flex align-items-center p-0 m-0 rounded-0 form-control">
+                            <i class="fa-solid fa-magnifying-glass px-2"></i>
+                            <input type="text" class="form-control border-0" placeholder="Serach......">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @for (item of alluser; track $index) {
+            <a href="javascript:void(0)" class="text-decoration-none text-dark pe-3" (click)="selectUser(item)">
+                <div class="row py-2 px-3" [@highlightAnim]="item.userId == selectedUser.userId ? 'selected' : 'normal'"
+                    [ngClass]="{'mt-3': $index == 0}">
+                    <div class="col-auto">
+                        <div class="avatar rounded-circle d-flex align-items-center justify-content-center fw-semibold"
+                            [ngStyle]="{'background-color': getColorFromName(item.firstName, item.lastName)}">
+                            {{getUserInitiaLetter(item.firstName, item.lastName)}}
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="row align-items-center justify-content-between">
+                            <div class="col-md-8 text-truncate">
+                                {{item.firstName}} {{(item.lastName != null && item.lastName != '') ? item.lastName :
+                                ''}}
                             </div>
-                            <div class="col-md-10">
-                                <div class="row align-items-center justify-content-between">
-                                    <div class="col-md-8 text-truncate">
-                                        {{item.firstName}} {{(item.lastName != null && item.lastName != '') ? item.lastName : ''}}
-                                    </div>
-                                    <div class="col-auto">
-                                        {{today | date: 'h:mm a'}}
-                                    </div>
-                                </div>
-                                <p class="mb-0">Sounds good?</p>
+                            <div class="col-auto">
+                                {{today | date: 'h:mm a'}}
                             </div>
                         </div>
-                    </a>
-                }
-            </div>
-            <div class="col-md-8 border bg-white">
-                <div class="card shadow">
-
+                        <p class="mb-0">Sounds good?</p>
+                    </div>
+                </div>
+            </a>
+            }
+        </div>
+        <div class="col-md-8 shadow-sm border bg-white px-0 mx-0">
+            <div class="card border-0 shadow-sm m-0 p-2">
+                <div class="d-flex align-items-center">
+                    <div class="col-auto">
+                        <div class="avatar rounded-circle d-flex align-items-center justify-content-center fw-semibold"
+                            [ngStyle]="{'background-color': getColorFromName(selectedUser.firstName, selectedUser.lastName)}">
+                            {{getUserInitiaLetter(selectedUser.firstName, selectedUser.lastName)}}
+                        </div>
+                    </div>
+                    <span class="fw-bold ps-3">{{selectedUser.firstName}} {{(selectedUser.lastName != null &&
+                        selectedUser.lastName != '') ? selectedUser.lastName : ''}}</span>
                 </div>
             </div>
         </div>
     </div>
+</div>
 }

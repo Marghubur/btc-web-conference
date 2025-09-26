@@ -2,22 +2,46 @@ import { Component, OnInit } from '@angular/core';
 import { AjaxService } from '../providers/services/ajax.service';
 import { ResponseModel } from '../providers/model';
 import { CommonModule } from '@angular/common';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './chat.component.html',
-  styleUrl: './chat.component.css'
+  styleUrl: './chat.component.css',
+  animations: [
+    trigger('highlightAnim', [
+      state('normal', style({
+        backgroundColor: 'transparent',
+        boxShadow: 'none',
+        fontWeight: 'normal',
+        transform: 'scale(1)'
+      })),
+      state('selected', style({
+        backgroundColor: 'white',
+        boxShadow: 'rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px',
+        fontWeight: '600',
+        transform: 'scale(1)'  // slight zoom
+      })),
+      transition('normal => selected', [
+        animate('200ms ease-in')
+      ]),
+      transition('selected => normal', [
+        animate('200ms ease-out')
+      ])
+    ])
+  ]
 })
 export class ChatComponent implements OnInit {
   alluser: Array<User> = [];
   isPageReady: boolean = false;
   today: Date = new Date();
-  selectedUserId: number = 0;
+  selectedUser: User = {userId: 0, firstName: null, lastName: null, mobile: null};
+  filterModal: FilterModal = {pageIndex: 1, pageSize: 20, searchString: '1=1'};
   constructor(private http: AjaxService) { }
   ngOnInit() {
-    this.http.get("user/getAllUser").then((res: ResponseModel) => {
+    this.http.post("user/getAllUser", this.filterModal).then((res: ResponseModel) => {
       if (res.ResponseBody) {
         this.alluser = res.ResponseBody;
         this.isPageReady = true;
@@ -62,8 +86,8 @@ export class ChatComponent implements OnInit {
     return colors[index];
   }
 
-  selecteUser(user: User) {
-    this.selectedUserId = user.userId;
+  selectUser(user: User) {
+    this.selectedUser = user;
   }
 
 }
@@ -71,5 +95,16 @@ export class ChatComponent implements OnInit {
 export interface User {
   userId: number;
   firstName: string;
-  lastName: string
+  lastName: string;
+  total?: number;
+  rowIndex?: number;
+  email?: string;
+  mobile: string;
+}
+
+export interface FilterModal {
+  searchString: string;
+  sortBy?: string;
+  pageIndex: number;
+  pageSize: number;
 }

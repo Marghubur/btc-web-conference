@@ -87,7 +87,9 @@ export class MeetingService {
         if (videoPub?.videoTrack) {
           this.localTrack.set(videoPub.videoTrack);
         }
-        this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
+        setTimeout(() => {
+          this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
+        }, 200);
       } else {
         console.warn("No camera detected, showing avatar placeholder");
         this.localTrack.set(undefined); // explicitly mark no video
