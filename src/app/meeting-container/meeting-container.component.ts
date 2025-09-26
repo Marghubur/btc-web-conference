@@ -20,12 +20,12 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     ])
   ]
 })
-export class MeetingContainerComponent implements OnInit {
-  isLoggedIn: boolean = true;
+export class MeetingContainerComponent {
   constructor(public meetingService: MeetingService,
     private local: LocalService
   ) { }
-  ngOnInit() {
-    this.isLoggedIn = this.local.isLoggedIn();
-  }
+
+  get isLoggedIn(): boolean {
+  return this.local.isLoggedIn();
+  } 
 }

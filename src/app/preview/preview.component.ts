@@ -88,30 +88,20 @@ export class PreviewComponent implements OnDestroy {
     }
 
     async ngOnInit() {
-        if (this.isLoggedIn) {
+        if (this.isLoggedIn && !this.meetingId) {
             let meetingDetail = this.nav.getValue();
             this.meetingId = meetingDetail.meetingId;
             this.meetingTitle = meetingDetail.title;
         }
 
         this.validatMeetingId();
-        if (this.isValidMeetingId) {
-            await this.loadDevices();
-            this.toggleCamera();
-            this.subscription = this.mediaPerm.permissions$.subscribe(
-                permissions => {
-                    this.permissions = permissions;
-                }
-            );
-        } 
     }
 
-    validatMeetingId() {
+    async validatMeetingId() {
         if (this.meetingId) {
             const match  = this.meetingId.match(/_(\d+)$/);
             let meetingDetailId = match ? +match[1] : null;
             const updatedId = this.meetingId.replace(/_\d+$/, "");
-            this.meetingId
             let value = {
                 meetingId: updatedId,
                 meetingDetailId: meetingDetailId
@@ -120,6 +110,13 @@ export class PreviewComponent implements OnDestroy {
                 if (res.ResponseBody) {
                     this.isValidMeetingId = true;
                     this.meetingTitle = res.ResponseBody.title;
+                    this.loadDevices();
+                    this.toggleCamera();
+                    this.subscription = this.mediaPerm.permissions$.subscribe(
+                        permissions => {
+                            this.permissions = permissions;
+                        }
+                    );
                 }
             }).catch(e => {
                 this.isValidMeetingId = false;
