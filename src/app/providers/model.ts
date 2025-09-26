@@ -31,5 +31,4 @@ export interface User {
     userId?: number;
     token?: string;
     isLogin?: boolean;
-    passCode?: string;
 }
