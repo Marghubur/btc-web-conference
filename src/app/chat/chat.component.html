@@ -4,7 +4,7 @@
             <div class="col-md-4 bg-light">
                 @for (item of alluser; track $index) {
                     <a href="javascript:void(0)" class="text-decoration-none text-dark" [ngClass]="{'selected-user': item.userId == selectedUserId}">
-                        <div class="row my-3 px-4">
+                        <div class="row py-2 px-4">
                             <div class="col-md-2">
                                 <div class="user-name-icon rounded-circle d-flex align-items-center justify-content-center fw-semibold" [ngStyle]="{'background-color': getColorFromName(item.firstName, item.lastName)}">
                                     {{getUserInitiaLetter(item.firstName, item.lastName)}}
