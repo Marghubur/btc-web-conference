@@ -1,18 +1,29 @@
 import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject, interval, Subscription } from 'rxjs';
+import { MeetingService } from './meeting.service'; // import your LiveKit service
 
 @Injectable({ providedIn: 'root' })
 export class NetworkService {
   private disconnectTimer: any;
   private pingSub?: Subscription;
+  private readonly OFFLINE_LIMIT = 60_000; // 1 minute
 
   isOnline$ = new BehaviorSubject<boolean>(navigator.onLine);
   isSlow$ = new BehaviorSubject<boolean>(false);
 
-  constructor(private ngZone: NgZone) {
-    // listen browser events
+  constructor(private ngZone: NgZone, private meetingService: MeetingService) {
+    // listen to network events
     window.addEventListener('online', () => this.setOnline(true));
     window.addEventListener('offline', () => this.setOnline(false));
+
+    // listen to tab visibility (sleep / hibernate)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.startDisconnectTimer();
+      } else {
+        this.clearDisconnectTimer();
+      }
+    });
 
     // start speed monitoring
     this.startPingCheck();
@@ -29,14 +40,18 @@ export class NetworkService {
     });
   }
 
-  /** if disconnected > 1 min → emit false */
+  /** start 1-min offline/hibernate countdown */
   private startDisconnectTimer() {
     this.clearDisconnectTimer();
-    this.disconnectTimer = setTimeout(() => {
-      // after 1 min no internet
-      this.isOnline$.next(false);
-      // here you can trigger force meeting disconnect
-    }, 60_000);
+    this.ngZone.runOutsideAngular(() => {
+      this.disconnectTimer = setTimeout(() => {
+        this.ngZone.run(() => {
+          console.warn('User offline or hibernated >1 min. Disconnecting meeting.');
+          this.isOnline$.next(false);
+          this.meetingService.leaveRoom(); // disconnect LiveKit meeting
+        });
+      }, this.OFFLINE_LIMIT);
+    });
   }
 
   private clearDisconnectTimer() {
@@ -46,19 +61,25 @@ export class NetworkService {
     }
   }
 
-  /** check internet speed via ping */
+  /** periodic ping to check connection speed */
   private startPingCheck() {
     this.pingSub = interval(5000).subscribe(() => {
       const start = Date.now();
       fetch('https://www.google.com/favicon.ico', { method: 'HEAD', mode: 'no-cors' })
         .then(() => {
           const latency = Date.now() - start;
-          this.isSlow$.next(latency > 1000); // >1s = slow
-          this.isOnline$.next(true);
+          this.ngZone.run(() => {
+            this.isSlow$.next(latency > 1000); // >1s = slow network
+            this.setOnline(true); // network is available
+          });
         })
-        .catch(() => {
-          this.isOnline$.next(false);
-        });
+        .catch(() => this.setOnline(false));
     });
+  }
+
+  /** cleanup subscription if service destroyed */
+  ngOnDestroy() {
+    this.pingSub?.unsubscribe();
+    this.clearDisconnectTimer();
   }
 }

@@ -30,9 +30,6 @@ export class MeetingService {
     private cameraService: CameraService,
     private videoBackgroundService: VideoBackgroundService
   ) {
-    this.user = local.getUser();
-    this.isCameraOn.set(this.user?.isCameraOn!);
-    this.isMicOn.set(this.user?.isMicOn!);
   }
 
   minimize() { this._isMinimized.set(true); }
@@ -61,6 +58,9 @@ export class MeetingService {
   async joinRoom() {
     try {
       this._loading.set(true);
+      this.user = this.local.getUser();
+      this.isCameraOn.set(this.user?.isCameraOn!);
+      this.isMicOn.set(this.user?.isMicOn!);
       // Detect available devices
       const devices = await navigator.mediaDevices.enumerateDevices();
       const hasMic = devices.some(d => d.kind === "audioinput");
@@ -75,8 +75,9 @@ export class MeetingService {
       this.userJoinRoom();
 
       // Enable default camera & mic
-      if (this.user?.isMicOn && hasMic) {
+      if (this.isMicOn() && hasMic) {
         await this.cameraService.enableMic(joinedRoom);
+        joinedRoom.localParticipant.setMicrophoneEnabled(this.isMicOn()); 
       }
 
       if (hasCam && this.room) {
@@ -86,9 +87,7 @@ export class MeetingService {
         if (videoPub?.videoTrack) {
           this.localTrack.set(videoPub.videoTrack);
         }
-        setTimeout(async () => {
-          this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
-        }, 100);
+        this.room()?.localParticipant.setCameraEnabled(this.isCameraOn());
       } else {
         console.warn("No camera detected, showing avatar placeholder");
         this.localTrack.set(undefined); // explicitly mark no video
