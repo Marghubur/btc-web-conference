@@ -238,7 +238,7 @@ export class DashboardComponent implements OnInit {
   }
 
   copyLink(item: MeetingDetail, tooltip: any) {
-    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}`;
+    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
     navigator.clipboard.writeText(url).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();

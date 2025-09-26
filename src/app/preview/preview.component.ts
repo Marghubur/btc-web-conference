@@ -74,11 +74,6 @@ export class PreviewComponent implements OnDestroy {
                 alert("Please add your name");
                 return;
             }
-
-            if (!this.passCode) {
-                alert("Please add meeting pass code");
-                return;
-            }
         }
         this.saveUser();
         this.meetingService.meetingId = this.meetingId;
@@ -212,7 +207,6 @@ export class PreviewComponent implements OnDestroy {
                 isCameraOn: this.selectedCamera != null ? this.isCameraOn: false,
                 firstName: this.userName,
                 isLogin: false,
-                passCode: this.passCode
             }
         }
         this.local.setUser(user)
