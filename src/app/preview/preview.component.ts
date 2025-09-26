@@ -79,7 +79,6 @@ export class PreviewComponent implements OnDestroy {
         this.meetingService.meetingId = this.meetingId;
         this.meetingService.maximize();
         this.meetingService.userJoinRoom();
-        //this.router.navigate(['/btc/meeting', this.meetingId]);
     }
 
     async ngOnInit() {
@@ -94,12 +93,11 @@ export class PreviewComponent implements OnDestroy {
 
     async validatMeetingId() {
         if (this.meetingId) {
-            const match  = this.meetingId.match(/_(\d+)$/);
-            let meetingDetailId = match ? +match[1] : null;
-            const updatedId = this.meetingId.replace(/_\d+$/, "");
+            // const match  = this.meetingId.match(/_(\d+)$/);
+            // let meetingDetailId = match ? +match[1] : null;
+            // const updatedId = this.meetingId.replace(/_\d+$/, "");
             let value = {
-                meetingId: updatedId,
-                meetingDetailId: meetingDetailId
+                meetingId: this.meetingId
             };
             this.http.post(`meeting/validateMeeting`, value).then((res: ResponseModel) => {
                 if (res.ResponseBody) {

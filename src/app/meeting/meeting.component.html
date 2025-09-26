@@ -70,7 +70,7 @@
                                         </svg>
                                     </div>
                                     }
-                                    <div class="" style="bottom: 5px; left: 5px;">
+                                    <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate" style="bottom: 5px; left: 5px;">
                                         {{remoteTrack.participantIdentity!}}
                                     </div>
                                 </div>
@@ -83,7 +83,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="" [ngClass]="{'col-md-12': !isViewParticipant, 'col-md-10': isViewParticipant, }">
+                    <div class="col-md-10">
                         @if (isMyshareScreen) {
                         <video #screenPreview autoplay playsinline muted
                             style="width: 100%; border: 2px solid #007bff; border-radius: 8px; height: 86vh;"></video>

@@ -178,9 +178,9 @@ export class DashboardComponent implements OnInit {
     this.allSchedularMeeting = (res != null && res.length > 0) ?  res.filter(x => !x.hasQuickMeeting) : [];
     if (this.allSchedularMeeting.length > 0) {
       this.allSchedularMeeting.forEach(x => {
-        let startDate = new Date(x.startDate);
-        x.startTime = this.formatTime(startDate);
-        x.endDate = new Date(startDate.getTime() + (x.durationInSecond * 1000));
+        x.startDate = new Date(x.startDate);
+        x.startTime = this.formatTime(x.startDate);
+        x.endDate = new Date(x.startDate.getTime() + (x.durationInSecond * 1000));
         x.endTime = this.formatTime(x.endDate);
       })
     }
@@ -188,7 +188,6 @@ export class DashboardComponent implements OnInit {
 
   joinMeeting(item: MeetingDetail) {
     // this.router.navigate(['/btc/preview'], {queryParams: {meetingid: item.meetingId}});
-    item.meetingId = `${item.meetingId}_${item.meetingDetailId}`;
     this.nav.navigate(Preview, item);
   }
 
@@ -238,7 +237,7 @@ export class DashboardComponent implements OnInit {
   }
 
   copyLink(item: MeetingDetail, tooltip: any) {
-    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
+    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}`;
     navigator.clipboard.writeText(url).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();
@@ -313,7 +312,12 @@ export class DashboardComponent implements OnInit {
     }
 
     this.isLoading = true;
-    this.http.post("validateMeetingIdPassCode", '').then((res: ResponseModel) => {
+    let value = {
+      meetingDetailId: 0,
+      meetingId: `${this.meetingDetail.meetingId}`,
+      meetingPassword: this.meetingDetail.meetingPassword
+    }
+    this.http.post("meeting/joinMeetingIdPassCode", value).then((res: ResponseModel) => {
       if (res.ResponseBody) {
         HideModal("joinMeetingModal");
         let meeting = res.ResponseBody;
@@ -326,12 +330,12 @@ export class DashboardComponent implements OnInit {
   }
 
   shareInviteLink(item: MeetingDetail, tooltip: any) {
-    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
+    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}`;
     let shareUrl = `${item.organizerName} invited you to a BottomHalf Meeting:
 
 ${item.title}
-${this.toFullDateString(item.startDate)}
-${item.startTime} - ${item.endTime} (IST)
+${this.toFullDateString(item.startDate)} - ${item.startTime} (IST)
+${this.toFullDateString(item.endDate)} - ${item.endTime} (IST)
 
 Meeting link: ${url}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
