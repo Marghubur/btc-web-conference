@@ -6,7 +6,6 @@ import { AjaxService } from '../providers/services/ajax.service';
 import { HideModal, ShowModal, ToLocateDate } from '../providers/services/common.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { Preview } from '../providers/constant';
 import { LocalService } from '../providers/services/local.service';
 import { environment } from '../../environments/environment';
@@ -14,7 +13,7 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbDatepickerModule, NgbTooltipModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbDatepickerModule, NgbTooltipModule, NgbTooltipModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -28,11 +27,13 @@ export class DashboardComponent implements OnInit {
   meetingDetail: MeetingDetail = { agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null }
   isSubmitted: boolean = false;
   isLoading: boolean = false;
-  allMeetings: Array<MeetingDetail> = [];
   isPageReady: boolean = false;
   quickMeetingTitle: string = "";
   showAll: boolean = false;
   duration: string = "00:00";
+  today: Date = new Date();
+  allQuickMeeting: Array<MeetingDetail> = [];
+  allSchedularMeeting: Array<MeetingDetail> = [];
   constructor(private nav: iNavigation,
     private local: LocalService,
     private fb: FormBuilder,
@@ -48,6 +49,8 @@ export class DashboardComponent implements OnInit {
 
 
   async ngOnInit() {
+    history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', this.popStateListener);
     this.generateTimeSlots();
     this.initForm();
     this.loadData();
@@ -143,26 +146,26 @@ export class DashboardComponent implements OnInit {
     if (this.meetingForm.invalid) {
       return;
     }
-    // this.isLoading = true;
-    // let value = this.meetingForm.getRawValue();
-    // value.durationInSecond = 5000;
-    // this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
-    //   if (res.ResponseBody) {
-    //     this.allMeetings = res.ResponseBody;
-    //     HideModal("createMeeting");
-    //     this.isLoading = false;
-    //     this.isSubmitted = false;
-    //   }
-    // }).catch(e => {
-    //   this.isLoading = false;
-    // })
+    this.isLoading = true;
+    let value = this.meetingForm.getRawValue();
+    console.log(value);
+    this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
+      if (res.ResponseBody) {
+        this.bindMeetings(res.ResponseBody);
+        HideModal("createMeeting");
+        this.isLoading = false;
+        this.isSubmitted = false;
+      }
+    }).catch(e => {
+      this.isLoading = false;
+    })
   }
 
   private loadData() {
     this.isPageReady = false;
     this.http.get("meeting/getAllMeetingByOrganizer").then((res: ResponseModel) => {
       if (res.ResponseBody) {
-        this.allMeetings = res.ResponseBody;
+        this.bindMeetings(res.ResponseBody);
         this.isPageReady = true;
       }
     }).catch(e => {
@@ -170,8 +173,22 @@ export class DashboardComponent implements OnInit {
     })
   }
 
+  private bindMeetings(res: any) {
+    this.allQuickMeeting = (res != null && res.length > 0) ?  res.filter(x => x.hasQuickMeeting) : [];
+    this.allSchedularMeeting = (res != null && res.length > 0) ?  res.filter(x => !x.hasQuickMeeting) : [];
+    if (this.allSchedularMeeting.length > 0) {
+      this.allSchedularMeeting.forEach(x => {
+        let startDate = new Date(x.startDate);
+        x.startTime = this.formatTime(startDate);
+        x.endDate = new Date(startDate.getTime() + (x.durationInSecond * 1000));
+        x.endTime = this.formatTime(x.endDate);
+      })
+    }
+  }
+
   joinMeeting(item: MeetingDetail) {
     // this.router.navigate(['/btc/preview'], {queryParams: {meetingid: item.meetingId}});
+    item.meetingId = `${item.meetingId}_${item.meetingDetailId}`;
     this.nav.navigate(Preview, item);
   }
 
@@ -180,6 +197,7 @@ export class DashboardComponent implements OnInit {
     this.meetingDetail = { agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null };
     this.meetingDate = null;
     this.meetingEndDate = null;
+    this.initForm();
     ShowModal("createMeeting");
   }
 
@@ -206,7 +224,7 @@ export class DashboardComponent implements OnInit {
     };
     this.http.post("meeting/generateQuickMeeting", meetingDetal).then((res: ResponseModel) => {
       if (res.ResponseBody) {
-        this.allMeetings = res.ResponseBody;
+        this.bindMeetings(res.ResponseBody);
         this.isLoading = false;
         HideModal("quickMeetingModal");
       }
@@ -220,7 +238,7 @@ export class DashboardComponent implements OnInit {
   }
 
   copyLink(item: MeetingDetail, tooltip: any) {
-    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}`;
+    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
     navigator.clipboard.writeText(url).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();
@@ -231,7 +249,7 @@ export class DashboardComponent implements OnInit {
   }
 
   get visibleRecords() {
-    return this.showAll ? this.allMeetings : this.allMeetings.slice(0, 7);
+    return this.showAll ? this.allQuickMeeting : this.allQuickMeeting.slice(0, 3);
   }
 
   toggleView() {
@@ -278,5 +296,96 @@ export class DashboardComponent implements OnInit {
     var hours = Math.floor(totalMinutes / 60);
 
     this.duration =  `${hours}:${totalMinutes%60}`;
+  }
+
+  joinMeetingPopup() {
+    this.isSubmitted = false;
+    this.meetingDetail.meetingId = null;
+    this.meetingDetail.meetingPassword = null;
+    ShowModal("joinMeetingModal");
+  }
+
+  JoinMeetingBydId() {
+    this.isSubmitted = true;
+    if (!this.meetingDetail.meetingId || !this.meetingDetail.meetingPassword) {
+      console.error("Please enter meeting id and password")
+      return;
+    }
+
+    this.isLoading = true;
+    this.http.post("validateMeetingIdPassCode", '').then((res: ResponseModel) => {
+      if (res.ResponseBody) {
+        HideModal("joinMeetingModal");
+        let meeting = res.ResponseBody;
+        this.joinMeeting(meeting);
+        this.isLoading = false;
+      }
+    }).catch(e => {
+      this.isLoading = false;
+    })
+  }
+
+  shareInviteLink(item: MeetingDetail, tooltip: any) {
+    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
+    let shareUrl = `${item.organizerName} invited you to a BottomHalf Meeting:
+
+${item.title}
+${this.toFullDateString(item.startDate)}
+${item.startTime} - ${item.endTime} (IST)
+
+Meeting link: ${url}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      console.log('Copied to clipboard:');
+      tooltip.open();
+      setTimeout(() => tooltip.close(), 1500); // Close tooltip after 1.5s
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+    });
+  }
+
+  shareIdPasscodeLink(item: MeetingDetail, tooltip: any) {
+    let shareUrl = `BottomHalf Meeting:
+
+Meeting ID: ${item.meetingId}
+
+Passcode: ${item.meetingPassword}
+
+`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      console.log('Copied to clipboard:');
+      tooltip.open();
+      setTimeout(() => tooltip.close(), 1500); // Close tooltip after 1.5s
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+    });
+  }
+
+  private popStateListener = (event: PopStateEvent) => {
+    history.pushState(null, '', window.location.href); // push state back
+    alert('You cannot navigate back.');
+  };
+
+  private formatTime(date: Date): string {
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'P.M' : 'A.M';
+    
+    hours = hours % 12;
+    hours = hours ? hours : 12; // convert 0 to 12 for midnight/noon
+
+    const minStr = minutes < 10 ? '0' + minutes : minutes;
+
+    return `${hours}:${minStr} ${ampm}`;
+  }
+
+  private toFullDateString(dateInput: Date): string {
+    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
+    return date.toLocaleDateString('en-US', options);
   }
 }

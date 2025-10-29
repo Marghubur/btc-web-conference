@@ -74,11 +74,6 @@ export class PreviewComponent implements OnDestroy {
                 alert("Please add your name");
                 return;
             }
-
-            if (!this.passCode) {
-                alert("Please add meeting pass code");
-                return;
-            }
         }
         this.saveUser();
         this.meetingService.meetingId = this.meetingId;
@@ -88,38 +83,42 @@ export class PreviewComponent implements OnDestroy {
     }
 
     async ngOnInit() {
-        if (this.isLoggedIn) {
+        if (this.isLoggedIn && !this.meetingId) {
             let meetingDetail = this.nav.getValue();
             this.meetingId = meetingDetail.meetingId;
             this.meetingTitle = meetingDetail.title;
         }
+
+        this.validatMeetingId();
+    }
+
+    async validatMeetingId() {
         if (this.meetingId) {
-            this.isValidMeetingId = true;
-            //this.validateMeetingId();
-            await this.loadDevices();
-            this.toggleCamera();
-            //await this.startPreview();
-            this.subscription = this.mediaPerm.permissions$.subscribe(
-                permissions => {
-                    this.permissions = permissions;
+            const match  = this.meetingId.match(/_(\d+)$/);
+            let meetingDetailId = match ? +match[1] : null;
+            const updatedId = this.meetingId.replace(/_\d+$/, "");
+            let value = {
+                meetingId: updatedId,
+                meetingDetailId: meetingDetailId
+            };
+            this.http.post(`meeting/validateMeeting`, value).then((res: ResponseModel) => {
+                if (res.ResponseBody) {
+                    this.isValidMeetingId = true;
+                    this.meetingTitle = res.ResponseBody.title;
+                    this.loadDevices();
+                    this.toggleCamera();
+                    this.subscription = this.mediaPerm.permissions$.subscribe(
+                        permissions => {
+                            this.permissions = permissions;
+                        }
+                    );
                 }
-            );
+            }).catch(e => {
+                this.isValidMeetingId = false;
+            })
         } else {
             this.isValidMeetingId = false;
         }
-    }
-
-    validateMeetingId() {
-        let value = {
-            meetingId: this.meetingId
-        };
-        this.http.post("", value).then((res: ResponseModel) => {
-            if (res.ResponseBody) {
-                this.isValidMeetingId = res.ResponseBody;
-            }
-        }).catch(e => {
-            this.isValidMeetingId = false;
-        })
     }
 
 
@@ -208,7 +207,6 @@ export class PreviewComponent implements OnDestroy {
                 isCameraOn: this.selectedCamera != null ? this.isCameraOn: false,
                 firstName: this.userName,
                 isLogin: false,
-                passCode: this.passCode
             }
         }
         this.local.setUser(user)

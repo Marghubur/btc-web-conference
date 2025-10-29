@@ -8,7 +8,7 @@ import { JwtService } from './jwt.service';
   providedIn: 'root'
 })
 export class AjaxService {
-  private basUrl: string ="http://" + environment.appServerBaseUrl;
+  private basUrl: string =environment.appServerBaseUrl;
 
   constructor(private http: HttpClient,
               private jwtService: JwtService

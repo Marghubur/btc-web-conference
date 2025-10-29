@@ -1,0 +1,8 @@
+.avatar {
+    width: 3rem;
+    height: 3rem;
+}
+
+.main-container:hover {
+    overflow-y: auto !important;
+}

@@ -5,3 +5,10 @@
     align-items: center;
     justify-content: center;
 }
+
+.meetng-date-badge {
+    background-color: #f5f1f1 !important;
+    color: #222 !important;
+    width: 3rem;
+    height: 3.3rem;
+}

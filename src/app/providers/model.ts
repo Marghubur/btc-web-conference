@@ -6,17 +6,19 @@ export interface ResponseModel {
 }
 
 export interface MeetingDetail {
-  meetingDetailId: number;
+  meetingDetailId?: number;
   meetingId: string;
   meetingPassword: string;
-  organizedBy: number; 
-  agenda: string;
-  title: string;
+  organizedBy?: number; 
+  agenda?: string;
+  title?: string;
   startDate?: Date;
-  durationInSecond: number;
+  durationInSecond?: number;
   endDate?: Date;
   startTime? : string;
   endTime?: string;
+  organizerName?: string;
+  hasQuickMeeting? : boolean;
 }
 
 
@@ -29,5 +31,4 @@ export interface User {
     userId?: number;
     token?: string;
     isLogin?: boolean;
-    passCode?: string;
 }

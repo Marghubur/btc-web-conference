@@ -3,7 +3,7 @@
         <div class="d-flex justify-content-between align-items-start p-2">
             <strong class="text-white">Meeting</strong>
             <div>
-                @if (permissions.microphone == 'granted') {
+                @if ((permissions$ | async)?.microphone == 'granted') {
                 <a href="javascript:void(0)" class="text-decoration-none me-3" (click)="toggleMic()" placement="top"
                     [ngbTooltip]="meetingService.isMicOn() ? 'Turn off microphone' : 'Turn on microphone'">
                     @if (meetingService.isMicOn()) {
@@ -30,7 +30,7 @@
                 </a>
                 }
     
-                @if (permissions.camera == 'granted') {
+                @if ((permissions$ | async)?.camera == 'granted') {
                 <a href="javascript:void(0)" class="text-decoration-none me-3" (click)="toggleCamera()" placement="top"
                     [ngbTooltip]="meetingService.isCameraOn() ? 'Turn off camera' : 'Turn on camera'">
                     @if(meetingService.isCameraOn()) {

@@ -5,7 +5,7 @@ import { User } from '../providers/model';
 import { LocalService } from '../providers/services/local.service';
 import { CommonModule } from '@angular/common';
 import { MediaPermissions, MediaPermissionsService } from '../providers/services/media-permission.service';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { VideoComponent } from '../video/video.component';
 
 @Component({
@@ -15,7 +15,7 @@ import { VideoComponent } from '../video/video.component';
   templateUrl: './meeting-mini.component.html',
   styleUrl: './meeting-mini.component.css'
 })
-export class MeetingMiniComponent implements OnInit, OnDestroy {
+export class MeetingMiniComponent implements OnInit {
   // Simple draggable behavior
   private dragging = false;
   private startX = 0;
@@ -25,26 +25,19 @@ export class MeetingMiniComponent implements OnInit, OnDestroy {
   localTrack = signal<LocalVideoTrack | undefined>(undefined);
   userName: string = null;
   private user: User = null;
-  permissions: MediaPermissions = {
-    camera: 'unknown',
-    microphone: 'unknown',
-  };
-  private subscription?: Subscription;
+  permissions$: Observable<MediaPermissions>;
   room = signal<Room | undefined>(undefined);
   constructor(private elRef: ElementRef,
     public meetingService: MeetingService,
     private mediaPerm: MediaPermissionsService,
-    private local: LocalService) { }
+    private local: LocalService) {
+      this.permissions$ = this.mediaPerm.permissions$;
+     }
   ngOnInit() {
     this.user = this.local.getUser();
     this.userName = this.getFullName();
     this.room.set(this.meetingService.room());
     this.localTrack.set(this.meetingService.localTrack());
-    this.subscription = this.mediaPerm.permissions$.subscribe(
-      permissions => {
-        this.permissions = permissions;
-      }
-    );
   }
 
   expand() { this.meetingService.maximize(); }
@@ -147,12 +140,5 @@ export class MeetingMiniComponent implements OnInit, OnDestroy {
       fullName = fullName + " " + this.user.lastName;
 
     return fullName;
-  }
-
-  ngOnDestroy(): void {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
-    this.mediaPerm.destroy();
   }
 }
