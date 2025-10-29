@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  sfuBaseUrl: "www.axilcorps.com",
-  appServerBaseUrl: `https://www.axilcorps.com/api/`
+  sfuBaseUrl: "www.confeet.com",
+  appServerBaseUrl: `https://www.confeet.com/api/`
 };
