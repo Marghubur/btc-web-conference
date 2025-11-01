@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
   sfuBaseUrl: "www.confeet.com",
-  appServerBaseUrl: "localhost:7801/api/"
+  appServerBaseUrl: "http://localhost:7801/api/"
 };
