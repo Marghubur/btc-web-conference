@@ -1,9 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LocalService } from '../providers/services/local.service';
 import { ResponseModel } from '../providers/model';
-import { Router } from '@angular/router';
 import { AjaxService } from '../providers/services/ajax.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { Dashboard } from '../providers/constant';
@@ -16,11 +14,11 @@ import { Dashboard } from '../providers/constant';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  email: string = "";
+  email: string = "istiyaq.mi9@gmail.com";
   isSubmitted: boolean = false;
   isEmailValid: boolean = true;
   passwordType: string = "password";
-  password: string = '';
+  password: string = '123456';
   isLoading: boolean = false;
   constructor(private nav: iNavigation,
               private http: AjaxService

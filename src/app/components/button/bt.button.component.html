@@ -1,0 +1,9 @@
+<button
+  class="custom-btn"
+  [ngClass]="finalClasses"
+  [disabled]="disabled"
+  (click)="onClick()">
+
+  <i *ngIf="icon" class="bi" [ngClass]="icon"></i>
+  {{ label }}
+</button>
