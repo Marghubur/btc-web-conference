@@ -1,11 +1,11 @@
 @if (isLoggedIn) {
-<div class="d-flex vh-100 bg-white justify-content-between">
-    <div class="right-panel">
-        <router-outlet></router-outlet>
-    </div>
-    <div class="left-panel bg-white">
+<div class="layout-container">
+    <aside class="sidemenu-panel">
         <app-sidemenu></app-sidemenu>
-    </div>
+    </aside>
+    <main class="content-panel">
+        <router-outlet></router-outlet>
+    </main>
 </div>
 } @else {
 <router-outlet></router-outlet>

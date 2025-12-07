@@ -1,158 +1,170 @@
-<!-- <div class="container-fluid vh-100 bg-light">
-    <div class="d-flex align-items-center justify-content-center h-100">
-        <div class="col-md-4 shadow">
-            <div class="card p-4">
-                <img src="assets/logos.png" alt="logo" class="img-fluid mx-auto" width="70%">
-                <h3 class="text-center mt-3">Meeting</h3>
-                <div class="mt-3">
-                    <label class="form-label">Email <span class="text-danger">*</span></label>
-                    <input type="email" placeholder="Email" class="form-control" [(ngModel)]="email" (input)="isValidEmail()" 
-                    [ngClass]="{'error-field': isSubmitted && (email== '' || !isEmailValid)}">
+<div class="login-wrapper">
+    <div class="container-fluid h-100">
+        <div class="row h-100 g-0">
+            <!-- Left Side - Decorative Panel -->
+            <div class="col-lg-7 d-none d-lg-flex left-panel">
+                <div class="overlay-content">
+                    <div class="text-center">
+                        <i class="fas fa-video login-icon mb-4"></i>
+                        <h1 class="display-4 fw-bold mb-3">Welcome to Conference</h1>
+                        <p class="lead mb-4">Connect, collaborate, and communicate seamlessly</p>
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>HD Video Conferencing</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Real-time Chat & Collaboration</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Screen Sharing & Recording</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Secure & Encrypted Meetings</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="mt-3">
-                    <label class="form-label">Password <span class="text-danger">*</span></label>
-                    <div class="position-relative">
-                        <input [type]="passwordType" placeholder="Password" class="form-control" [(ngModel)]="password" (keyup.enter)="login()"
-                        [ngClass]="{'error-field': isSubmitted && password== ''}">
-                        <a href="javascript:void(0)" class="text-decoration-none" (click)="viewPassword()">
-                            <i class="text-dark position-absolute fa-solid view-password" [ngClass]="{'fa-eye-slash': passwordType == 'password', 'fa-eye': passwordType == 'text'}"></i>
+            </div>
+
+            <!-- Right Side - Login Form -->
+            <div class="col-lg-5 d-flex align-items-center justify-content-center right-panel">
+                <div class="login-form-container">
+                    <div class="text-center mb-5">
+                        <div class="logo-circle mb-3">
+                            <i class="fas fa-video-camera"></i>
+                        </div>
+                        <h2 class="fw-bold mb-2">Sign In</h2>
+                        <p class="text-muted">Enter your credentials to access your account</p>
+                    </div>
+
+                    <!-- Social Login Buttons -->
+                    <div class="social-login mb-4">
+                        <button type="button" class="btn btn-social btn-google">
+                            <i class="fab fa-google me-2"></i>
+                            <span>Sign in with Google</span>
+                        </button>
+                        <button type="button" class="btn btn-social btn-microsoft">
+                            <i class="fab fa-microsoft me-2"></i>
+                            <span>Sign in with Microsoft</span>
+                        </button>
+                    </div>
+
+                    <div class="divider">
+                        <span>OR CONTINUE WITH EMAIL</span>
+                    </div>
+
+                    <!-- Email Input -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-envelope me-2 text-primary"></i>Email Address
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-user text-muted"></i>
+                            </span>
+                            <input
+                                type="email"
+                                placeholder="Enter your email"
+                                class="form-control form-control-lg border-start-0 ps-0"
+                                [(ngModel)]="email"
+                                (input)="isValidEmail()"
+                                [ngClass]="{ 'is-invalid': isSubmitted && (email == '' || !isEmailValid) }"
+                            />
+                        </div>
+                        <div class="invalid-feedback d-block" *ngIf="isSubmitted && email == ''">Email is required</div>
+                        <div class="invalid-feedback d-block" *ngIf="isSubmitted && email != '' && !isEmailValid">
+                            Please enter a valid email address
+                        </div>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-lock me-2 text-primary"></i>Password
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-key text-muted"></i>
+                            </span>
+                            <input
+                                [type]="passwordType"
+                                placeholder="Enter your password"
+                                class="form-control form-control-lg border-start-0 border-end-0 ps-0"
+                                [(ngModel)]="password"
+                                (keyup.enter)="login()"
+                                [ngClass]="{ 'is-invalid': isSubmitted && password == '' }"
+                            />
+                            <span
+                                class="input-group-text bg-light border-start-0 cursor-pointer"
+                                (click)="viewPassword()"
+                            >
+                                <i
+                                    class="fas text-muted"
+                                    [ngClass]="{
+                                        'fa-eye-slash': passwordType == 'password',
+                                        'fa-eye': passwordType == 'text'
+                                    }"
+                                ></i>
+                            </span>
+                        </div>
+                        <div class="invalid-feedback d-block" *ngIf="isSubmitted && password == ''">
+                            Password is required
+                        </div>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="rememberMe" />
+                            <label class="form-check-label text-muted" for="rememberMe"> Remember me </label>
+                        </div>
+                        <a href="javascript:void(0)" class="text-decoration-none fw-semibold forgot-link">
+                            Forgot Password?
                         </a>
                     </div>
-                </div>
-                <button class="btn btn-success mt-3" [disabled]="isLoading" (click)="login()">
-                    <i class="fa-solid" [ngClass]="{'fa-spinner fa-spin': isLoading, 'fa-arrow-right-to-bracket': !isLoading}"></i>
-                    <span class="ps-2">{{ isLoading ? "Wait" : "Login"}}</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div> -->
 
-<section class="vh-100">
-    <div class="container-fluid h-custom">
-        <div class="row d-flex justify-content-center align-items-center h-100">
-            <div class="col-md-9 col-lg-6 col-xl-5">
-                <img
-                    src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.webp"
-                    class="img-fluid"
-                    alt="Sample image"
-                />
-            </div>
-            <div class="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
-                <div class="d-flex flex-row align-items-center justify-content-center justify-content-lg-start">
-                    <p class="lead fw-normal mb-0 me-3">Sign in with</p>
-                    <button
-                        type="button"
-                        data-mdb-button-init
-                        data-mdb-ripple-init
-                        class="btn btn-primary btn-floating mx-1"
-                    >
-                        <i class="fab fa-facebook-f"></i>
+                    <!-- Login Button -->
+                    <button class="btn btn-login w-100 mb-4" [disabled]="isLoading" (click)="login()">
+                        <span *ngIf="!isLoading"> <i class="fas fa-sign-in-alt me-2"></i>Sign In </span>
+                        <span *ngIf="isLoading"> <i class="fas fa-spinner fa-spin me-2"></i>Signing In... </span>
                     </button>
 
-                    <button
-                        type="button"
-                        data-mdb-button-init
-                        data-mdb-ripple-init
-                        class="btn btn-primary btn-floating mx-1"
-                    >
-                        <i class="fab fa-twitter"></i>
-                    </button>
-
-                    <button
-                        type="button"
-                        data-mdb-button-init
-                        data-mdb-ripple-init
-                        class="btn btn-primary btn-floating mx-1"
-                    >
-                        <i class="fab fa-linkedin-in"></i>
-                    </button>
-                </div>
-
-                <div class="divider d-flex align-items-center my-4">
-                    <p class="text-center fw-bold mx-3 mb-0">Or</p>
-                </div>
-
-                <div class="mt-3">
-                    <label class="form-label">Email <span class="text-danger">*</span></label>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        class="form-control"
-                        [(ngModel)]="email"
-                        (input)="isValidEmail()"
-                        [ngClass]="{ 'error-field': isSubmitted && (email == '' || !isEmailValid) }"
-                    />
-                </div>
-                <div class="mt-3">
-                    <label class="form-label">Password <span class="text-danger">*</span></label>
-                    <div class="position-relative">
-                        <input
-                            [type]="passwordType"
-                            placeholder="Password"
-                            class="form-control"
-                            [(ngModel)]="password"
-                            (keyup.enter)="login()"
-                            [ngClass]="{ 'error-field': isSubmitted && password == '' }"
-                        />
-                        <a href="javascript:void(0)" class="text-decoration-none" (click)="viewPassword()">
-                            <i
-                                class="text-dark position-absolute fa-solid view-password"
-                                [ngClass]="{
-                                    'fa-eye-slash': passwordType == 'password',
-                                    'fa-eye': passwordType == 'text'
-                                }"
-                            ></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center">
-                    <!-- Checkbox -->
-                    <div class="form-check mb-0">
-                        <input class="form-check-input me-2" type="checkbox" value="" id="form2Example3" />
-                        <label class="form-check-label" for="form2Example3"> Remember me </label>
-                    </div>
-                    <a href="#!" class="text-body">Forgot password?</a>
-                </div>
-
-                <div class="text-center text-lg-start mt-4 pt-2">
-                    <button class="btn btn-success mt-3" [disabled]="isLoading" (click)="login()">
+                    <!-- <button class="btn btn-success mt-3" [disabled]="isLoading" (click)="login()">
                         <i
                             class="fa-solid"
                             [ngClass]="{ 'fa-spinner fa-spin': isLoading, 'fa-arrow-right-to-bracket': !isLoading }"
                         ></i>
                         <span class="ps-2">{{ isLoading ? "Wait" : "Login" }}</span>
-                    </button>
-                    <p class="small fw-bold mt-2 pt-1 mb-0">
-                        Don't have an account? <a href="#!" class="link-danger">Register</a>
-                    </p>
+                    </button> -->
+
+                    <!-- Sign Up Link -->
+                    <div class="text-center">
+                        <p class="text-muted mb-0">
+                            Don't have an account?
+                            <a href="javascript:void(0)" class="fw-semibold text-decoration-none signup-link">
+                                Create Account
+                            </a>
+                        </p>
+                    </div>
+
+                    <!-- Footer Links -->
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <small class="text-muted">
+                            <a href="#" class="text-decoration-none me-3">Privacy Policy</a>
+                            <span class="me-3">•</span>
+                            <a href="#" class="text-decoration-none me-3">Terms of Service</a>
+                            <span class="me-3">•</span>
+                            <a href="#" class="text-decoration-none">Help</a>
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div
-        class="d-flex flex-column flex-md-row text-center text-md-start justify-content-between py-4 px-4 px-xl-5 bg-primary"
-    >
-        <!-- Copyright -->
-        <div class="text-white mb-3 mb-md-0">Copyright © 2020. All rights reserved.</div>
-        <!-- Copyright -->
-
-        <!-- Right -->
-        <div>
-            <a href="#!" class="text-white me-4">
-                <i class="fab fa-facebook-f"></i>
-            </a>
-            <a href="#!" class="text-white me-4">
-                <i class="fab fa-twitter"></i>
-            </a>
-            <a href="#!" class="text-white me-4">
-                <i class="fab fa-google"></i>
-            </a>
-            <a href="#!" class="text-white">
-                <i class="fab fa-linkedin-in"></i>
-            </a>
-        </div>
-        <!-- Right -->
-    </div>
-</section>
+</div>

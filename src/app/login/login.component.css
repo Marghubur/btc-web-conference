@@ -1,20 +1,322 @@
-/* .view-password {
-    right:5px;
-    top: 0.7rem;
+/* Login Wrapper */
+.login-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* .login-wrapper::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: float 20s linear infinite;
 } */
 
-.divider:after,
-.divider:before {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: #eee;
-}
-.h-custom {
-    height: calc(100% - 73px);
-}
-@media (max-width: 450px) {
-    .h-custom {
-        height: 100%;
+@keyframes float {
+    0% {
+        transform: translate(0, 0);
+    }
+    100% {
+        transform: translate(50px, 50px);
     }
 }
+
+/* Left Panel */
+.left-panel {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+}
+
+.overlay-content {
+    color: white;
+    z-index: 2;
+    max-width: 600px;
+}
+
+.login-icon {
+    font-size: 5rem;
+    color: white;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+.feature-list {
+    margin-top: 2rem;
+    text-align: left;
+}
+
+.feature-item {
+    padding: 0.75rem 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.feature-item i {
+    font-size: 1.3rem;
+    color: #4ade80;
+}
+
+/* Right Panel */
+.right-panel {
+    background: #ffffff;
+    padding: 2rem;
+}
+
+.login-form-container {
+    width: 100%;
+    max-width: 480px;
+    padding: 2rem;
+}
+
+/* Logo Circle */
+.logo-circle {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.logo-circle i {
+    font-size: 2rem;
+    color: white;
+}
+
+/* Social Login Buttons */
+.social-login {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.btn-social {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    border: 2px solid #e5e7eb;
+    background: white;
+    color: #374151;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-social:hover {
+    border-color: #667eea;
+    background: #f9fafb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.btn-google i {
+    color: #ea4335;
+    font-size: 1.2rem;
+}
+
+.btn-microsoft i {
+    color: #00a4ef;
+    font-size: 1.2rem;
+}
+
+/* Divider */
+.divider {
+    position: relative;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.divider span {
+    background: white;
+    padding: 0 1rem;
+    position: relative;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Form Inputs */
+.form-label {
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.input-group-text {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+}
+
+.form-control {
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+.form-control.is-invalid {
+    border-color: #ef4444;
+}
+
+.invalid-feedback {
+    color: #ef4444;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+/* Remember Me Checkbox */
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.form-check-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Forgot Password Link */
+.forgot-link {
+    color: #667eea;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+.forgot-link:hover {
+    color: #764ba2;
+}
+
+/* Login Button */
+.btn-login {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-login:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.btn-login:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Sign Up Link */
+.signup-link {
+    color: #667eea;
+    transition: color 0.3s ease;
+}
+
+.signup-link:hover {
+    color: #764ba2;
+}
+
+/* Footer Links */
+.border-top {
+    border-color: #e5e7eb !important;
+}
+
+.border-top a {
+    color: #6b7280;
+    transition: color 0.3s ease;
+}
+
+.border-top a:hover {
+    color: #667eea;
+}
+
+/* Cursor Pointer */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Responsive Design */
+@media (max-width: 991px) {
+    .left-panel {
+        display: none !important;
+    }
+
+    .login-form-container {
+        padding: 1rem;
+    }
+
+    .right-panel {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-wrapper {
+        background: white;
+    }
+
+    .logo-circle {
+        width: 70px;
+        height: 70px;
+    }
+
+    .logo-circle i {
+        font-size: 1.75rem;
+    }
+
+    .btn-social {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        font-size: 0.9rem;
+    }
+}
+

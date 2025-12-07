@@ -7,6 +7,7 @@ import { LocalService } from '../providers/services/local.service';
 import { environment } from '../../environments/environment';
 import { ConfeetSocketService } from '../providers/socket/confeet-socket.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChatServerService } from '../providers/services/chat.server.service';
 
 @Component({
     selector: 'app-chat',
@@ -40,7 +41,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     ],
 })
 export class ChatComponent implements OnInit {
-    alluser: Array<User> = [];
+    meetingRooms: Array<User> = [];
     isPageReady: boolean = false;
     today: Date = new Date();
     message: any = signal<string | null>('');
@@ -56,16 +57,21 @@ export class ChatComponent implements OnInit {
 
     readonly destroyRef = inject(DestroyRef);
 
-    constructor(private http: AjaxService, private local: LocalService, private ws: ConfeetSocketService) {}
+    constructor(
+        private http: AjaxService, 
+        private local: LocalService, 
+        private ws: ConfeetSocketService,
+        private httpMessage: ChatServerService
+    ) {}
 
     ngOnInit() {
         this.user = this.local.getUser();
         this.currentUserId = `user-${this.user.userId}`;
-        this.alluser.push(this.user);
         this.socketHandShake();
-
+        
         this.recievedEvent();
-
+        
+        this.getConversationNames();
         this.isPageReady = true;
     }
 
@@ -73,6 +79,15 @@ export class ChatComponent implements OnInit {
         var socketEndPoint = `${environment.socketBaseUrl}/${environment.socketHandshakEndpoint}`;
         console.log(socketEndPoint);
         this.ws.connect(socketEndPoint, this.user.userId.toString(), 'ctx-ab0-kujd0');
+    }
+
+    getConversationNames() {
+        this.httpMessage.get(`users/meeting-rooms`).then((res: any) => {
+            if(res.conversations && res.conversations.length > 0) {
+                console.log("meeting rooms loaded");
+                this.meetingRooms = res.conversations;
+            }
+        });
     }
 
     getUserInitiaLetter(fname: string, lname: string): string {
