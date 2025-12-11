@@ -53,6 +53,7 @@ export class ConfeetSocketService {
     }
 
     private initSocket() {
+        console.log("Connecting to: " + this.url);
         this.ws = new WebSocket(`${this.url}?userId=${this.userId}&conversationId=${this.channelId}`);
 
         this.ws.onopen = () => {

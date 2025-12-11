@@ -83,7 +83,6 @@ export class ChatComponent implements OnInit {
 
     socketHandShake() {
         var socketEndPoint = `${environment.socketBaseUrl}/${environment.socketHandshakEndpoint}`;
-        console.log(socketEndPoint);
         this.ws.connect(socketEndPoint, this.user.userId, '675459a1b1c2d3e4f5a6b7c1');
     }
 
