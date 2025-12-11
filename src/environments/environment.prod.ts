@@ -4,6 +4,6 @@ export const environment = {
   appServerBaseUrl: `https://www.confeet.com/api/`,
 
   socketBaseUrl: "wss://www.confeet.com/cf/meet",
-  messageBaseUrl: "https://www.confeet.com/message/",
+  messageBaseUrl: "https://www.confeet.com/cf/meet/message/",
   socketHandshakEndpoint: "ws",
 };
