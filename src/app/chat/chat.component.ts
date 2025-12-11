@@ -87,7 +87,7 @@ export class ChatComponent implements OnInit {
     }
 
     getConversationNames() {
-        this.httpMessage.get(`users/meeting-rooms`).then((res: any) => {
+        this.httpMessage.get(`meeting-rooms`).then((res: any) => {
             if (res.conversations && res.conversations.length > 0) {
                 console.log("meeting rooms loaded");
                 this.meetingRooms = res.conversations;
@@ -158,7 +158,7 @@ export class ChatComponent implements OnInit {
     loadMoreMessages() {
         if (!this.activeConversation) return;
 
-        this.httpMessage.get(`meetings/get-room-messages/${this.activeConversation.id}?page=${this.pageIndex}`).then((res: any) => {
+        this.httpMessage.get(`get-room-messages/${this.activeConversation.id}?page=${this.pageIndex}`).then((res: any) => {
             if (res.messages && res.messages.data && res.messages.data.length > 0) {
                 console.log("messages loaded", res.messages.data.length);
                 const newMessages = res.messages.data;
