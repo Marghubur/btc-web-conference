@@ -3,7 +3,7 @@ export const environment = {
   sfuBaseUrl: "www.confeet.com",
   appServerBaseUrl: `https://www.confeet.com/api/`,
 
-  socketBaseUrl: "wss://www.confeet.com/socket",
+  socketBaseUrl: "wss://www.confeet.com/cf/meet",
   messageBaseUrl: "https://www.confeet.com/message/",
   socketHandshakEndpoint: "ws",
 };
