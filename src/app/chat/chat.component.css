@@ -1,6 +1,6 @@
 .avatar {
-    width: 3rem;
-    height: 3rem;
+    width: 2rem;
+    height: 2rem;
 }
 
 .main-container:hover {
@@ -30,7 +30,7 @@
 
 /* ------- chat bubble --------------*/
 .chat-container {
-  height: 400px;
+  height: 80vh;
   overflow-y: auto;
   border-radius: 8px;
 }
@@ -67,4 +67,9 @@
   font-size: 11px;
   margin-top: 4px;
   text-align: right;
+}
+
+
+.text-slategrey {
+  color: lightslategrey;
 }

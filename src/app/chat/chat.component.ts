@@ -5,9 +5,10 @@ import { CommonModule } from '@angular/common';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { LocalService } from '../providers/services/local.service';
 import { environment } from '../../environments/environment';
-import { ConfeetSocketService } from '../providers/socket/confeet-socket.service';
+import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ChatServerService } from '../providers/services/chat.server.service';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-chat',
@@ -45,6 +46,8 @@ export class ChatComponent implements OnInit {
     isPageReady: boolean = false;
     today: Date = new Date();
     message: any = signal<string | null>('');
+    messages: Message[] = [];
+    pageIndex: number = 1;
     filterModal: FilterModal = { pageIndex: 1, pageSize: 20, searchString: '1=1' };
     conn: any = null;
     user: User = {
@@ -52,25 +55,28 @@ export class ChatComponent implements OnInit {
         isCameraOn: false,
     };
 
-    currentUserId: string = null;
-    chatMessages = signal<MessageEvent[]>([]);
+    typingUsers: Map<string, boolean> = new Map();
+    private subscriptions = new Subscription();
+
+    currentUserId: number = 0;
+    activeConversation: Conversation = null;
 
     readonly destroyRef = inject(DestroyRef);
 
     constructor(
-        private http: AjaxService, 
-        private local: LocalService, 
+        private http: AjaxService,
+        private local: LocalService,
         private ws: ConfeetSocketService,
         private httpMessage: ChatServerService
-    ) {}
+    ) { }
 
     ngOnInit() {
         this.user = this.local.getUser();
-        this.currentUserId = `user-${this.user.userId}`;
+        this.currentUserId = this.user.userId;
         this.socketHandShake();
-        
+
         this.recievedEvent();
-        
+
         this.getConversationNames();
         this.isPageReady = true;
     }
@@ -78,12 +84,12 @@ export class ChatComponent implements OnInit {
     socketHandShake() {
         var socketEndPoint = `${environment.socketBaseUrl}/${environment.socketHandshakEndpoint}`;
         console.log(socketEndPoint);
-        this.ws.connect(socketEndPoint, this.user.userId.toString(), 'ctx-ab0-kujd0');
+        this.ws.connect(socketEndPoint, this.user.userId, '675459a1b1c2d3e4f5a6b7c1');
     }
 
     getConversationNames() {
         this.httpMessage.get(`users/meeting-rooms`).then((res: any) => {
-            if(res.conversations && res.conversations.length > 0) {
+            if (res.conversations && res.conversations.length > 0) {
                 console.log("meeting rooms loaded");
                 this.meetingRooms = res.conversations;
             }
@@ -136,84 +142,58 @@ export class ChatComponent implements OnInit {
         return colors[index];
     }
 
-    selectUser(user: User) {
-        this.user = user;
+    selectUser(conversation: Conversation) {
+        this.activeConversation = conversation;
+        this.pageIndex = 1;
+        this.messages = []; // Clear existing messages
+        this.loadMoreMessages();
+    }
+
+    onScroll(event: any) {
+        const element = event.target;
+        if (element.scrollHeight - element.scrollTop <= element.clientHeight + 10) {
+            this.loadMoreMessages();
+        }
+    }
+
+    loadMoreMessages() {
+        if (!this.activeConversation) return;
+
+        this.httpMessage.get(`meetings/get-room-messages/${this.activeConversation.id}?page=${this.pageIndex}`).then((res: any) => {
+            if (res.messages && res.messages.data && res.messages.data.length > 0) {
+                console.log("messages loaded", res.messages.data.length);
+                const newMessages = res.messages.data;
+                // Append new messages to the list
+                this.messages = [...this.messages, ...newMessages];
+                this.pageIndex++;
+            }
+        });
     }
 
     sendMessage() {
         console.log(this.message());
         if (this.message() != null && this.message() != '') {
-            this.sendEvent(this.message());
-        }
-
-        this.message.set('');
-    }
-
-    recievedEvent() {
-        this.ws.messages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((msg: MessageEvent) => {
-            console.log('Received:', msg);
-
-            switch (msg.event) {
-                // 1️⃣ NEW MESSAGE
-                case 'client_message':
-                    this.chatMessages.update((old) => [...old, msg]);
-                    break;
-
-                // 2️⃣ MESSAGE DELIVERED UPDATE
-                case 'server_message':
-                    this.updateMessageStatus(msg.messageId, 1);
-                    break;
-
-                // 3️⃣ MESSAGE SEEN UPDATE
-                case 'message_seen':
-                    this.updateMessageStatus(msg.messageId, 2);
-                    break;
-
-                default:
-                    console.warn('Unknown event:', msg.event);
-                    break;
-            }
-        });
-    }
-
-    updateMessageStatus(messageId: string, status: 1 | 2) {
-        this.chatMessages.update((current) =>
-            current.map((ev) => {
-                if (ev.messageId === messageId) {
-                    return {
-                        ...ev,
-                        message: { ...ev.message, status },
-                    };
-                }
-                return ev;
-            })
-        );
-    }
-
-    sendEvent(payload: any) {
-        var event: MessageEvent = {
-            event: 'client_message',
-            requestId: crypto.randomUUID(),
-            messageId: crypto.randomUUID(),
-            message: {
-                channelId: 'ch-121',
+            this.messages.push(this.message() as Message);
+            var event: Message = {
+                conversationId: this.activeConversation.id,
+                messageId: crypto.randomUUID(),
                 senderId: this.currentUserId,
-                type: 'text',
-                body: payload,
-                fileLink: null,
-                timestamp: Date.now(),
-                status: 0,
-                metadata: {
-                    replyTo: null,
-                    mentions: [],
-                    clientType: 'web',
-                },
-            },
-        };
+                type: "text",
+                body: this.message(),
+                fileUrl: null,
+                replyTo: null,
+                mentions: [],
+                reactions: [],
+                clientType: "web",
+                createdAt: new Date(),
+                editedAt: null,
+                status: 1
+            }
 
-        this.chatMessages.update((old) => [...old, event]);
-        // const data = JSON.stringify(event);
-        this.ws.send(event);
+            this.messages.push(event);
+            this.ws.sendMessage(event);
+            this.message.set('');
+        }
     }
 
     formatTime(timestamp: number): string {
@@ -221,6 +201,76 @@ export class ChatComponent implements OnInit {
             hour: '2-digit',
             minute: '2-digit',
         });
+    }
+
+    recievedEvent() {
+        // New message received
+        this.subscriptions.add(
+            this.ws.newMessage$.subscribe(message => {
+                this.messages.push(message);
+                // Auto mark as delivered
+                this.ws.markDelivered(message.id!, message.conversationId);
+            })
+        );
+
+        // Message sent confirmation
+        this.subscriptions.add(
+            this.ws.messageSent$.subscribe(message => {
+                // Update local message with server-assigned id and timestamp
+                const index = this.messages.findIndex(m => m.messageId === message.messageId);
+                if (index > -1) {
+                    this.messages[index] = message;
+                }
+            })
+        );
+
+        // Delivery receipt
+        this.subscriptions.add(
+            this.ws.delivered$.subscribe(delivered => {
+                this.updateMessageStatus(delivered.messageId, 'delivered');
+            })
+        );
+
+        // Read receipt
+        this.subscriptions.add(
+            this.ws.seen$.subscribe(seen => {
+                this.updateMessageStatus(seen.messageId, 'seen');
+            })
+        );
+
+        // Typing indicator
+        this.subscriptions.add(
+            this.ws.userTyping$.subscribe(typing => {
+                this.typingUsers.set(typing.userId, typing.isTyping);
+            })
+        );
+
+        // Error handling
+        this.subscriptions.add(
+            this.ws.error$.subscribe(error => {
+                console.error('Server error:', error.message);
+            })
+        );
+    }
+
+    onTyping(isTyping: boolean): void {
+        this.ws.sendTyping('current-conversation-id', isTyping);
+    }
+
+    markAsSeen(messageId: string, conversationId: string): void {
+        this.ws.markSeen(messageId, conversationId);
+    }
+
+    private updateMessageStatus(messageId: string, status: string): void {
+        const message = this.messages.find(m => m.id === messageId);
+        if (message) {
+            // Update UI to show delivered/seen status
+        }
+    }
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe();
+        this.ws.disconnect();
     }
 }
 
@@ -231,26 +281,33 @@ export interface FilterModal {
     pageSize: number;
 }
 
-export interface MessageEvent {
-    event: string; // "client_message"
-    requestId: string; // uuid
-    message: ChatMessage;
-    messageId: string;
+export interface Participant {
+    userId: string;
+    username: string;
+    joinedAt: string;
+    role: 'admin' | 'member';
 }
 
-export interface ChatMessage {
-    channelId: string;
-    senderId: string;
-    type: 'text' | 'audio' | 'video' | 'image' | 'file';
-    body: string | null;
-    fileLink: string | null;
-    metadata: ChatMetadata;
-    status: number; //  <-- ADD THIS
-    timestamp: number;
+export interface LastMessage {
+    content: string;
+    senderUsername: string;
+    timestamp: string;
 }
 
-export interface ChatMetadata {
-    replyTo: string | null;
-    mentions: string[];
-    clientType: 'web' | 'android' | 'ios' | 'desktop';
+export interface ConversationSettings {
+    allowReactions: boolean;
+    allowPinning: boolean;
+    adminOnlyPost: boolean;
+}
+
+export interface Conversation {
+    id: string;
+    conversationType: 'group' | 'direct';
+    participants: Participant[];
+    conversationName: string;
+    createdAt: string;
+    lastMessageAt: string;
+    lastMessage: LastMessage;
+    isActive: boolean;
+    settings: ConversationSettings;
 }
