@@ -2,7 +2,6 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { AjaxService } from '../providers/services/ajax.service';
 import { User } from '../providers/model';
 import { CommonModule } from '@angular/common';
-import { trigger, state, style, transition, animate } from '@angular/animations';
 import { LocalService } from '../providers/services/local.service';
 import { environment } from '../../environments/environment';
 import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
@@ -16,30 +15,6 @@ import { Subscription } from 'rxjs';
     imports: [CommonModule],
     templateUrl: './chat.component.html',
     styleUrl: './chat.component.css',
-    animations: [
-        trigger('highlightAnim', [
-            state(
-                'normal',
-                style({
-                    backgroundColor: 'transparent',
-                    boxShadow: 'none',
-                    fontWeight: 'normal',
-                    transform: 'scale(1)',
-                })
-            ),
-            state(
-                'selected',
-                style({
-                    backgroundColor: 'white',
-                    boxShadow: 'rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px',
-                    fontWeight: '600',
-                    transform: 'scale(1)', // slight zoom
-                })
-            ),
-            transition('normal => selected', [animate('200ms ease-in')]),
-            transition('selected => normal', [animate('200ms ease-out')]),
-        ]),
-    ],
 })
 export class ChatComponent implements OnInit {
     meetingRooms: Array<User> = [];

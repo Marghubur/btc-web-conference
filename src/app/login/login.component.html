@@ -33,24 +33,25 @@
             <!-- Right Side - Login Form -->
             <div class="col-lg-5 d-flex align-items-center justify-content-center right-panel">
                 <div class="login-form-container">
-                    <div class="text-center mb-5">
-                        <div class="logo-circle mb-3">
+                    <div class="text-center mb-3">
+                        <div class="logo-circle mb-2">
                             <i class="fas fa-video-camera"></i>
                         </div>
-                        <h2 class="fw-bold mb-2">Sign In</h2>
-                        <p class="text-muted">Enter your credentials to access your account</p>
+                        <h2 class="fw-bold mb-1" style="font-size: 1.4rem;">Sign In</h2>
+                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Enter your credentials to access your
+                            account</p>
                     </div>
 
                     <!-- Social Login Buttons -->
-                    <div class="social-login mb-4">
+                    <div class="social-login mb-3">
                         <button type="button" class="btn btn-social btn-google">
                             <i class="fab fa-google me-2"></i>
                             <span>Sign in with Google</span>
                         </button>
-                        <button type="button" class="btn btn-social btn-microsoft">
+                        <!-- <button type="button" class="btn btn-social btn-microsoft">
                             <i class="fab fa-microsoft me-2"></i>
                             <span>Sign in with Microsoft</span>
-                        </button>
+                        </button> -->
                     </div>
 
                     <div class="divider">
@@ -58,7 +59,7 @@
                     </div>
 
                     <!-- Email Input -->
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label fw-semibold">
                             <i class="fas fa-envelope me-2 text-primary"></i>Email Address
                             <span class="text-danger">*</span>
@@ -67,14 +68,9 @@
                             <span class="input-group-text bg-light border-end-0">
                                 <i class="fas fa-user text-muted"></i>
                             </span>
-                            <input
-                                type="email"
-                                placeholder="Enter your email"
-                                class="form-control form-control-lg border-start-0 ps-0"
-                                [(ngModel)]="email"
-                                (input)="isValidEmail()"
-                                [ngClass]="{ 'is-invalid': isSubmitted && (email == '' || !isEmailValid) }"
-                            />
+                            <input type="email" placeholder="Enter your email" class="form-control border-start-0 ps-0"
+                                [(ngModel)]="email" (input)="isValidEmail()"
+                                [ngClass]="{ 'is-invalid': isSubmitted && (email == '' || !isEmailValid) }" />
                         </div>
                         <div class="invalid-feedback d-block" *ngIf="isSubmitted && email == ''">Email is required</div>
                         <div class="invalid-feedback d-block" *ngIf="isSubmitted && email != '' && !isEmailValid">
@@ -83,7 +79,7 @@
                     </div>
 
                     <!-- Password Input -->
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label fw-semibold">
                             <i class="fas fa-lock me-2 text-primary"></i>Password
                             <span class="text-danger">*</span>
@@ -92,25 +88,15 @@
                             <span class="input-group-text bg-light border-end-0">
                                 <i class="fas fa-key text-muted"></i>
                             </span>
-                            <input
-                                [type]="passwordType"
-                                placeholder="Enter your password"
-                                class="form-control form-control-lg border-start-0 border-end-0 ps-0"
-                                [(ngModel)]="password"
-                                (keyup.enter)="login()"
-                                [ngClass]="{ 'is-invalid': isSubmitted && password == '' }"
-                            />
-                            <span
-                                class="input-group-text bg-light border-start-0 cursor-pointer"
-                                (click)="viewPassword()"
-                            >
-                                <i
-                                    class="fas text-muted"
-                                    [ngClass]="{
+                            <input [type]="passwordType" placeholder="Enter your password"
+                                class="form-control border-start-0 border-end-0 ps-0" [(ngModel)]="password"
+                                (keyup.enter)="login()" [ngClass]="{ 'is-invalid': isSubmitted && password == '' }" />
+                            <span class="input-group-text bg-light border-start-0 cursor-pointer"
+                                (click)="viewPassword()">
+                                <i class="fas text-muted" [ngClass]="{
                                         'fa-eye-slash': passwordType == 'password',
                                         'fa-eye': passwordType == 'text'
-                                    }"
-                                ></i>
+                                    }"></i>
                             </span>
                         </div>
                         <div class="invalid-feedback d-block" *ngIf="isSubmitted && password == ''">
@@ -119,7 +105,7 @@
                     </div>
 
                     <!-- Remember Me & Forgot Password -->
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" value="" id="rememberMe" />
                             <label class="form-check-label text-muted" for="rememberMe"> Remember me </label>
@@ -130,7 +116,7 @@
                     </div>
 
                     <!-- Login Button -->
-                    <button class="btn btn-login w-100 mb-4" [disabled]="isLoading" (click)="login()">
+                    <button class="btn btn-login w-100 mb-3" [disabled]="isLoading" (click)="login()">
                         <span *ngIf="!isLoading"> <i class="fas fa-sign-in-alt me-2"></i>Sign In </span>
                         <span *ngIf="isLoading"> <i class="fas fa-spinner fa-spin me-2"></i>Signing In... </span>
                     </button>
@@ -154,12 +140,12 @@
                     </div>
 
                     <!-- Footer Links -->
-                    <div class="text-center mt-4 pt-3 border-top">
+                    <div class="text-center mt-3 pt-2 border-top">
                         <small class="text-muted">
-                            <a href="#" class="text-decoration-none me-3">Privacy Policy</a>
-                            <span class="me-3">•</span>
-                            <a href="#" class="text-decoration-none me-3">Terms of Service</a>
-                            <span class="me-3">•</span>
+                            <a href="#" class="text-decoration-none me-2">Privacy</a>
+                            <span class="me-2">•</span>
+                            <a href="#" class="text-decoration-none me-2">Terms</a>
+                            <span class="me-2">•</span>
                             <a href="#" class="text-decoration-none">Help</a>
                         </small>
                     </div>
