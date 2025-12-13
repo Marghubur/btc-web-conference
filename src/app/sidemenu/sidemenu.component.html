@@ -1,43 +1,93 @@
-<div class="d-flex align-items-center flex-column justify-content-between py-3 vh-100 px-2 shadow">
-    <div class="col-md-12">
-        @for (item of sideMenu; track $index) {
-            <div class="col-md-12">
-                <a href="javascript:void(0)"
-                    class="text-decoration-none text-dark py-2 d-flex flex-column align-items-center mt-3" (click)="navigatePage(item.Link)" [ngClass]="{'active': item.IsActive}">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
-                        fill="#000000">
-                        <path
-                            [attr.d]="item.Icon" />
-                    </svg>
-                    <p class="mb-0">
-                        {{item.Title}}
-                    </p>
-                </a>
-            </div>
-        }
+<div class="sidebar-container">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+        <div class="logo-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                    d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" />
+            </svg>
+        </div>
     </div>
-    <div class="col-auto" ngbDropdown>
-        <a href="javascript:void(0)" class="text-decoration-none" id="dropdownConfig" ngbDropdownToggle>
-            <div class="rounded-circle bg-success d-flex align-items-center justify-content-center user-container bg-primary-subtle fw-semibold text-dark">
-                {{getUserInitiaLetter()}}
+
+    <!-- Navigation Items -->
+    <nav class="nav-section">
+        @for (item of sideMenu; track $index) {
+        <a href="javascript:void(0)" class="nav-item" [class.active]="item.IsActive" (click)="navigatePage(item.Link)">
+
+            <div class="nav-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                    <path [attr.d]="item.Icon" />
+                </svg>
+            </div>
+            <p class="nav-label">{{ item.Title }}</p>
+
+            <!-- Tooltip (shown on hover) -->
+            <span class="nav-tooltip">{{ item.Title }}</span>
+
+            <!-- Optional: Badge for notifications -->
+            @if (item.Id === 1 && unreadCount > 0) {
+            <span class="nav-badge">{{ unreadCount }}</span>
+            }
+        </a>
+        }
+    </nav>
+
+    <!-- Divider -->
+    <div class="sidebar-divider"></div>
+
+    <!-- User Section -->
+    <div class="user-section" ngbDropdown placement="top-start">
+        <a href="javascript:void(0)" class="user-trigger" ngbDropdownToggle>
+            <div class="user-avatar">
+                {{ getUserInitiaLetter() }}
+                <span class="status-indicator"></span>
             </div>
         </a>
-        <div ngbDropdownMenu aria-labelledby="dropdownConfig" class="px-2 c-width">
-            <div class="text-end">
-                <a href="javascript:void(0)" class="text-decoration-none text-dark" (click)="logout()">
-                    <small>Sign out</small>
-                </a>
-            </div>
-            <div class="row">
-                <div class="col-md-2">
-                    <div class="rounded-circle bg-success d-flex align-items-center justify-content-center user-container bg-primary-subtle fw-semibold text-dark">
-                        {{getUserInitiaLetter()}}
+
+        <!-- Dropdown Menu -->
+        <div class="user-dropdown" ngbDropdownMenu>
+            <!-- Header with user info -->
+            <div class="dropdown-header">
+                <div class="dropdown-user-info">
+                    <div class="dropdown-avatar">
+                        {{ getUserInitiaLetter() }}
+                    </div>
+                    <div class="dropdown-user-details">
+                        <p class="dropdown-user-name">{{ getFullName() }}</p>
+                        <p class="dropdown-user-email">{{ currentUser?.email }}</p>
                     </div>
                 </div>
-                <div class="col-md-10 ps-2">
-                    <p class="mb-0 fw-bold text-truncate col-md-12">{{getFullName()}}</p>
-                    <small>{{currentUser.email}}</small>
-                </div>
+            </div>
+
+            <!-- Menu Items -->
+            <div class="dropdown-body">
+                <a href="javascript:void(0)" class="dropdown-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+
+                <a href="javascript:void(0)" class="dropdown-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    <span>Settings</span>
+                </a>
+
+                <div class="dropdown-divider"></div>
+
+                <a href="javascript:void(0)" class="dropdown-item danger" (click)="logout()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    <span>Sign Out</span>
+                </a>
             </div>
         </div>
     </div>

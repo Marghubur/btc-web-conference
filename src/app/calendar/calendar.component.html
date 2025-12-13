@@ -1,0 +1,329 @@
+@if (isPageReady) {
+<div class="calendar-container">
+    <!-- Header -->
+    <div class="calendar-header">
+        <div class="header-left">
+            <h1 class="calendar-title">
+                <i class="fa-regular fa-calendar-days"></i>
+                Calendar
+            </h1>
+            <span class="period-title">{{ getPeriodTitle() }}</span>
+        </div>
+
+        <div class="header-actions">
+            <!-- New Meeting Button -->
+            <button class="btn-new-meeting" (click)="openScheduleModal()">
+                <i class="fa-solid fa-plus"></i>
+                New Meeting
+            </button>
+
+            <!-- Navigation -->
+            <div class="nav-controls">
+                <button class="btn-nav" (click)="previousPeriod()">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button class="btn-today" (click)="goToToday()">Today</button>
+                <button class="btn-nav" (click)="nextPeriod()">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- View Switcher -->
+            <div class="view-switcher">
+                <button class="btn-view" [class.active]="viewMode === 'day'" (click)="setViewMode('day')">Day</button>
+                <button class="btn-view" [class.active]="viewMode === 'week'"
+                    (click)="setViewMode('week')">Week</button>
+                <button class="btn-view" [class.active]="viewMode === 'month'"
+                    (click)="setViewMode('month')">Month</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Content -->
+    <div class="calendar-content">
+        <!-- Month View -->
+        @if (viewMode === 'month') {
+        <div class="month-view">
+            <div class="month-header">
+                @for (day of weekDays; track $index) {
+                <div class="month-header-cell">{{ day }}</div>
+                }
+            </div>
+            <div class="month-grid">
+                @for (day of calendarDays; track $index) {
+                <div class="month-day" [class.other-month]="!day.isCurrentMonth" [class.today]="day.isToday"
+                    [class.selected]="day.isSelected" (click)="selectDate(day)">
+                    <span class="day-number">{{ day.dayOfMonth }}</span>
+                    <div class="day-meetings">
+                        @for (meeting of day.meetings.slice(0, 3); track $index) {
+                        <div class="meeting-pill" [class]="getMeetingColor($index)"
+                            (click)="showMeetingDetails(meeting); $event.stopPropagation()">
+                            {{ meeting.title }}
+                        </div>
+                        }
+                        @if (day.meetings.length > 3) {
+                        <span class="more-meetings">+{{ day.meetings.length - 3 }} more</span>
+                        }
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+        }
+
+        <!-- Week View -->
+        @if (viewMode === 'week') {
+        <div class="week-view">
+            <div class="week-header">
+                <div class="time-column-header"></div>
+                @for (date of weekDates; track $index) {
+                <div class="week-day-header" [class.today]="isDateToday(date)">
+                    <span class="week-day-name">{{ date | date: 'EEE' }}</span>
+                    <span class="week-day-number" [class.today-number]="isDateToday(date)">{{ date | date: 'd' }}</span>
+                </div>
+                }
+            </div>
+            <div class="week-body" #weekBody>
+                <!-- Current time indicator -->
+                @if (isCurrentTimeVisible()) {
+                <div class="current-time-line" [style.top.px]="getCurrentTimePosition()">
+                    <div class="time-dot"></div>
+                </div>
+                }
+
+                @for (slot of timeSlots; track $index) {
+                <div class="time-row">
+                    <div class="time-label">{{ slot.display }}</div>
+                    @for (date of weekDates; track $index; let dayIndex = $index) {
+                    <div class="time-cell" (click)="openScheduleModal(date, slot)">
+                        @for (meeting of getMeetingsForTimeSlot(date, slot); track $index) {
+                        <div class="meeting-block" [class]="getMeetingColor($index)"
+                            (click)="showMeetingDetails(meeting); $event.stopPropagation()">
+                            <div class="meeting-time">{{ meeting.startTime }}</div>
+                            <div class="meeting-title-block">{{ meeting.title }}</div>
+                        </div>
+                        }
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+        }
+
+        <!-- Day View -->
+        @if (viewMode === 'day') {
+        <div class="day-view">
+            <div class="day-header">
+                <div class="time-column-header"></div>
+                <div class="day-header-cell" [class.today]="isDateToday(currentDate)">
+                    <span class="day-name-full">{{ currentDate | date: 'EEEE' }}</span>
+                    <span class="day-date-full">{{ currentDate | date: 'MMMM d, y' }}</span>
+                </div>
+            </div>
+            <div class="day-body" #dayBody>
+                <!-- Current time indicator -->
+                @if (isCurrentTimeVisible() && isDateToday(currentDate)) {
+                <div class="current-time-line" [style.top.px]="getCurrentTimePosition()">
+                    <div class="time-dot"></div>
+                </div>
+                }
+
+                @for (slot of timeSlots; track $index) {
+                <div class="time-row day-time-row">
+                    <div class="time-label">{{ slot.display }}</div>
+                    <div class="time-cell day-time-cell" (click)="openScheduleModal(currentDate, slot)">
+                        @for (meeting of getMeetingsForTimeSlot(currentDate, slot); track $index) {
+                        <div class="meeting-block day-meeting-block" [class]="getMeetingColor($index)"
+                            (click)="showMeetingDetails(meeting); $event.stopPropagation()">
+                            <div class="meeting-info">
+                                <div class="meeting-time-full">{{ meeting.startTime }} - {{ meeting.endTime }}</div>
+                                <div class="meeting-title-full">{{ meeting.title }}</div>
+                                @if (meeting.organizerName) {
+                                <div class="meeting-organizer">
+                                    <i class="fa-regular fa-user"></i> {{ meeting.organizerName }}
+                                </div>
+                                }
+                            </div>
+                            <div class="meeting-actions-inline">
+                                <button class="btn-join-inline"
+                                    (click)="joinMeeting(meeting); $event.stopPropagation()">
+                                    <i class="fa-solid fa-video"></i> Join
+                                </button>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+        }
+    </div>
+</div>
+} @else {
+<div class="loading-container">
+    <div class="loading-spinner"></div>
+</div>
+}
+
+<!-- Schedule Meeting Modal -->
+<div class="modal fade" id="scheduleMeetingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+    data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fa-regular fa-calendar-plus me-2 text-primary"></i>
+                    Schedule Meeting
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="meetingForm">
+                    <div class="mb-4">
+                        <label class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" placeholder="Enter meeting title" class="form-control"
+                            formControlName="title"
+                            [ngClass]="{'is-invalid': isSubmitted && meetingForm.controls['title'].errors}">
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-5">
+                            <label class="form-label">Start <span class="text-danger">*</span></label>
+                            <div class="row g-2">
+                                <div class="col-7">
+                                    <div class="input-group">
+                                        <input class="form-control" placeholder="Date" name="dp"
+                                            [minDate]="minPickerDate" [(ngModel)]="meetingDate"
+                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #md="ngbDatepicker"
+                                            (dateSelect)="onMeetingDateSelect($event)" />
+                                        <button class="btn btn-outline-secondary" (click)="md.toggle()" type="button">
+                                            <i class="fa-solid fa-calendar-days"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-5">
+                                    <select class="form-select" formControlName="startTime"
+                                        (change)="onStartTimeSelect()">
+                                        <option [value]="null">Time</option>
+                                        @for (time of meetingTimes; track $index) {
+                                        <option [value]="time">{{ time }}</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-2 d-flex align-items-end justify-content-center pb-2">
+                            <span class="badge bg-light text-dark px-3 py-2">{{ duration }}</span>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label">End <span class="text-danger">*</span></label>
+                            <div class="row g-2">
+                                <div class="col-7">
+                                    <div class="input-group">
+                                        <input class="form-control" placeholder="Date" name="dp"
+                                            [minDate]="minEndPickerDate" [(ngModel)]="meetingEndDate"
+                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #med="ngbDatepicker"
+                                            (dateSelect)="onMeetingEndDateSelect($event)" />
+                                        <button class="btn btn-outline-secondary" (click)="med.toggle()" type="button">
+                                            <i class="fa-solid fa-calendar-days"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-5">
+                                    <select class="form-select" formControlName="endTime" (change)="onEndTimeSelect()">
+                                        <option [value]="null">Time</option>
+                                        @for (time of meetingTimes; track $index) {
+                                        <option [value]="time">{{ time }}</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Description</label>
+                        <textarea rows="3" placeholder="Add meeting notes..." formControlName="agenda"
+                            class="form-control"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" [disabled]="isLoading" (click)="saveMeeting()">
+                    @if (isLoading) {
+                    <i class="fa-solid fa-spinner fa-spin me-1"></i>
+                    }
+                    {{ isLoading ? 'Saving...' : 'Schedule' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Meeting Details Modal -->
+<div class="modal fade" id="meetingDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            @if (selectedMeeting) {
+            <div class="modal-header meeting-details-header">
+                <div>
+                    <h5 class="modal-title mb-1">{{ selectedMeeting.title }}</h5>
+                    <p class="text-white-50 mb-0 small">
+                        <i class="fa-regular fa-clock me-1"></i>
+                        {{ selectedMeeting.startDate | date: 'EEEE, MMMM d, y' }}
+                    </p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="meeting-detail-row">
+                    <i class="fa-regular fa-clock"></i>
+                    <div>
+                        <strong>Time</strong>
+                        <p class="mb-0">{{ selectedMeeting.startTime }} - {{ selectedMeeting.endTime }}</p>
+                    </div>
+                </div>
+                @if (selectedMeeting.organizerName) {
+                <div class="meeting-detail-row">
+                    <i class="fa-regular fa-user"></i>
+                    <div>
+                        <strong>Organizer</strong>
+                        <p class="mb-0">{{ selectedMeeting.organizerName }}</p>
+                    </div>
+                </div>
+                }
+                @if (selectedMeeting.agenda) {
+                <div class="meeting-detail-row">
+                    <i class="fa-regular fa-file-lines"></i>
+                    <div>
+                        <strong>Description</strong>
+                        <p class="mb-0">{{ selectedMeeting.agenda }}</p>
+                    </div>
+                </div>
+                }
+                <div class="meeting-detail-row">
+                    <i class="fa-solid fa-key"></i>
+                    <div>
+                        <strong>Meeting ID</strong>
+                        <p class="mb-0">{{ selectedMeeting.meetingId }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" (click)="copyMeetingLink(selectedMeeting, t)"
+                    [ngbTooltip]="'Copied!'" triggers="manual" #t="ngbTooltip">
+                    <i class="fa-solid fa-share-nodes me-1"></i> Share
+                </button>
+                <button class="btn btn-primary" (click)="joinMeeting(selectedMeeting)" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-video me-1"></i> Join Meeting
+                </button>
+            </div>
+            }
+        </div>
+    </div>
+</div>

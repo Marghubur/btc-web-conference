@@ -33,3 +33,4 @@ export const Preview = "btc/preview";
 export const Meeting = "btc/meeting";
 export const Login = "login";
 export const ChatPage = "btc/chat";
+export const CalendarPage = "btc/calendar";

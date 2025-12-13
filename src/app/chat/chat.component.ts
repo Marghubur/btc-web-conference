@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild, AfterViewChecked } from '@angular/core';
 import { AjaxService } from '../providers/services/ajax.service';
 import { User } from '../providers/model';
 import { CommonModule } from '@angular/common';
@@ -16,7 +16,9 @@ import { Subscription } from 'rxjs';
     templateUrl: './chat.component.html',
     styleUrl: './chat.component.css',
 })
-export class ChatComponent implements OnInit {
+export class ChatComponent implements OnInit, AfterViewChecked {
+    @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+
     meetingRooms: Array<User> = [];
     isPageReady: boolean = false;
     today: Date = new Date();
@@ -32,6 +34,7 @@ export class ChatComponent implements OnInit {
 
     typingUsers: Map<string, boolean> = new Map();
     private subscriptions = new Subscription();
+    private shouldScrollToBottom = false;
 
     currentUserId: number = 0;
     activeConversation: Conversation = null;
@@ -44,6 +47,13 @@ export class ChatComponent implements OnInit {
         private ws: ConfeetSocketService,
         private httpMessage: ChatServerService
     ) { }
+
+    ngAfterViewChecked() {
+        if (this.shouldScrollToBottom) {
+            this.scrollToBottom();
+            this.shouldScrollToBottom = false;
+        }
+    }
 
     ngOnInit() {
         this.user = this.local.getUser();
@@ -120,17 +130,18 @@ export class ChatComponent implements OnInit {
         this.activeConversation = conversation;
         this.pageIndex = 1;
         this.messages = []; // Clear existing messages
-        this.loadMoreMessages();
+        this.loadMoreMessages(true); // Pass true to scroll to bottom on first load
     }
 
     onScroll(event: any) {
         const element = event.target;
-        if (element.scrollHeight - element.scrollTop <= element.clientHeight + 10) {
-            this.loadMoreMessages();
+        // Load more when scrolled to top (for loading older messages)
+        if (element.scrollTop === 0) {
+            this.loadMoreMessages(false);
         }
     }
 
-    loadMoreMessages() {
+    loadMoreMessages(scrollToBottom: boolean = false) {
         if (!this.activeConversation) return;
 
         this.httpMessage.get(`meetings/get-room-messages/${this.activeConversation.id}?page=${this.pageIndex}`).then((res: any) => {
@@ -140,6 +151,11 @@ export class ChatComponent implements OnInit {
                 // Append new messages to the list
                 this.messages = [...this.messages, ...newMessages];
                 this.pageIndex++;
+
+                // Scroll to bottom only on initial load
+                if (scrollToBottom) {
+                    this.shouldScrollToBottom = true;
+                }
             }
         });
     }
@@ -147,7 +163,6 @@ export class ChatComponent implements OnInit {
     sendMessage() {
         console.log(this.message());
         if (this.message() != null && this.message() != '') {
-            this.messages.push(this.message() as Message);
             var event: Message = {
                 conversationId: this.activeConversation.id,
                 messageId: crypto.randomUUID(),
@@ -167,6 +182,17 @@ export class ChatComponent implements OnInit {
             this.messages.push(event);
             this.ws.sendMessage(event);
             this.message.set('');
+            this.shouldScrollToBottom = true; // Scroll to bottom after sending
+        }
+    }
+
+    scrollToBottom(): void {
+        try {
+            if (this.messagesContainer) {
+                this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
+            }
+        } catch (err) {
+            console.error('Error scrolling to bottom:', err);
         }
     }
 
@@ -184,6 +210,7 @@ export class ChatComponent implements OnInit {
                 this.messages.push(message);
                 // Auto mark as delivered
                 this.ws.markDelivered(message.id!, message.conversationId);
+                this.shouldScrollToBottom = true; // Scroll to bottom on new message
             })
         );
 
