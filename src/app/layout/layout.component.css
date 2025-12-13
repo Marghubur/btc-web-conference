@@ -23,6 +23,7 @@
     margin-left: 7rem;
     width: calc(100% - 7rem);
     max-width: calc(100vw - 7rem);
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
 }

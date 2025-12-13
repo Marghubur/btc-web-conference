@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { NgbDatepickerModule, NgbDateStruct, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { MeetingDetail, ResponseModel } from '../providers/model';
@@ -17,7 +17,7 @@ import { environment } from '../../environments/environment';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   meetingDate!: NgbDateStruct;
   meetingTimes: Array<string> = [];
   minPickerDate!: NgbDateStruct;
@@ -34,6 +34,7 @@ export class DashboardComponent implements OnInit {
   today: Date = new Date();
   allQuickMeeting: Array<MeetingDetail> = [];
   allSchedularMeeting: Array<MeetingDetail> = [];
+  private timer!: any;
   constructor(private nav: iNavigation,
     private local: LocalService,
     private fb: FormBuilder,
@@ -47,10 +48,13 @@ export class DashboardComponent implements OnInit {
     };
   }
 
-
   async ngOnInit() {
     history.pushState(null, '', window.location.href);
     window.addEventListener('popstate', this.popStateListener);
+    this.timer = setInterval(() => {
+      this.today = new Date();
+    }, 1000); // update every second
+
     this.generateTimeSlots();
     this.initForm();
     this.loadData();
@@ -174,8 +178,8 @@ export class DashboardComponent implements OnInit {
   }
 
   private bindMeetings(res: any) {
-    this.allQuickMeeting = (res != null && res.length > 0) ?  res.filter(x => x.hasQuickMeeting) : [];
-    this.allSchedularMeeting = (res != null && res.length > 0) ?  res.filter(x => !x.hasQuickMeeting) : [];
+    this.allQuickMeeting = (res != null && res.length > 0) ? res.filter(x => x.hasQuickMeeting) : [];
+    this.allSchedularMeeting = (res != null && res.length > 0) ? res.filter(x => !x.hasQuickMeeting) : [];
     if (this.allSchedularMeeting.length > 0) {
       this.allSchedularMeeting.forEach(x => {
         let startDate = new Date(x.startDate);
@@ -292,10 +296,10 @@ export class DashboardComponent implements OnInit {
   }
 
   getDuration(duration: number) {
-    var totalMinutes = Math.floor(duration /  60);
+    var totalMinutes = Math.floor(duration / 60);
     var hours = Math.floor(totalMinutes / 60);
 
-    this.duration =  `${hours}:${totalMinutes%60}`;
+    this.duration = `${hours}:${totalMinutes % 60}`;
   }
 
   joinMeetingPopup() {
@@ -369,7 +373,7 @@ Passcode: ${item.meetingPassword}
     let hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'P.M' : 'A.M';
-    
+
     hours = hours % 12;
     hours = hours ? hours : 12; // convert 0 to 12 for midnight/noon
 
@@ -387,5 +391,9 @@ Passcode: ${item.meetingPassword}
       day: 'numeric'
     };
     return date.toLocaleDateString('en-US', options);
+  }
+
+  ngOnDestroy() {
+    clearInterval(this.timer);
   }
 }

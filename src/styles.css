@@ -1,5 +1,6 @@
 html {
     height: 100%;
+    overflow: hidden;
 }
 
 body {
@@ -8,6 +9,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
 }
 
 header {
@@ -111,10 +113,10 @@ footer .text span {
 select:focus,
 a:focus,
 input:focus {
-  outline: none !important;
-  border-color: 1px solid #d9d9d9 !important;
-  -webkit-box-shadow: none !important;
-  box-shadow: none !important;
+    outline: none !important;
+    border-color: 1px solid #d9d9d9 !important;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
 }
 
 select,
@@ -123,14 +125,14 @@ label,
 input,
 button,
 textarea {
-  outline: none !important;
-  -webkit-box-shadow: none !important;
-  box-shadow: none !important;
+    outline: none !important;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
 }
 
 .error-field {
-  border: 1px solid red !important;
-  border-right: 4px solid red !important;
+    border: 1px solid red !important;
+    border-right: 4px solid red !important;
 }
 
 .vh-25 {
@@ -139,10 +141,10 @@ textarea {
 
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  margin: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin: 0;
 }
 
 .main-container {

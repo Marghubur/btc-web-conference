@@ -1,3 +1,630 @@
+/* ===== Advanced Dashboard Styles ===== */
+
+/* Main Container */
+.main-container {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: 100vh;
+}
+
+/* ===== HERO BANNER (Option 4 Style) ===== */
+.hero-banner {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    border-radius: 24px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(99, 102, 241, 0.3);
+}
+
+.hero-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.hero-banner::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 40%;
+    height: 150%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hero-left {
+    flex: 1;
+}
+
+.hero-greeting {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hero-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 0.5rem 0;
+}
+
+.hero-subtitle {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.hero-right {
+    text-align: right;
+}
+
+.hero-time {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1;
+}
+
+.hero-date {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0.5rem 0 0 0;
+}
+
+.hero-stats {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.stat-icon i {
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.stat-info h4 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.stat-info p {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+/* Page Header */
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-title i {
+    color: #6366f1;
+}
+
+/* Action Cards */
+.action-card {
+    background: #ffffff;
+    border: none;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.action-card .icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.action-card:hover .icon-wrapper {
+    transform: scale(1.1);
+}
+
+.action-card.create .icon-wrapper {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.action-card.join .icon-wrapper {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.action-card.schedule .icon-wrapper {
+    background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+}
+
+.action-card .icon-wrapper i {
+    font-size: 1.5rem;
+    color: #ffffff;
+}
+
+.action-card h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 0.25rem 0;
+}
+
+.action-card p {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Section Header */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: #6366f1;
+}
+
+.section-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6366f1;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.section-link:hover {
+    color: #4f46e5;
+}
+
+/* ===== ENHANCED MEETING CARD (Option 2 Style - Floating/Glassmorphism) ===== */
+.meeting-card {
+    background: #ffffff;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    border-radius: 20px;
+    padding: 1.5rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.meeting-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.meeting-card:hover {
+    transform: translateY(-10px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow:
+        0 20px 40px rgba(99, 102, 241, 0.15),
+        0 0 0 1px rgba(99, 102, 241, 0.1);
+}
+
+.meeting-card:hover::before {
+    opacity: 1;
+}
+
+.meeting-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    transition: all 0.3s ease;
+}
+
+.meeting-card:hover .meeting-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 12px 25px rgba(99, 102, 241, 0.4);
+}
+
+.meeting-icon i {
+    font-size: 1.25rem;
+    color: #ffffff;
+}
+
+.meeting-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.meeting-meta {
+    font-size: 0.85rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+.meeting-meta i {
+    font-size: 0.8rem;
+    color: #6366f1;
+}
+
+/* Buttons */
+.btn-action-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    color: #ffffff;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.btn-action-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    color: #ffffff;
+}
+
+.btn-action-secondary {
+    background: #f1f5f9;
+    border: none;
+    color: #475569;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.btn-action-secondary:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.menu-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f8fafc;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    transition: all 0.2s ease;
+}
+
+.menu-btn:hover {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* Schedule Card */
+.schedule-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+    display: flex;
+    gap: 1rem;
+}
+
+.schedule-card:hover {
+    border-color: #8b5cf6;
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.15);
+}
+
+.date-badge {
+    width: 60px;
+    min-width: 60px;
+    height: 68px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+}
+
+.date-badge .month {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+.date-badge .day {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.schedule-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.schedule-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 0.75rem 0;
+}
+
+.time-box {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #475569;
+}
+
+.time-row:not(:last-child) {
+    margin-bottom: 0.5rem;
+}
+
+.time-row i {
+    color: #6366f1;
+    width: 16px;
+}
+
+.organizer {
+    font-size: 0.85rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0.75rem;
+}
+
+.organizer i {
+    color: #94a3b8;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem auto;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-icon i {
+    font-size: 2rem;
+    color: #6366f1;
+}
+
+.empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+}
+
+.empty-desc {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    padding: 1.5rem 1.5rem 0 1.5rem;
+    border: none;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    border: none;
+    gap: 0.75rem;
+}
+
+/* Form Styles */
+.form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.btn-modal-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #ffffff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-modal-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    color: #ffffff;
+}
+
+.btn-modal-primary:disabled {
+    opacity: 0.6;
+    transform: none;
+}
+
+.btn-modal-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-modal-secondary:hover {
+    background: #e2e8f0;
+}
+
+/* Error Field */
+.error-field {
+    border-color: #ef4444 !important;
+}
+
+/* Loading */
+.loading-wrapper {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.spinner-custom {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Legacy support */
 .rounded-icon {
     width: 2.5rem;
     height: 2.5rem;
@@ -11,4 +638,22 @@
     color: #222 !important;
     width: 3rem;
     height: 3.3rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .action-card {
+        padding: 1.25rem;
+    }
+
+    .schedule-card {
+        flex-direction: column;
+    }
+
+    .date-badge {
+        width: 100%;
+        height: 50px;
+        flex-direction: row;
+        gap: 10px;
+    }
 }
