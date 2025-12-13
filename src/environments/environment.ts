@@ -1,9 +1,8 @@
 export const environment = {
   production: false,
   sfuBaseUrl: "www.confeet.com",
-  appServerBaseUrl: `https://www.confeet.com/api/`,
-
-  socketBaseUrl: "wss://www.confeet.com/cf/meet",
-  messageBaseUrl: "https://www.confeet.com/cf/api/",
+  appServerBaseUrl: "http://localhost:7801/api/",
+  socketBaseUrl: "ws://localhost:8402/cf/meet",
+  messageBaseUrl: "http://localhost:8080/cf/meetings/api/",
   socketHandshakEndpoint: "ws",
 };
