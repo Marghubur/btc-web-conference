@@ -1,11 +1,18 @@
 @if (isLoggedIn) {
 <div class="layout-container">
-    <aside class="sidemenu-panel">
-        <app-sidemenu></app-sidemenu>
-    </aside>
-    <main class="content-panel">
-        <router-outlet></router-outlet>
-    </main>
+    <div class="header-panel">
+        <app-header></app-header>
+    </div>
+    <div class="body-content">
+        <aside class="sidemenu-panel">
+            <app-sidemenu></app-sidemenu>
+        </aside>
+        <main class="content-panel">
+            <div class="page-content">
+                <router-outlet></router-outlet>
+            </div>
+        </main>
+    </div>
 </div>
 } @else {
 <router-outlet></router-outlet>

@@ -1,30 +1,32 @@
 import { Component, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild, AfterViewChecked } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { AjaxService } from '../providers/services/ajax.service';
 import { User } from '../providers/model';
 import { CommonModule } from '@angular/common';
 import { LocalService } from '../providers/services/local.service';
 import { environment } from '../../environments/environment';
 import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ChatServerService } from '../providers/services/chat.server.service';
 import { Subscription } from 'rxjs';
+import { Participant } from 'livekit-client';
 
 @Component({
     selector: 'app-chat',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
     templateUrl: './chat.component.html',
     styleUrl: './chat.component.css',
 })
 export class ChatComponent implements OnInit, AfterViewChecked {
     @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
-    meetingRooms: Array<User> = [];
+    meetingRooms: Array<Conversation> = [];
     isPageReady: boolean = false;
     today: Date = new Date();
     message: any = signal<string | null>('');
     messages: Message[] = [];
     pageIndex: number = 1;
+    recieverId?: string = null;
     filterModal: FilterModal = { pageIndex: 1, pageSize: 20, searchString: '1=1' };
     conn: any = null;
     user: User = {
@@ -32,11 +34,15 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         isCameraOn: false,
     };
 
+    searchQuery: string = '';
+    searchResults: any[] = [];
+    isSearching: boolean = false;
+
     typingUsers: Map<string, boolean> = new Map();
     private subscriptions = new Subscription();
     private shouldScrollToBottom = false;
 
-    currentUserId: number = 0;
+    currentUserId: string = "";
     activeConversation: Conversation = null;
 
     readonly destroyRef = inject(DestroyRef);
@@ -61,6 +67,13 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         this.socketHandShake();
 
         this.recievedEvent();
+
+        // Listen for global search selections
+        this.subscriptions.add(
+            this.httpMessage.openChat$.subscribe((user: any) => {
+                this.startChatWithUser(user);
+            })
+        );
 
         this.getConversationNames();
         this.isPageReady = true;
@@ -126,7 +139,66 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         return colors[index];
     }
 
-    selectUser(conversation: Conversation) {
+    onSearch() {
+        if (!this.searchQuery || this.searchQuery.length < 2) {
+            this.searchResults = [];
+            return;
+        }
+
+        this.isSearching = true;
+        this.httpMessage.get(`users/search?term=${this.searchQuery}`).then((res: any) => {
+            this.isSearching = false;
+            // Assuming res is the array of users or res.users
+            this.searchResults = Array.isArray(res) ? res : (res.users || []);
+        }).catch(e => {
+            this.isSearching = false;
+            console.error("Search failed", e);
+        });
+    }
+
+    startChatWithUser(selectedUser: any) {
+        // Check if conversation exists
+        const existing = this.meetingRooms.findIndex(x =>
+            x.participantIds.findIndex(y => y === selectedUser.userId) > -1);
+        if (existing > -1) {
+            this.selectUser(this.meetingRooms[existing]); // Type assertion if needed, or better type matching
+        } else {
+            // Logic to create new conversation if not exists
+            // For now, let's treat it as transient user add to list for UI
+            // Or verify with backend to create room
+            console.log("Starting new chat with", selectedUser);
+            let newConversation: Conversation = {
+                id: null,
+                conversationName: selectedUser.firstName + ' ' + selectedUser.lastName,
+                createdBy: `${this.currentUserId}`,
+                conversationType: 'direct',
+                participantIds: [selectedUser.userId, this.currentUserId],
+                conversationAvatar: selectedUser.avatar,
+                participants: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: null,
+                lastMessageAt: null,
+                lastMessage: null,
+                settings: null,
+                isActive: true
+            }
+
+            this.meetingRooms.unshift(newConversation);
+            this.selectUser(newConversation, selectedUser.userId);
+
+            // this.http.post("user/create-conversation", newConversation).then((res: any) => {
+            //     this.meetingRooms.push(res);
+            //     this.selectUser(res);
+            // });
+            // Verify if we need to call API to create room
+            // For this task, assuming we might just display
+        }
+        this.searchQuery = '';
+        this.searchResults = [];
+    }
+
+    selectUser(conversation: Conversation, recieverId: string = null) {
+        this.recieverId = recieverId;
         this.activeConversation = conversation;
         this.pageIndex = 1;
         this.messages = []; // Clear existing messages
@@ -161,12 +233,21 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     sendMessage() {
-        console.log(this.message());
+        if (this.recieverId != null) {
+            // call java to insert or create conversation channel
+            this.http.post(`conversations/create-channel`, this.activeConversation).then((res: any) => {
+                console.log("channel created", res);
+                // this.messages.push(res);
+                // this.message('');
+            });
+        }
+
         if (this.message() != null && this.message() != '') {
             var event: Message = {
                 conversationId: this.activeConversation.id,
                 messageId: crypto.randomUUID(),
                 senderId: this.currentUserId,
+                recievedId: this.recieverId,
                 type: "text",
                 body: this.message(),
                 fileUrl: null,
@@ -179,10 +260,10 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                 status: 1
             }
 
-            this.messages.push(event);
-            this.ws.sendMessage(event);
-            this.message.set('');
-            this.shouldScrollToBottom = true; // Scroll to bottom after sending
+            // this.messages.push(event);
+            // this.ws.sendMessage(event);
+            // this.message.set('');
+            // this.shouldScrollToBottom = true; // Scroll to bottom after sending
         }
     }
 
@@ -282,17 +363,23 @@ export interface FilterModal {
     pageSize: number;
 }
 
-export interface Participant {
+export interface Participants {
     userId: string;
     username: string;
+    displayName: string;
     joinedAt: string;
     role: 'admin' | 'member';
+    email: string;
+    avatar: string;
+    isActive: boolean;
 }
 
 export interface LastMessage {
+    messageId: string;
     content: string;
-    senderUsername: string;
-    timestamp: string;
+    senderId: string;
+    senderName: string;
+    sentAt: string;
 }
 
 export interface ConversationSettings {
@@ -304,11 +391,15 @@ export interface ConversationSettings {
 export interface Conversation {
     id: string;
     conversationType: 'group' | 'direct';
-    participants: Participant[];
+    participantIds: Array<string>;
+    participants: Participants[];
     conversationName: string;
+    conversationAvatar: string;
+    createdBy: string;
     createdAt: string;
+    updatedAt: string;
     lastMessageAt: string;
     lastMessage: LastMessage;
-    isActive: boolean;
     settings: ConversationSettings;
+    isActive: boolean;
 }

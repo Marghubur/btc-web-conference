@@ -304,7 +304,7 @@
     background-color: var(--teams-bg-main);
     min-width: 0;
     min-height: 0;
-    height: 100%;
+    height: calc(100% - 3rem);
     overflow: hidden;
     position: relative;
 }

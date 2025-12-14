@@ -24,7 +24,7 @@ export class ConfeetSocketService {
 
     public messages$ = new Subject<any>();
 
-    private userId!: number;
+    private userId!: string;
     private channelId!: string;
     private url!: string;
     private user: User = {
@@ -42,7 +42,7 @@ export class ConfeetSocketService {
         this.error$ = this.onEvent<ErrorPayload>(WsEvents.ERROR);
     }
 
-    connect(url: string, userId: number, channelId: string) {
+    connect(url: string, userId: string, channelId: string) {
         this.url = url;
         this.userId = userId;
         this.channelId = channelId;
@@ -134,7 +134,7 @@ export interface Message {
     id?: string;
     messageId: string;
     conversationId: string;
-    senderId: number;
+    senderId: string;
     type: 'text' | 'audio' | 'video' | 'image' | 'file';
     body: string;
     fileUrl?: string | null;
@@ -145,6 +145,7 @@ export interface Message {
     createdAt?: Date,
     editedAt?: Date | null,
     status?: number;
+    recievedId?: string;
 }
 
 export interface Reactions {

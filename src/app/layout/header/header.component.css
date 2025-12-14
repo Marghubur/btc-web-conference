@@ -1,0 +1,170 @@
+.app-header {
+    height: 3rem; /* Height of the header */
+    background-color: #f5f5f5; /* Light grey background like Teams */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    border-bottom: 1px solid #e0e0e0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.search-bar-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+.search-input-wrapper {
+    position: relative;
+    width: 600px;
+    max-width: 100%;
+    background-color: #ffffff; /* Teams Active background */
+    border: 1px solid #e1dfdd; /* Default neutral border */
+    border-radius: 4px; /* Teams standard radius */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    height: 32px;
+    margin: 0 auto;
+    transition: all 0.1s;
+}
+
+/* Focus State - Teams Blurple Border */
+.search-input-wrapper:focus-within {
+    border: 2px solid #6264a7; /* Microsoft Teams Brand Color */
+    box-shadow: none;
+}
+
+
+.search-icon {
+    width: 16px;
+    height: 16px;
+    color: #616161;
+    margin-right: 8px;
+}
+
+.search-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    font-size: 0.85rem;
+    color: #424242;
+}
+
+/* Target the NgbTypeahead window - Fluent UI Depth 8 Shadow */
+::ng-deep .dropdown-menu {
+    width: 100% !important; /* Match wrapper width exactly */
+    max-width: 100% !important;
+    left: 0 !important; /* Force align to left edge */
+    right: 0 !important; /* Force align to right edge */
+    margin: 4px 0 0 0 !important; /* Only top margin */
+    transform: none !important; /* Disable dynamic positioning shifts if any */
+    top: 100% !important; /* Position correctly below input */
+    
+    border: 1px solid #edebe9 !important;
+    box-shadow: 0 3.2px 7.2px 0 rgba(0,0,0,.132), 0 0.6px 1.8px 0 rgba(0,0,0,.108) !important;
+    border-radius: 4px !important;
+    padding: 0 !important;
+    background-color: #ffffff;
+    overflow: hidden;
+}
+
+::ng-deep .dropdown-item {
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border-bottom: 1px solid #edebe9; /* Lighter separator */
+    margin: 0 !important;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+::ng-deep .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+/* Teams Hover State - Light Grey */
+::ng-deep .dropdown-item:active, 
+::ng-deep .dropdown-item.active,
+::ng-deep .dropdown-item:hover {
+    background-color: #f5f5f5 !important; 
+    color: inherit !important;
+}
+
+/* User name styling - Fluent UI */
+.user-name {
+    font-size: 14px;
+    font-weight: 600; /* Semibold */
+    color: #242424; /* Neutral Dark */
+    line-height: 20px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Email styling - Fluent UI */
+.user-email {
+    font-size: 12px;
+    color: #616161; /* Neutral Secondary */
+    line-height: 16px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+::ng-deep .ngb-highlight {
+    font-weight: 700;
+    color: #000;
+}
+
+.result-item-container {
+    padding: 0 16px; /* Teams Standard padding */
+    height: 100%;
+}
+
+
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.user-profile {
+    cursor: pointer;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 500;
+    position: relative;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    background-color: #4caf50; /* Online green */
+    border: 2px solid #fff;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    padding: 10px 15px;
+}
+.list-group-item:hover {
+    background-color: #f5f5f5;
+}

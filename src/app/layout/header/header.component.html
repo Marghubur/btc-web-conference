@@ -1,0 +1,39 @@
+<header class="app-header">
+    <div class="search-input-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input type="text" class="search-input" placeholder="Search for people, chats..." [(ngModel)]="searchQuery"
+            [ngbTypeahead]="search" [inputFormatter]="formatter" [resultFormatter]="formatter"
+            (selectItem)="onSelect($event)" [resultTemplate]="rt" />
+        <span *ngIf="isSearching" class="spinner-border spinner-border-sm text-secondary ms-2" role="status"></span>
+    </div>
+
+    <ng-template #rt let-r="result" let-t="term">
+        <div class="result-item-container d-flex align-items-center w-100">
+            <div class="avatar-container me-3">
+                <div class="avatar" style="width: 32px; height: 32px; font-size: 12px; font-weight: 600;"
+                    [ngStyle]="{ 'background-color': getColorFromName(r.firstName, r.lastName) }">
+                    {{ getUserInitiaLetter(r.firstName, r.lastName) }}
+                </div>
+            </div>
+            <div class="user-details d-flex flex-column justify-content-center">
+                <div class="user-name">
+                    <ngb-highlight [result]="formatter(r)" [term]="t"></ngb-highlight>
+                </div>
+                <small class="user-email" *ngIf="r.email">{{r.email}}</small>
+            </div>
+        </div>
+    </ng-template>
+
+    <div class="header-right">
+        <div class="user-profile">
+            <div class="avatar"
+                [ngStyle]="{ 'background-color': getColorFromName(user?.firstName || '', user?.lastName || '') }">
+                {{ getUserInitiaLetter(user?.firstName || '', user?.lastName || '') }}
+                <span class="status-indicator"></span>
+            </div>
+        </div>
+    </div>
+</header>

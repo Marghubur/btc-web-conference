@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ResponseModel } from '../providers/model';
 import { AjaxService } from '../providers/services/ajax.service';
@@ -13,16 +13,27 @@ import { Dashboard } from '../providers/constant';
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
-export class LoginComponent {
-  email: string = "istiyaq.mi9@gmail.com";
+export class LoginComponent implements OnInit {
+  email: string = "";
   isSubmitted: boolean = false;
   isEmailValid: boolean = true;
   passwordType: string = "password";
-  password: string = '123456';
+  password: string = '';
   isLoading: boolean = false;
+  rememberMe: boolean = false;
   constructor(private nav: iNavigation,
-              private http: AjaxService
-  ) {}
+    private http: AjaxService
+  ) { }
+
+  ngOnInit(): void {
+    const storedCreds = localStorage.getItem('creds');
+    if (storedCreds) {
+      const { email, password } = JSON.parse(storedCreds);
+      this.email = email;
+      this.password = password;
+      this.rememberMe = true;
+    }
+  }
   login() {
     this.isSubmitted = true;
     if (!this.email || !this.isEmailValid)
@@ -39,6 +50,11 @@ export class LoginComponent {
     this.http.login("auth/authenticateUser", user).then((res: ResponseModel) => {
       if (res.ResponseBody) {
         this.isLoading = false;
+        if (this.rememberMe) {
+          localStorage.setItem('creds', JSON.stringify({ email: this.email, password: this.password }));
+        } else {
+          localStorage.removeItem('creds');
+        }
         this.nav.navigate(Dashboard, null);
       }
     }).catch(e => {
@@ -48,7 +64,7 @@ export class LoginComponent {
 
   isValidEmail() {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    this.isEmailValid =  regex.test(this.email);
+    this.isEmailValid = regex.test(this.email);
   }
 
   viewPassword() {

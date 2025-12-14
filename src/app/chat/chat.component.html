@@ -4,6 +4,24 @@
     <aside class="teams-sidebar">
         <!-- Sidebar Header -->
         <div class="sidebar-header">
+            <!-- Current User Info -->
+            <div class="user-profile-header mb-3 d-flex align-items-center p-2 rounded" style="background: #f0f2f5;">
+                <div class="avatar-container me-2">
+                    <div class="avatar"
+                        [ngStyle]="{ 'background-color': getColorFromName(user.firstName, user.lastName) }">
+                        {{ getUserInitiaLetter(user.firstName, user.lastName) }}
+                    </div>
+                </div>
+                <div class="user-info overflow-hidden">
+                    <h6 class="mb-0 text-truncate fw-bold">{{ user.firstName }} {{ user.lastName }}</h6>
+                    <small class="text-success d-flex align-items-center">
+                        <span class="status-dot bg-success me-1"
+                            style="width: 8px; height: 8px; border-radius: 50%;"></span>
+                        Online
+                    </small>
+                </div>
+            </div>
+
             <h2 class="sidebar-title">
                 <span class="sidebar-title-text">
                     <svg class="sidebar-title-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -20,13 +38,30 @@
             </h2>
 
             <!-- Search Bar -->
-            <div class="search-container">
+            <div class="search-container position-relative">
                 <div class="search-input-wrapper">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8" />
                         <path d="M21 21l-4.35-4.35" />
                     </svg>
-                    <input type="text" class="search-input" placeholder="Search conversations..." />
+                    <input type="text" class="search-input" placeholder="Search conversations..."
+                        [(ngModel)]="searchQuery" (input)="onSearch()" />
+                </div>
+                <!-- Search Results Dropdown -->
+                <div class="search-results-dropdown position-absolute w-100 bg-white shadow rounded mt-1"
+                    style="z-index: 1000; max-height: 300px; overflow-y: auto;" *ngIf="searchResults.length > 0">
+                    <div class="list-group">
+                        <button type="button" class="list-group-item list-group-item-action d-flex align-items-center"
+                            *ngFor="let result of searchResults" (click)="startChat(result)">
+                            <div class="avatar-container me-2">
+                                <div class="avatar" style="width: 32px; height: 32px; font-size: 14px;"
+                                    [ngStyle]="{ 'background-color': getColorFromName(result.firstName, result.lastName) }">
+                                    {{ getUserInitiaLetter(result.firstName, result.lastName) }}
+                                </div>
+                            </div>
+                            <span>{{ result.firstName }} {{ result.lastName }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

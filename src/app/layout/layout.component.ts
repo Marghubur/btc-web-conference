@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { SidemenuComponent } from "../sidemenu/sidemenu.component";
+import { HeaderComponent } from "./header/header.component";
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { LocalService } from '../providers/services/local.service';
 import { RoomService } from '../providers/services/room.service';
@@ -10,7 +11,7 @@ import { MeetingService } from '../providers/services/meeting.service';
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [SidemenuComponent, RouterOutlet, NgbTooltipModule, MeetingComponent],
+  imports: [SidemenuComponent, RouterOutlet, NgbTooltipModule, MeetingComponent, HeaderComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })
@@ -40,5 +41,5 @@ export class LayoutComponent {
     });
   }
 
-  
+
 }
