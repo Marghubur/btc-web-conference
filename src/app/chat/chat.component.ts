@@ -235,35 +235,33 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     sendMessage() {
         if (this.recieverId != null) {
             // call java to insert or create conversation channel
-            this.http.post(`conversations/create-channel`, this.activeConversation).then((res: any) => {
+            this.http.post(`conversations/create/${this.currentUserId}`, this.activeConversation).then((res: any) => {
                 console.log("channel created", res);
-                // this.messages.push(res);
-                // this.message('');
+
+                if (this.message() != null && this.message() != '' && res.id != null) {
+                    var event: Message = {
+                        conversationId: res.id,
+                        messageId: crypto.randomUUID(),
+                        senderId: this.currentUserId,
+                        recievedId: this.recieverId,
+                        type: "text",
+                        body: this.message(),
+                        fileUrl: null,
+                        replyTo: null,
+                        mentions: [],
+                        reactions: [],
+                        clientType: "web",
+                        createdAt: new Date(),
+                        editedAt: null,
+                        status: 1
+                    }
+
+                    this.messages.push(event);
+                    this.ws.sendMessage(event);
+                    this.message.set('');
+                    this.shouldScrollToBottom = true; // Scroll to bottom after sending
+                }
             });
-        }
-
-        if (this.message() != null && this.message() != '') {
-            var event: Message = {
-                conversationId: this.activeConversation.id,
-                messageId: crypto.randomUUID(),
-                senderId: this.currentUserId,
-                recievedId: this.recieverId,
-                type: "text",
-                body: this.message(),
-                fileUrl: null,
-                replyTo: null,
-                mentions: [],
-                reactions: [],
-                clientType: "web",
-                createdAt: new Date(),
-                editedAt: null,
-                status: 1
-            }
-
-            // this.messages.push(event);
-            // this.ws.sendMessage(event);
-            // this.message.set('');
-            // this.shouldScrollToBottom = true; // Scroll to bottom after sending
         }
     }
 

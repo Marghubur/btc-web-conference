@@ -267,17 +267,19 @@
 .user-dropdown,
 .dropdown-menu {
     position: absolute;
-    bottom: 100%;
-    left: 50%;
+    bottom: 85% !important;
+    left: 50% !important;
     transform: translateX(-50%);
     min-width: 280px;
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    padding: 0;
-    margin-bottom: 12px;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+    padding: 0 !important;
+    margin-bottom: 12px !important;
     overflow: hidden;
     z-index: 99999 !important;
+    top: auto !important;
+    border: none !important;
 }
 
 /* Ensure ngb-dropdown works properly */
