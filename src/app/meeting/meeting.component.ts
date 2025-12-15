@@ -27,12 +27,12 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
     templateUrl: './meeting.component.html',
     styleUrl: './meeting.component.css',
     animations: [
-    trigger('slideFade', [
-      state('hidden', style({ opacity: 0, height: '0px', overflow: 'hidden', width: '0px' })),
-      state('visible', style({ opacity: 1, height: '*', overflow: 'hidden', width: '16.66666667%' })),
-      transition('hidden <=> visible', animate('300ms ease'))
-    ])
-  ]
+        trigger('slideFade', [
+            state('hidden', style({ opacity: 0, height: '0px', overflow: 'hidden', width: '0px' })),
+            state('visible', style({ opacity: 1, height: '*', overflow: 'hidden', width: '16.66666667%' })),
+            transition('hidden <=> visible', animate('300ms ease'))
+        ])
+    ]
 })
 export class MeetingComponent implements OnDestroy, OnInit {
     // Reference to the dedicated <video> element for screen sharing
@@ -95,7 +95,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
     linkedInUrl: string = "";
     user: User | null = null;
     remoteAudio!: HTMLAudioElement;
-    recordingAndType: RecordingAndType = {isAudioRecording: false, isReacording: false ,isTranscribe: false, isVideoRecording: false};
+    recordingAndType: RecordingAndType = { isAudioRecording: false, isRecording: false, isTranscribe: false, isVideoRecording: false };
     timeInSeconds: number = 0;
     private watchSubscription: Subscription | null = null;
     private timer$ = interval(1000);
@@ -125,9 +125,9 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
             // Find newly raised (in current but not in notified)
             currentlyRaised.forEach(name => {
-            if (!this.notified.has(name)) {
-                this.showNotification(`${name} raised hand ✋`);
-            }
+                if (!this.notified.has(name)) {
+                    this.showNotification(`${name} raised hand ✋`);
+                }
             });
 
             // Update our tracking set
@@ -137,9 +137,9 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async ngOnInit() {
         //this.meetingId = this.route.snapshot.paramMap.get('id');
-        this.meetingId =  this.meetingService.meetingId;
+        this.meetingId = this.meetingService.meetingId;
         if (!this.local.isValidUser()) {
-            this.router.navigate(['/btc/preview'], {queryParams: {meetingid: this.meetingId}});
+            this.router.navigate(['/btc/preview'], { queryParams: { meetingid: this.meetingId } });
         }
         this.setInitialDetail();
         // Load default backgrounds
@@ -249,7 +249,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
     //         const devices = await navigator.mediaDevices.enumerateDevices();
     //         const hasMic = devices.some(d => d.kind === "audioinput");
     //         const hasCam = devices.some(d => d.kind === "videoinput");
-            
+
     //         // const roomName = this.roomForm.value.roomName!;
     //         const participantName = this.getFullName();
     //         const joinedRoom = await this.roomService.joinRoom(this.meetingId!, participantName!);
@@ -468,7 +468,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
             type: this.handRaised ? hand_raise : hand_down,
             raised: this.handRaised
         });
-        
+
         this.room()?.localParticipant.publishData(
             new TextEncoder().encode(message),
             {
@@ -488,7 +488,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
             this.roomService.sendChat(this.textMessage, this.roomForm.value.participantName!, true);
             this.textMessage = "";
             const audio = new Audio('/assets/message-pop-alert.mp3');
-            audio.play().catch(() => {});
+            audio.play().catch(() => { });
         }
     }
 
@@ -533,34 +533,61 @@ export class MeetingComponent implements OnDestroy, OnInit {
         }
     }
 
-    async startVideoAudio() {
+    // Screen Recording Methods
+    async startScreenVideoAudio() {
         this.startTimer();
-        this.recordingAndType = {isReacording: true,  isAudioRecording: false, isTranscribe: false, isVideoRecording: true};
-        await this.recorder.startRecording({ video: true, audio: true });
+        this.recordingAndType = { isRecording: true, isAudioRecording: false, isTranscribe: false, isVideoRecording: true };
+        await this.recorder.startRecording({ video: true, audio: true, source: 'screen' });
     }
 
-    async startVideo() {
+    async startScreenVideo() {
         this.startTimer();
-        this.recordingAndType = {isReacording: true,  isAudioRecording: false, isTranscribe: false, isVideoRecording: true};
-        await this.recorder.startRecording({ video: true, audio: false });
+        this.recordingAndType = { isRecording: true, isAudioRecording: false, isTranscribe: false, isVideoRecording: true };
+        await this.recorder.startRecording({ video: true, audio: false, source: 'screen' });
     }
 
+    // Camera Recording Methods
+    async startCameraVideoAudio() {
+        this.startTimer();
+        this.recordingAndType = { isRecording: true, isAudioRecording: false, isTranscribe: false, isVideoRecording: true };
+        await this.recorder.startRecording({ video: true, audio: true, source: 'camera' });
+    }
+
+    async startCameraVideo() {
+        this.startTimer();
+        this.recordingAndType = { isRecording: true, isAudioRecording: false, isTranscribe: false, isVideoRecording: true };
+        await this.recorder.startRecording({ video: true, audio: false, source: 'camera' });
+    }
+
+    // Audio Only Recording
     async startAudio() {
         this.startTimer();
-        this.recordingAndType = {isReacording: true,  isAudioRecording: true, isTranscribe: false, isVideoRecording: false};
-        await this.recorder.startRecording({ video: false, audio: true });
+        this.recordingAndType = { isRecording: true, isAudioRecording: true, isTranscribe: false, isVideoRecording: false };
+        await this.recorder.startRecording({ video: false, audio: true, source: 'camera' });
     }
 
     async startTranscribe() {
         this.startTimer();
-        this.recordingAndType = {isReacording: true,  isAudioRecording: true, isTranscribe: true, isVideoRecording: false};
-        await this.recorder.startRecording({ video: false, audio: true });
+        this.recordingAndType = { isRecording: true, isAudioRecording: true, isTranscribe: true, isVideoRecording: false };
+        await this.recorder.startRecording({ video: false, audio: true, source: 'camera' });
+    }
+
+    // Pause/Resume Recording
+    togglePauseResume() {
+        this.recorder.togglePauseResume();
+    }
+
+    // Cancel Recording
+    cancelRecording() {
+        this.recorder.cancelRecording();
+        this.stopTimer();
+        this.recordingAndType = { isRecording: false, isAudioRecording: false, isTranscribe: false, isVideoRecording: false };
     }
 
     async stopRecording() {
         try {
             this.stopTimer();
-            this.recordingAndType.isReacording = false;
+            this.recordingAndType.isRecording = false;
             const blob = await this.recorder.stopRecording();
             const name = `recording_${crypto.randomUUID()}`;
             if (this.recordingAndType.isTranscribe) {
@@ -568,7 +595,7 @@ export class MeetingComponent implements OnDestroy, OnInit {
             } else {
                 this.recorder.downloadRecording(blob, name);
             }
-            this.recordingAndType = {isReacording: false,  isAudioRecording: false, isTranscribe: false, isVideoRecording: false};
+            this.recordingAndType = { isRecording: false, isAudioRecording: false, isTranscribe: false, isVideoRecording: false };
         } catch (err) {
             alert('Error stopping recording: ' + err);
         }
@@ -589,13 +616,13 @@ export class MeetingComponent implements OnDestroy, OnInit {
         return initials;
     }
 
-     private startTimer(): void {
+    private startTimer(): void {
         this.timeInSeconds = 0;
         this.watchSubscription = this.timer$.subscribe(() => {
-        this.timeInSeconds++;
+            this.timeInSeconds++;
         });
     }
-    
+
     private stopTimer(): void {
         if (this.watchSubscription) {
             this.watchSubscription.unsubscribe();
@@ -639,8 +666,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     private popStateListener = (event: PopStateEvent) => {
         if (this.meetingService.inMeeting()) {
-        history.pushState(null, '', window.location.href); // push state back
-        alert('You cannot navigate back during a meeting.');
+            history.pushState(null, '', window.location.href); // push state back
+            alert('You cannot navigate back during a meeting.');
         }
     };
 
@@ -658,14 +685,14 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
 
 interface RecordingAndType {
-    isReacording: boolean;
+    isRecording: boolean;
     isAudioRecording: boolean;
     isVideoRecording: boolean;
     isTranscribe: boolean;
 }
 
 export interface Reaction {
-  id: number;
-  emoji: string;
-  name: string;
+    id: number;
+    emoji: string;
+    name: string;
 }

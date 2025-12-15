@@ -72,6 +72,7 @@
     padding: 0 !important;
     background-color: #ffffff;
     overflow: hidden;
+    top: auto !important;
 }
 
 ::ng-deep .dropdown-item {
