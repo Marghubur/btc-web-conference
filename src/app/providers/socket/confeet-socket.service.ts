@@ -22,7 +22,7 @@ export class ConfeetSocketService {
 
     private reconnectInterval = 3000;
 
-    public messages$ = new Subject<any>();
+
 
     private userId!: string;
     private channelId!: string;
@@ -61,7 +61,7 @@ export class ConfeetSocketService {
         };
 
         this.ws.onmessage = (event) => {
-            // this.messages$.next(JSON.parse(event.data));
+
             this.messageSubject.next(JSON.parse(event.data));
         };
 
@@ -126,6 +126,7 @@ export class ConfeetSocketService {
 
     disconnect(): void {
         this.ws?.close();
+        this.ws = null;
     }
 }
 

@@ -66,7 +66,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         this.currentUserId = this.user.userId;
         this.socketHandShake();
 
-        this.recievedEvent();
+        this.receivedEvent();
 
         // Listen for global search selections
         this.subscriptions.add(
@@ -237,31 +237,36 @@ export class ChatComponent implements OnInit, AfterViewChecked {
             // call java to insert or create conversation channel
             this.http.post(`conversations/create/${this.currentUserId}`, this.activeConversation).then((res: any) => {
                 console.log("channel created", res);
-
-                if (this.message() != null && this.message() != '' && res.id != null) {
-                    var event: Message = {
-                        conversationId: res.id,
-                        messageId: crypto.randomUUID(),
-                        senderId: this.currentUserId,
-                        recievedId: this.recieverId,
-                        type: "text",
-                        body: this.message(),
-                        fileUrl: null,
-                        replyTo: null,
-                        mentions: [],
-                        reactions: [],
-                        clientType: "web",
-                        createdAt: new Date(),
-                        editedAt: null,
-                        status: 1
-                    }
-
-                    this.messages.push(event);
-                    this.ws.sendMessage(event);
-                    this.message.set('');
-                    this.shouldScrollToBottom = true; // Scroll to bottom after sending
-                }
+                this.send(res);
             });
+        } else {
+            this.send(this.activeConversation);
+        }
+    }
+
+    private send(response: any) {
+        if (this.message() != null && this.message() != '' && response.id != null) {
+            var event: Message = {
+                conversationId: response.id,
+                messageId: crypto.randomUUID(),
+                senderId: this.currentUserId,
+                recievedId: this.recieverId,
+                type: "text",
+                body: this.message(),
+                fileUrl: null,
+                replyTo: null,
+                mentions: [],
+                reactions: [],
+                clientType: "web",
+                createdAt: new Date(),
+                editedAt: null,
+                status: 1
+            }
+
+            this.messages.push(event);
+            this.ws.sendMessage(event);
+            this.message.set('');
+            this.shouldScrollToBottom = true; // Scroll to bottom after sending
         }
     }
 
@@ -282,7 +287,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         });
     }
 
-    recievedEvent() {
+    receivedEvent() {
         // New message received
         this.subscriptions.add(
             this.ws.newMessage$.subscribe(message => {
@@ -300,6 +305,8 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                 const index = this.messages.findIndex(m => m.messageId === message.messageId);
                 if (index > -1) {
                     this.messages[index] = message;
+                } else {
+                    this.messages.push(message);
                 }
             })
         );
