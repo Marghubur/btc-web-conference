@@ -151,3 +151,28 @@ input[type="number"]::-webkit-outer-spin-button {
     max-height: 100% !important;
     overflow-y: auto !important;
 }
+
+/* Global styles for ngbDropdown appended to body */
+body>.dropdown-menu,
+body>ngb-dropdown-menu>.dropdown-menu,
+ngb-dropdown-menu {
+    z-index: 100000 !important;
+}
+
+/* User dropdown styles when appended to body */
+body .user-dropdown,
+body ngb-dropdown-menu .user-dropdown,
+ngb-dropdown-menu.dropdown-menu {
+    position: fixed !important;
+    left: 70px !important;
+    bottom: 80px !important;
+    top: auto !important;
+    min-width: 280px;
+    background: #ffffff;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+    padding: 0 !important;
+    overflow: hidden;
+    border: none !important;
+    transform: none !important;
+}

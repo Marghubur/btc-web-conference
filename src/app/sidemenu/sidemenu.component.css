@@ -30,7 +30,7 @@
     box-shadow: var(--sidebar-shadow);
     position: relative;
     overflow: visible;
-    z-index: 1000;
+    z-index: 1100;
 }
 
 /* Decorative Background */
