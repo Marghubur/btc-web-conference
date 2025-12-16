@@ -1,8 +1,10 @@
 @if (isLoggedIn) {
 <div class="layout-container">
+    @if (!meetingService.inMeeting()) {
     <div class="header-panel">
         <app-header></app-header>
     </div>
+    }
     <div class="body-content">
         <aside class="sidemenu-panel">
             <app-sidemenu></app-sidemenu>

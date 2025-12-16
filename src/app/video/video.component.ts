@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, input, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, input, viewChild, effect } from '@angular/core';
 import { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client';
 import { MeetingService } from '../providers/services/meeting.service';
 
@@ -17,14 +17,47 @@ export class VideoComponent implements AfterViewInit, OnDestroy {
     participantIdentity = input.required<string>();
     local = input(false);
     isMute = input(false);
-    constructor(public meetingService: MeetingService) {}
+
+    private attachedElement: HTMLVideoElement | null = null;
+
+    constructor(public meetingService: MeetingService) {
+        // Use effect to react to track changes
+        effect(() => {
+            const currentTrack = this.track();
+            if (currentTrack && this.videoElement()) {
+                this.attachTrack();
+            }
+        });
+    }
+
     ngAfterViewInit() {
-        if (this.videoElement()) {
-            this.track().attach(this.videoElement()!.nativeElement);
+        this.attachTrack();
+    }
+
+    private attachTrack() {
+        const videoEl = this.videoElement()?.nativeElement;
+        const currentTrack = this.track();
+
+        if (videoEl && currentTrack && this.attachedElement !== videoEl) {
+            try {
+                // Attach to this video element (tracks can be attached to multiple elements)
+                currentTrack.attach(videoEl);
+                this.attachedElement = videoEl;
+            } catch (error) {
+                console.error('Error attaching video track:', error);
+            }
         }
     }
 
     ngOnDestroy() {
-        this.track().detach();
+        // Only detach from THIS specific element, not all elements
+        if (this.attachedElement) {
+            try {
+                this.track()?.detach(this.attachedElement);
+            } catch (error) {
+                console.error('Error detaching video track:', error);
+            }
+            this.attachedElement = null;
+        }
     }
 }

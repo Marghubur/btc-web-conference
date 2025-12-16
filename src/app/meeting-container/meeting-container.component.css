@@ -1,12 +1,30 @@
+/* Microsoft Teams Style - Meeting Container */
+
+/* Mini floating window container */
 .mini-container {
     position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    width: 20rem;
-    height: 12rem;
+    bottom: 24px;
+    right: 24px;
+    width: 320px;
+    height: auto;
+    min-height: 200px;
     z-index: 2000;
+    animation: slideInUp 0.3s ease-out;
 }
 
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Full-screen overlay (legacy - keeping for compatibility) */
 .full-overlay {
     position: fixed;
     inset: 0;
@@ -15,21 +33,76 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(4px);
 }
 
+/* Full meeting container */
 .full-container {
-    width: calc(100% - 7.7rem);
+    width: calc(100% - 7rem);
     position: fixed;
     top: 0;
+    right: 0;
+    bottom: 0;
+    background: #201f1e;
+    animation: fadeIn 0.2s ease-out;
+    z-index: 20 !important;
 }
 
+.full-container.w-100 {
+    width: 100% !important;
+}
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Loading State */
 .loader-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  background-color: #222 !important;
-  color: #eee !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: linear-gradient(135deg, #201f1e 0%, #292827 100%) !important;
+    color: #ffffff !important;
+}
+
+.loader-container .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #6264a7;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loader-container .loading-text {
+    margin-top: 16px;
+    font-size: 14px;
+    color: #c8c6c4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .mini-container {
+        width: 280px;
+        bottom: 16px;
+        right: 16px;
+    }
+
+    .full-container {
+        width: 100% !important;
+    }
 }
