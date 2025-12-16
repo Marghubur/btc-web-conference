@@ -1,17 +1,18 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, signal } from '@angular/core';
 import { MeetingService } from '../providers/services/meeting.service';
-import { LocalVideoTrack, Room } from 'livekit-client';
+import { Room } from 'livekit-client';
 import { User } from '../providers/model';
 import { LocalService } from '../providers/services/local.service';
 import { CommonModule } from '@angular/common';
 import { MediaPermissions, MediaPermissionsService } from '../providers/services/media-permission.service';
 import { Observable, Subscription } from 'rxjs';
 import { VideoComponent } from '../video/video.component';
+import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-meeting-mini',
   standalone: true,
-  imports: [CommonModule, VideoComponent],
+  imports: [CommonModule, VideoComponent, NgbTooltipModule],
   templateUrl: './meeting-mini.component.html',
   styleUrl: './meeting-mini.component.css'
 })
@@ -22,22 +23,22 @@ export class MeetingMiniComponent implements OnInit {
   private startY = 0;
   private origLeft = 0;
   private origTop = 0;
-  localTrack = signal<LocalVideoTrack | undefined>(undefined);
   userName: string = null;
   private user: User = null;
   permissions$: Observable<MediaPermissions>;
   room = signal<Room | undefined>(undefined);
+
   constructor(private elRef: ElementRef,
     public meetingService: MeetingService,
     private mediaPerm: MediaPermissionsService,
     private local: LocalService) {
-      this.permissions$ = this.mediaPerm.permissions$;
-     }
+    this.permissions$ = this.mediaPerm.permissions$;
+  }
+
   ngOnInit() {
     this.user = this.local.getUser();
     this.userName = this.getFullName();
     this.room.set(this.meetingService.room());
-    this.localTrack.set(this.meetingService.localTrack());
   }
 
   expand() { this.meetingService.maximize(); }

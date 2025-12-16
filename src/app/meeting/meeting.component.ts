@@ -12,20 +12,21 @@ import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../pro
 import { LocalService } from '../providers/services/local.service';
 import { ScreenRecorderService } from '../providers/services/screen-recorder.service';
 import { hand_down, hand_raise } from '../providers/constant';
-import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbTooltipConfig, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { User } from '../providers/model';
 import { MeetingService } from '../providers/services/meeting.service';
 import { NetworkService } from '../providers/services/network.service';
 import { CameraService } from '../providers/services/camera.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { animate, state, style, transition, trigger } from '@angular/animations';
-
+import { Offcanvas } from 'bootstrap';
 @Component({
     selector: 'app-meeting',
     standalone: true,
     imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule],
     templateUrl: './meeting.component.html',
     styleUrl: './meeting.component.css',
+    providers: [NgbTooltipConfig],
     animations: [
         trigger('slideFade', [
             state('hidden', style({ opacity: 0, height: '0px', overflow: 'hidden', width: '0px' })),
@@ -37,7 +38,12 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 export class MeetingComponent implements OnDestroy, OnInit {
     // Reference to the dedicated <video> element for screen sharing
     @ViewChild('screenPreview') screenPreview!: ElementRef<HTMLVideoElement>;
-
+    @ViewChild('seetingOffCanvas') offcanvasRef!: ElementRef;
+    private offcanvasInstance!: Offcanvas;
+    @ViewChild('virtualBackgroundOffcanvas') virtualBackgroundOffcanvasRef!: ElementRef;
+    private virtualBackgroundOffcanvasInstance!: Offcanvas;
+    @ViewChild('chatOffCanvas') chatOffCanvasRef!: ElementRef;
+    private chatOffCanvasInstance!: Offcanvas;
     roomForm = new FormGroup({
         roomName: new FormControl('Test Room', Validators.required),
         participantName: new FormControl('Participant' + Math.floor(Math.random() * 100), Validators.required),
@@ -113,8 +119,13 @@ export class MeetingComponent implements OnDestroy, OnInit {
         private local: LocalService,
         private recorder: ScreenRecorderService,
         public network: NetworkService,
-        public meetingService: MeetingService
+        public meetingService: MeetingService,
+        private tooltipConfig: NgbTooltipConfig
     ) {
+        // Configure tooltips to close properly on click
+        this.tooltipConfig.triggers = 'hover';
+        this.tooltipConfig.container = 'body';
+
         // Initialize virtual background service
         this.videoBackgroundService.initialize().catch(console.error);
         effect(() => {
@@ -229,16 +240,6 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
             cameraActiveModal.addEventListener('shown.bs.modal', () => {
                 this.cameraActiveModal?.nativeElement.focus();
-            });
-        }
-
-        const shareLinkModal = document.getElementById('shareMeetingURLModal');
-        if (shareLinkModal) {
-            // @ts-ignore (bootstrap comes from CDN)
-            this.shareLinkModalInstance = new bootstrap.Modal(shareLinkModal);
-
-            shareLinkModal.addEventListener('shown.bs.modal', () => {
-                this.shareMeetingURLModal?.nativeElement.focus();
             });
         }
     }
@@ -680,6 +681,33 @@ export class MeetingComponent implements OnDestroy, OnInit {
             return '';
         }
         return;
+    }
+
+    openSeetingOffCanvas() {
+        this.offcanvasInstance = new Offcanvas(this.offcanvasRef.nativeElement);
+        this.offcanvasInstance.show();
+    }
+
+    closeSeetingOffCanvas() {
+        this.offcanvasInstance.hide();
+    }
+
+    openVirtualBackgroundOffcanvas() {
+        this.virtualBackgroundOffcanvasInstance = new Offcanvas(this.virtualBackgroundOffcanvasRef.nativeElement);
+        this.virtualBackgroundOffcanvasInstance.show();
+    }
+
+    closeVirtualBackgroundOffcanvas() {
+        this.virtualBackgroundOffcanvasInstance.hide();
+    }
+
+    openChatOffCanvas() {
+        this.chatOffCanvasInstance = new Offcanvas(this.chatOffCanvasRef.nativeElement);
+        this.chatOffCanvasInstance.show();
+    }
+
+    closeChatOffCanvas() {
+        this.chatOffCanvasInstance.hide();
     }
 }
 
