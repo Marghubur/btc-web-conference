@@ -7,11 +7,12 @@ import { RoomService } from '../providers/services/room.service';
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { MeetingComponent } from '../meeting/meeting.component';
 import { MeetingService } from '../providers/services/meeting.service';
+import { GlobalSearchComponent } from '../components/global-search/global-search.component';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [SidemenuComponent, RouterOutlet, NgbTooltipModule, MeetingComponent, HeaderComponent],
+  imports: [SidemenuComponent, RouterOutlet, NgbTooltipModule, MeetingComponent, HeaderComponent, GlobalSearchComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })

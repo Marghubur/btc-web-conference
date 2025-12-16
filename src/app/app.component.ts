@@ -5,11 +5,12 @@ import { CommonService } from './providers/services/common.service';
 import { iNavigation } from './providers/services/iNavigation';
 import { MeetingContainerComponent } from "./meeting-container/meeting-container.component";
 import { MeetingService } from './providers/services/meeting.service';
+import { GlobalSearchComponent } from './components/global-search/global-search.component';
 
 @Component({
     selector: 'app-root',
     standalone: true,
-    imports: [RouterOutlet, MeetingContainerComponent],
+    imports: [RouterOutlet, MeetingContainerComponent, GlobalSearchComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.css',
 })

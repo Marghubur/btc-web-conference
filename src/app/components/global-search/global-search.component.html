@@ -1,0 +1,169 @@
+<div class="global-search" #searchContainer role="search">
+    <!-- Search Input -->
+    <div class="search-input-wrapper" [class.focused]="isOpen()">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+        </svg>
+
+        <input #searchInput type="text" class="search-input" [placeholder]="placeholder()" [ngModel]="query()"
+            (ngModelChange)="onQueryChange($event)" (focus)="onFocus()" (keydown)="onKeyDown($event)" autocomplete="off"
+            spellcheck="false" role="combobox" aria-label="Search" [attr.aria-expanded]="isOpen()"
+            aria-haspopup="listbox"
+            [attr.aria-activedescendant]="selectedIndex() >= 0 ? 'result-item-' + selectedIndex() : null"
+            aria-autocomplete="list" />
+
+        <!-- Loading Spinner -->
+        @if (isLoading()) {
+        <div class="loading-spinner" role="status" aria-label="Loading">
+            <svg class="spinner" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none"
+                    stroke-dasharray="30 70" />
+            </svg>
+        </div>
+        }
+
+        <!-- Clear Button -->
+        @if (query()) {
+        <button class="clear-btn" (click)="clearSearch()" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+        </button>
+        }
+
+        <!-- Keyboard Shortcut Hint -->
+        @if (!query() && !isOpen()) {
+        <kbd class="shortcut-hint" aria-hidden="true">{{ shortcutHint() }}</kbd>
+        }
+    </div>
+
+    <!-- Results Dropdown -->
+    @if (isOpen() && (hasResults() || hasError() || isLoading())) {
+    <div class="search-dropdown" role="listbox" aria-label="Search results">
+
+        <!-- Live region for screen readers -->
+        <div class="visually-hidden" aria-live="polite" aria-atomic="true">
+            @if (isLoading()) {
+            Searching...
+            } @else if (hasResults()) {
+            {{ totalCount() }} results found
+            } @else if (hasError()) {
+            {{ error() }}
+            }
+        </div>
+
+        <!-- Error State -->
+        @if (hasError()) {
+        <div class="search-error" role="alert">
+            <svg class="error-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+            </svg>
+            <span>{{ error() }}</span>
+            @if (isRetriable()) {
+            <button class="retry-btn" (click)="retry()">Retry</button>
+            }
+        </div>
+        }
+
+        <!-- Results -->
+        @if (hasResults() && !hasError()) {
+        <!-- People Section -->
+        @if (users().length > 0) {
+        <div class="result-section">
+            <div class="section-header">
+                <span class="section-title" id="people-section">People</span>
+                <span class="section-count">{{ users().length }}</span>
+            </div>
+            @for (user of users(); track user.id; let idx = $index) {
+            <div class="result-item" [id]="'result-item-' + idx" [class.selected]="selectedIndex() === idx"
+                (click)="selectResult(user)" (mouseenter)="setSelectedIndex(idx)" role="option"
+                [attr.aria-selected]="selectedIndex() === idx">
+                <div class="avatar" [class.online]="user.status === 'online'">
+                    @if (user.avatar) {
+                    <img [src]="user.avatar" [alt]="user.title" />
+                    } @else {
+                    <span class="avatar-fallback" aria-hidden="true">{{ getInitials(user.title) }}</span>
+                    }
+                    @if (user.status) {
+                    <span class="status-indicator" [class]="user.status" [attr.aria-label]="user.status"></span>
+                    }
+                </div>
+                <div class="result-content">
+                    <span class="result-title" [innerHTML]="user.highlights?.['name'] || user.title"></span>
+                    @if (user.subtitle) {
+                    <span class="result-subtitle" [innerHTML]="user.highlights?.['email'] || user.subtitle"></span>
+                    }
+                </div>
+                <span class="result-type-badge">Person</span>
+            </div>
+            }
+        </div>
+        }
+
+        <!-- Chats Section -->
+        @if (conversations().length > 0) {
+        <div class="result-section">
+            <div class="section-header">
+                <span class="section-title" id="chats-section">Chats</span>
+                <span class="section-count">{{ conversations().length }}</span>
+            </div>
+            @for (conv of conversations(); track conv.id; let idx = $index) {
+            <div class="result-item" [id]="'result-item-' + (users().length + idx)"
+                [class.selected]="selectedIndex() === users().length + idx" (click)="selectResult(conv)"
+                (mouseenter)="setSelectedIndex(users().length + idx)" role="option"
+                [attr.aria-selected]="selectedIndex() === users().length + idx">
+                <div class="avatar chat-avatar">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                    </svg>
+                </div>
+                <div class="result-content">
+                    <span class="result-title">{{ conv.title }}</span>
+                    @if (conv.subtitle) {
+                    <span class="result-subtitle">{{ conv.subtitle }}</span>
+                    }
+                </div>
+                <span class="result-type-badge">{{ conv.metadata?.['type'] || 'Chat' }}</span>
+            </div>
+            }
+        </div>
+        }
+
+        <!-- No Results -->
+        @if (!hasResults() && !isLoading() && query().length >= 2) {
+        <div class="no-results" role="status">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <p>No results found for "{{ query() }}"</p>
+            <span>Try different keywords or check your spelling</span>
+        </div>
+        }
+
+        <!-- See All Results -->
+        @if (totalCount() > 0) {
+        <button class="see-all-btn" (click)="seeAllResults()">
+            <span>See all results</span>
+            <span class="total-count">({{ totalCount() }})</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M9 18l6-6-6-6" />
+            </svg>
+        </button>
+        }
+        }
+
+        <!-- Footer with execution time (dev mode) -->
+        @if (showDebugInfo() && executionTime()) {
+        <div class="search-footer">
+            <span>{{ executionTime() }}ms</span>
+            @if (fromCache()) {
+            <span class="cache-badge">cached</span>
+            }
+        </div>
+        }
+    </div>
+    }
+</div>

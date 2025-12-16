@@ -11,11 +11,12 @@ import { User } from '../../providers/model';
 import { AjaxService } from '../../providers/services/ajax.service';
 import { iNavigation } from '../../providers/services/iNavigation';
 import { UserFilter } from '../../models/user.filter';
+import { GlobalSearchComponent } from "../../components/global-search/global-search.component";
 
 @Component({
     selector: 'app-header',
     standalone: true,
-    imports: [CommonModule, FormsModule, NgbTypeaheadModule],
+    imports: [CommonModule, FormsModule, NgbTypeaheadModule, GlobalSearchComponent],
     templateUrl: './header.component.html',
     styleUrl: './header.component.css'
 })
