@@ -14,11 +14,12 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 import { GlobalSearchService } from './global-search.service';
-import { SearchResultItem, GlobalSearchResponse } from './search.models';
+import { GlobalSearchResponse, UserDetail, Conversation } from './search.models';
+import { LocalService } from '../../providers/services/local.service';
+import { ChatServerService } from '../../providers/services/chat.server.service';
 
 @Component({
     selector: 'global-search',
@@ -28,21 +29,19 @@ import { SearchResultItem, GlobalSearchResponse } from './search.models';
     styleUrls: ['./global-search.component.css']
 })
 export class GlobalSearchComponent implements OnInit, OnDestroy {
-    private readonly searchService = inject(GlobalSearchService);
+    public readonly searchService = inject(GlobalSearchService);
+    private readonly router = inject(Router);
+    private readonly localService = inject(LocalService);
+    private readonly chatServerService = inject(ChatServerService);
     private readonly platformId = inject(PLATFORM_ID);
-    private readonly destroy$ = new Subject<void>();
     private keyboardShortcutHandler: ((event: KeyboardEvent) => void) | null = null;
+    currentUserId: string = '';
 
     @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
     @ViewChild('searchContainer') searchContainer!: ElementRef<HTMLDivElement>;
     @ViewChild('resultsList') resultsList!: ElementRef<HTMLDivElement>;
 
-    // Signals for state
-    query = signal('');
-    results = signal<GlobalSearchResponse | null>(null);
-    isLoading = signal(false);
-    error = signal<string | null>(null);
-    isOpen = signal(false);
+    // Local UI state
     selectedIndex = signal(-1);
 
     // Configuration
@@ -52,13 +51,24 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     // Platform-aware shortcut hint
     shortcutHint = signal('⌘K');
 
-    // Computed values
+    // Signal aliases for template access
+    query = this.searchService.query;
+    isLoading = this.searchService.isLoading;
+    isOpen = this.searchService.isOpen;
+    error = this.searchService.error;
+
+    // Computed values derived from service signals
+    results = this.searchService.results;
+
     users = computed(() => this.results()?.results?.users ?? []);
     conversations = computed(() => this.results()?.results?.conversations ?? []);
     totalCount = computed(() => this.results()?.metadata?.totalCount ?? 0);
     executionTime = computed(() => this.results()?.metadata?.executionTimeMs);
     fromCache = computed(() => this.results()?.metadata?.fromCache ?? false);
-    isRetriable = computed(() => this.results()?.error?.retriable ?? false);
+    isRetriable = computed(() => this.searchService.error() && (this.searchService.error() === 'Network error. Please check your connection.' || this.searchService.error() === 'Search failed. Please try again.'));
+    // Simplified isRetriable logic or just assume true for common errors if retriable isn't in error property
+    // But let's check if the error signal gives us an object or string. The service sets it to string. 
+    // So we can just say "if error exists".
 
     hasResults = computed(() => {
         const r = this.results();
@@ -66,21 +76,11 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
             (r?.results?.conversations?.length ?? 0) > 0;
     });
 
-    hasError = computed(() => !!this.error());
+    hasError = computed(() => !!this.searchService.error());
 
     allResults = computed(() => [...this.users(), ...this.conversations()]);
 
     ngOnInit(): void {
-        // Subscribe to search service state
-        this.searchService.state$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(state => {
-                this.query.set(state.query);
-                this.results.set(state.results);
-                this.isLoading.set(state.isLoading);
-                this.error.set(state.error);
-            });
-
         // Check if in development mode
         this.showDebugInfo.set(this.isDevMode());
 
@@ -92,6 +92,12 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
 
         // Setup keyboard shortcut (Cmd/Ctrl + K)
         this.setupKeyboardShortcut();
+
+        // Get current user ID
+        const user = this.localService.getUser();
+        if (user) {
+            this.currentUserId = user.userId;
+        }
     }
 
     ngOnDestroy(): void {
@@ -99,20 +105,17 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
         if (this.keyboardShortcutHandler && isPlatformBrowser(this.platformId)) {
             document.removeEventListener('keydown', this.keyboardShortcutHandler);
         }
-        this.destroy$.next();
-        this.destroy$.complete();
     }
 
     /**
      * Handle input changes
      */
     onQueryChange(value: string): void {
-        this.query.set(value);
         this.selectedIndex.set(-1);
         this.searchService.search(value);
 
         if (value.length >= 2) {
-            this.isOpen.set(true);
+            this.searchService.setSearchOpen(true);
         }
     }
 
@@ -120,9 +123,9 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
      * Handle input focus
      */
     onFocus(): void {
-        this.isOpen.set(true);
-        if (this.query().length >= 2 && !this.results()) {
-            this.searchService.search(this.query());
+        this.searchService.setSearchOpen(true);
+        if (this.searchService.query().length >= 2 && !this.results()) {
+            this.searchService.search(this.searchService.query());
         }
     }
 
@@ -157,7 +160,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
                 const idx = this.selectedIndex();
                 if (idx >= 0 && idx < total) {
                     this.selectResult(results[idx]);
-                } else if (this.query().length >= 2) {
+                } else if (this.searchService.query().length >= 2) {
                     this.seeAllResults();
                 }
                 break;
@@ -187,27 +190,35 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
      * Close dropdown
      */
     closeDropdown(): void {
-        this.isOpen.set(false);
+        this.searchService.setSearchOpen(false);
         this.selectedIndex.set(-1);
     }
 
-    /**
-     * Select a result
-     */
-    selectResult(result: SearchResultItem): void {
+    selectResult(result: UserDetail | Conversation): void {
         console.log('Selected:', result);
         this.closeDropdown();
 
-        // Navigate based on result type
-        switch (result.type) {
-            case 'USER':
-                // Navigate to user profile or start chat
-                // this.router.navigate(['/user', result.id]);
-                break;
-            case 'CONVERSATION':
-                // Navigate to conversation
-                // this.router.navigate(['/chat', result.id]);
-                break;
+        if ('conversationName' in result) {
+            // It's a Conversation
+            let groupChat: Conversation = result;
+
+            // Check if we are already on the chat page
+            if (this.router.url.includes('/btc/chat')) {
+                this.chatServerService.openChat$.next(groupChat);
+            } else {
+                this.router.navigate(['/btc/chat'], { state: { selectedUser: groupChat } });
+            }
+
+        } else {
+            // It's a UserDetail
+            let userDetail: UserDetail = result;
+
+            // Check if we are already on the chat page
+            if (this.router.url.includes('/btc/chat')) {
+                this.chatServerService.openChat$.next(userDetail);
+            } else {
+                this.router.navigate(['/btc/chat'], { state: { selectedUser: userDetail } });
+            }
         }
     }
 
@@ -221,19 +232,16 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     /**
      * See all results (full search)
      */
-    seeAllResults(): void {
-        const q = this.query();
+    async seeAllResults(): Promise<void> {
+        const q = this.searchService.query();
         if (q.length >= 2) {
-            this.searchService.fullSearch(q).subscribe({
-                next: (results) => {
-                    this.results.set(results);
-                    // Navigate to full search results page
-                    // this.router.navigate(['/search'], { queryParams: { q } });
-                },
-                error: (err) => {
-                    this.error.set(err.message);
-                }
-            });
+            try {
+                await this.searchService.fullSearch(q);
+                // Navigate to full search results page
+                // this.router.navigate(['/search'], { queryParams: { q } });
+            } catch (err) {
+                // Error handled by service signal
+            }
         }
     }
 
@@ -241,8 +249,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
      * Retry failed search
      */
     retry(): void {
-        this.error.set(null);
-        this.searchService.search(this.query());
+        this.searchService.search(this.searchService.query());
     }
 
     /**
@@ -295,7 +302,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
             if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
                 event.preventDefault();
                 this.searchInput?.nativeElement?.focus();
-                this.isOpen.set(true);
+                this.searchService.setSearchOpen(true);
             }
         };
 

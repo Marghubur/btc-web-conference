@@ -1,23 +1,91 @@
 // search.models.ts
 
-export interface SearchResultItem {
-  type: 'USER' | 'CONVERSATION' | 'MESSAGE' | 'FILE' | 'CHANNEL';
+export interface UserDetail {
   id: string;
-  title: string;
-  subtitle?: string;
-  avatar?: string;
-  status?: 'online' | 'offline' | 'away' | 'busy';
-  score: number;
-  highlights?: { [key: string]: string };
-  lastActivity?: string;
-  metadata?: { [key: string]: any };
+  userId: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  avatar: string;
+  status: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  syncedAt: Date;
+}
+
+export interface Conversation {
+  id: string;
+  conversationId: string;
+  conversationType: 'direct' | 'group';
+  participantIds: string[];
+  participants: Participant[];
+  conversationName: string;
+  conversationAvatar: string;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+  lastMessage: LastMessage;
+  lastMessageAt: Date;
+  isActive: boolean;
+  settings: ConversationSettings;
+}
+
+
+export interface Participant {
+  userId: string;
+  username: string;
+  email: string;
+  avatar: string;
+  joinedAt: Date;
+  role: string;
+}
+
+export interface LastMessage {
+  messageId: string;
+  content: string;
+  senderId: string;
+  senderName: string;
+  sentAt: Date;
+}
+
+export interface ConversationSettings {
+  allowReactions: boolean;
+  allowPinning: boolean;
+  adminOnlyPost: boolean;
+}
+
+export interface Messages {
+  id: string;
+  messageId: string;
+  conversationId: string;
+  senderId: string;
+  recievedId: string;
+  type: string;
+  avatar: string;
+  body: string;
+  fileUrl: string;
+  replyTo: string;
+  mentions: string[];
+  reactions: string[];
+  clientType: string;
+  createdAt: Date;
+  editedAt: Date;
+  status: number;
+  isNewConversation: boolean;
+}
+
+export interface Reaction {
+  userId: string;
+  emoji: string;
 }
 
 export interface GroupedResults {
-  users: SearchResultItem[];
-  conversations: SearchResultItem[];
-  messages: SearchResultItem[];
-  files: SearchResultItem[];
+  users: UserDetail[];
+  conversations: Conversation[];
+  messages: Messages[];
+  files: any[];
   userCount: number;
   conversationCount: number;
   messageCount: number;
@@ -43,7 +111,6 @@ export interface SearchError {
 
 export interface GlobalSearchResponse {
   results?: GroupedResults;
-  combined?: SearchResultItem[];
   metadata?: SearchMetadata;
   error?: SearchError;
 }

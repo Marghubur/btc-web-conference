@@ -1,27 +1,6 @@
 // global-search.service.ts
 
-import { Injectable, inject } from '@angular/core';
-import {
-    Observable,
-    Subject,
-    BehaviorSubject,
-    of,
-    throwError,
-    timer,
-    from
-} from 'rxjs';
-import {
-    debounceTime,
-    distinctUntilChanged,
-    switchMap,
-    catchError,
-    tap,
-    takeUntil,
-    retry,
-    shareReplay,
-    map,
-    finalize
-} from 'rxjs/operators';
+import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import {
     GlobalSearchResponse,
     SearchState,
@@ -39,203 +18,197 @@ export class GlobalSearchService {
     // Configuration
     private readonly DEBOUNCE_TIME = 300; // ms
     private readonly MIN_SEARCH_LENGTH = 2;
-    private readonly TYPEAHEAD_LIMIT = 5;
+    private readonly MIN_LENGTH_FOR_COMPLETE_SEARCH = 4;
+    private readonly TYPEAHEAD_LIMIT = 8;
     private readonly DEFAULT_PAGE_SIZE = 20;
 
-    // Subjects for search
-    private readonly searchSubject = new Subject<string>();
-    private readonly cancelSubject = new Subject<void>();
+    // Signals for state
+    readonly query = signal('');
+    readonly results = signal<GlobalSearchResponse | null>(null);
+    readonly isLoading = signal(false);
+    readonly error = signal<string | null>(null);
+    readonly isOpen = signal(false);
 
-    // State management
-    private readonly stateSubject = new BehaviorSubject<SearchState>({
-        query: '',
-        results: null,
-        isLoading: false,
-        error: null,
-        isOpen: false
-    });
-
-    // Public state observable
-    public readonly state$ = this.stateSubject.asObservable();
-
-    // Typeahead results stream with debouncing
-    public readonly typeaheadResults$: Observable<GlobalSearchResponse | null>;
+    // Derived state for convenience (optional, useful if components expect a state object)
+    readonly state = computed<SearchState>(() => ({
+        query: this.query(),
+        results: this.results(),
+        isLoading: this.isLoading(),
+        error: this.error(),
+        isOpen: this.isOpen()
+    }));
 
     constructor() {
-        // Set up the debounced typeahead stream
-        this.typeaheadResults$ = this.searchSubject.pipe(
-            // Debounce to avoid too many API calls
-            debounceTime(this.DEBOUNCE_TIME),
+        // Effect to handle search logic with debouncing
+        effect((onCleanup) => {
+            const query = this.query();
 
-            // Only search if query changed
-            distinctUntilChanged(),
+            // Clear results if query is too short
+            if (query.length < this.MIN_SEARCH_LENGTH) {
+                // We typically shouldn't write to signals in effects without care,
+                // but this sets derived state from the source of truth (query).
+                // Need to use untracked if we want to avoid re-triggering (though these don't trigger this effect).
+                this.results.set(null);
+                this.error.set(null);
+                this.isLoading.set(false);
+                return;
+            }
 
-            // Update state with new query
-            tap(query => this.updateState({ query, isLoading: query.length >= this.MIN_SEARCH_LENGTH })),
+            // Set loading state immediately (debouncing happens for the actual call, but UI might want to show typing?)
+            // Actually, typically we wait for debounce to show loading.
+            // Let's stick to standard debounce pattern: don't do anything until debounce timer hits.
 
-            // Switch to new search, cancelling previous
-            switchMap(query => {
-                // Don't search if query is too short
-                if (query.length < this.MIN_SEARCH_LENGTH) {
-                    this.updateState({ results: null, isLoading: false, error: null });
-                    return of(null);
-                }
+            const timeoutId = setTimeout(async () => {
+                await this.performTypeaheadSearch(query);
+            }, this.DEBOUNCE_TIME);
 
-                return this.typeahead(query).pipe(
-                    // Cancel if new search comes in
-                    takeUntil(this.cancelSubject),
-
-                    // Handle errors gracefully
-                    catchError(error => {
-                        this.updateState({
-                            error: this.extractErrorMessage(error),
-                            isLoading: false
-                        });
-                        return of(null);
-                    }),
-
-                    // Update state with results
-                    tap(results => {
-                        if (results) {
-                            this.updateState({ results, isLoading: false, error: null });
-                        }
-                    })
-                );
-            }),
-
-            // Share the result among subscribers
-            shareReplay(1)
-        );
-
-        // Subscribe to keep the stream active
-        this.typeaheadResults$.subscribe();
+            onCleanup(() => {
+                clearTimeout(timeoutId);
+            });
+        }, { allowSignalWrites: true });
     }
 
     /**
-     * Trigger a typeahead search (debounced)
+     * Update the search query
      */
     search(query: string): void {
-        this.searchSubject.next(query);
+        this.query.set(query);
     }
 
     /**
-     * Cancel ongoing search
+     * Cancel ongoing search (for external cancellation)
      */
     cancelSearch(): void {
-        this.cancelSubject.next();
-        this.updateState({ isLoading: false });
+        this.isLoading.set(false);
     }
 
     /**
      * Clear search results and query
      */
     clearSearch(): void {
-        this.cancelSearch();
-        this.updateState({
-            query: '',
-            results: null,
-            error: null,
-            isOpen: false
-        });
+        this.query.set('');
+        this.results.set(null);
+        this.error.set(null);
+        this.isOpen.set(false);
+        this.isLoading.set(false);
     }
 
     /**
      * Toggle search dropdown visibility
      */
     setSearchOpen(isOpen: boolean): void {
-        this.updateState({ isOpen });
+        this.isOpen.set(isOpen);
     }
 
     /**
-     * Typeahead API call (fast, limited results)
-     * Converts AjaxService Promise to Observable for reactive stream compatibility
+     * Perform the actual typeahead API call
      */
-    typeahead(query: string): Observable<GlobalSearchResponse> {
-        const url = `search/typeahead?q=${encodeURIComponent(query.trim())}&fs=n&limit=${this.TYPEAHEAD_LIMIT}`;
+    private async performTypeaheadSearch(query: string): Promise<void> {
+        // Double check query length (in case called directly)
+        if (query.length < this.MIN_SEARCH_LENGTH) {
+            this.results.set(null);
+            this.isLoading.set(false);
+            return;
+        }
 
-        return from(this.http.get(url)).pipe(
-            map(response => this.transformResponse(response)),
-            retry({
-                count: 2,
-                delay: (error, retryCount) => {
-                    // Only retry on network errors or 5xx
-                    if (error?.status >= 500 || error?.status === 0) {
-                        return timer(retryCount * 100); // Exponential backoff
-                    }
-                    return throwError(() => error);
-                }
-            })
-        );
+        this.isLoading.set(true);
+        this.error.set(null);
+
+        try {
+            const fs = query.length >= this.MIN_LENGTH_FOR_COMPLETE_SEARCH ? 'y' : 'n';
+            const url = `search/typeahead?q=${encodeURIComponent(query.trim())}&fs=${fs}&limit=${this.TYPEAHEAD_LIMIT}`;
+
+            // Assuming AjaxService returns a Promise. 
+            // If it supports cancellation, we would pass a signal here, but basic Promise doesn't.
+            // We handle "cancellation" via the effect cleanup: 
+            // - The timeout is cleared if query changes.
+            // - If the request already started, we check if the query is still the same before setting results.
+
+            const response = await this.http.get(url);
+
+            // Check if this result is still relevant
+            if (this.query() === query) {
+                const results = this.transformResponse(response);
+                this.results.set(results);
+                this.isLoading.set(false);
+            }
+        } catch (err) {
+            if (this.query() === query) {
+                this.error.set(this.extractErrorMessage(err));
+                this.results.set(null);
+                this.isLoading.set(false);
+            }
+        }
     }
 
     /**
      * Full search with pagination
      */
-    fullSearch(query: string, page = 0, limit = this.DEFAULT_PAGE_SIZE): Observable<GlobalSearchResponse> {
+    async fullSearch(query: string, page = 0, limit = this.DEFAULT_PAGE_SIZE): Promise<GlobalSearchResponse> {
         if (query.length < this.MIN_SEARCH_LENGTH) {
-            return of({ results: undefined, combined: [], metadata: undefined });
+            return { results: undefined, metadata: undefined };
         }
 
-        this.updateState({ isLoading: true, error: null });
+        this.isLoading.set(true);
+        this.error.set(null);
 
-        const url = `search/global?q=${encodeURIComponent(query.trim())}&page=${page}&limit=${limit}`;
+        try {
+            const url = `search/global?q=${encodeURIComponent(query.trim())}&page=${page}&limit=${limit}`;
+            const response = await this.http.get(url);
+            const results = this.transformResponse(response);
 
-        return from(this.http.get(url)).pipe(
-            map(response => this.transformResponse(response)),
-            tap(results => this.updateState({ results, isLoading: false })),
-            catchError(error => {
-                this.updateState({ error: this.extractErrorMessage(error), isLoading: false });
-                return throwError(() => error);
-            }),
-            finalize(() => this.updateState({ isLoading: false }))
-        );
+            // We might or might not want to update the main 'results' state for a full search.
+            // Usually full search navigates to a new page or updates a different view.
+            // But the legacy service updated the state.
+            this.results.set(results);
+            this.isLoading.set(false);
+            return results;
+        } catch (err) {
+            this.error.set(this.extractErrorMessage(err));
+            this.isLoading.set(false);
+            throw err;
+        }
     }
 
     /**
      * Search only users
      */
-    searchUsers(query: string, page = 0, limit = this.DEFAULT_PAGE_SIZE): Observable<GlobalSearchResponse> {
+    async searchUsers(query: string, page = 0, limit = this.DEFAULT_PAGE_SIZE): Promise<GlobalSearchResponse> {
         const url = `search/users?q=${encodeURIComponent(query.trim())}&page=${page}&limit=${limit}`;
-
-        return from(this.http.get(url)).pipe(
-            map(response => this.transformResponse(response))
-        );
+        const response = await this.http.get(url);
+        return this.transformResponse(response);
     }
 
     /**
      * Search only conversations
      */
-    searchConversations(query: string, page = 0, limit = this.DEFAULT_PAGE_SIZE): Observable<GlobalSearchResponse> {
+    async searchConversations(query: string, page = 0, limit = this.DEFAULT_PAGE_SIZE): Promise<GlobalSearchResponse> {
         const url = `search/conversations?q=${encodeURIComponent(query.trim())}&page=${page}&limit=${limit}`;
-
-        return from(this.http.get(url)).pipe(
-            map(response => this.transformResponse(response))
-        );
+        const response = await this.http.get(url);
+        return this.transformResponse(response);
     }
 
     /**
      * Health check
      */
-    checkHealth(): Observable<HealthResponse> {
-        return from(this.http.get('search/health')).pipe(
-            map(response => response?.ResponseBody as HealthResponse)
-        );
+    async checkHealth(): Promise<HealthResponse> {
+        const response = await this.http.get('search/health');
+        return response?.ResponseBody as HealthResponse;
     }
 
     /**
      * Get metrics
      */
-    getMetrics(): Observable<MetricsResponse> {
-        return from(this.http.get('search/metrics')).pipe(
-            map(response => response?.ResponseBody as MetricsResponse)
-        );
+    async getMetrics(): Promise<MetricsResponse> {
+        const response = await this.http.get('search/metrics');
+        return response?.ResponseBody as MetricsResponse;
     }
 
     /**
      * Get current state snapshot
      */
     getState(): SearchState {
-        return this.stateSubject.getValue();
+        return this.state();
     }
 
     /**
@@ -247,16 +220,6 @@ export class GlobalSearchService {
         const body = response?.ResponseBody || response;
         const data = body?.data || body?.result || body;
         return data as GlobalSearchResponse;
-    }
-
-    /**
-     * Update state
-     */
-    private updateState(partialState: Partial<SearchState>): void {
-        this.stateSubject.next({
-            ...this.stateSubject.getValue(),
-            ...partialState
-        });
     }
 
     /**

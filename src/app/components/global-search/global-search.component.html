@@ -82,18 +82,18 @@
                 [attr.aria-selected]="selectedIndex() === idx">
                 <div class="avatar" [class.online]="user.status === 'online'">
                     @if (user.avatar) {
-                    <img [src]="user.avatar" [alt]="user.title" />
+                    <img [src]="user.avatar" [alt]="user.firstName" />
                     } @else {
-                    <span class="avatar-fallback" aria-hidden="true">{{ getInitials(user.title) }}</span>
+                    <span class="avatar-fallback" aria-hidden="true">{{ getInitials(user.firstName) }}</span>
                     }
                     @if (user.status) {
                     <span class="status-indicator" [class]="user.status" [attr.aria-label]="user.status"></span>
                     }
                 </div>
                 <div class="result-content">
-                    <span class="result-title" [innerHTML]="user.highlights?.['name'] || user.title"></span>
-                    @if (user.subtitle) {
-                    <span class="result-subtitle" [innerHTML]="user.highlights?.['email'] || user.subtitle"></span>
+                    <span class="result-title" [innerHTML]="(user.firstName + ' ' + user.lastName)"></span>
+                    @if (user.email) {
+                    <span class="result-subtitle" [innerHTML]="user.email"></span>
                     }
                 </div>
                 <span class="result-type-badge">Person</span>
@@ -120,12 +120,14 @@
                     </svg>
                 </div>
                 <div class="result-content">
-                    <span class="result-title">{{ conv.title }}</span>
-                    @if (conv.subtitle) {
-                    <span class="result-subtitle">{{ conv.subtitle }}</span>
+                    <span class="result-title">{{ conv.conversationName }}</span>
+                    @if (conv.lastMessage) {
+                    <span class="result-subtitle">{{ conv.lastMessage.content }}</span>
+                    } @else {
+                    <span class="result-subtitle">No messages yet</span>
                     }
                 </div>
-                <span class="result-type-badge">{{ conv.metadata?.['type'] || 'Chat' }}</span>
+                <span class="result-type-badge">{{ conv.conversationType || 'Chat' }}</span>
             </div>
             }
         </div>
