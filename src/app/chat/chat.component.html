@@ -74,14 +74,14 @@
 
                 <div class="avatar-container">
                     <div class="avatar" [ngStyle]="{ 'background-color': getColorFromName(item.conversationName, '') }">
-                        {{ getUserInitiaLetter(item.conversationName, '') }}
+                        {{ getCurrentInitiaLetter(item) }}
                     </div>
                     <span class="presence-indicator"></span>
                 </div>
 
                 <div class="conversation-details">
                     <div class="conversation-header">
-                        <span class="conversation-name">{{ item.conversationName }}</span>
+                        <span class="conversation-name">{{ getConversationName(item) }}</span>
                         <span class="conversation-time">{{ item.lastMessageAt | date : "h:mm a" }}</span>
                     </div>
                     <div class="conversation-preview">
@@ -95,7 +95,7 @@
 
     <!-- ===== Main Chat Area ===== -->
     <main class="teams-chat-main">
-        @if (activeConversation) {
+        @if (receiver) {
         <!-- Chat Header -->
         <header class="chat-header">
             <div class="chat-header-left">
@@ -227,12 +227,12 @@
                     </button>
                 </div>
 
-                <input type="text" class="message-input" [disabled]="!activeConversation" [value]="message()"
+                <input type="text" class="message-input" [disabled]="!receiver" [value]="message()"
                     (input)="message.set($event.target.value)" (keyup.enter)="sendMessage()"
                     placeholder="Type a new message" />
 
                 <div class="input-actions-right">
-                    <button class="send-btn" [disabled]="!activeConversation || !message()" (click)="sendMessage()"
+                    <button class="send-btn" [disabled]="!receiver || !message()" (click)="sendMessage()"
                         title="Send message">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />

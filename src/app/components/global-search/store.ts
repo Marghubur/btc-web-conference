@@ -57,7 +57,7 @@ export class SearchStore {
     // Computed signals
     readonly users = computed(() => this._results()?.results?.users ?? []);
     readonly conversations = computed(() => this._results()?.results?.conversations ?? []);
-    readonly combined = computed(() => this._results()?.combined ?? []);
+    // readonly combined = computed(() => this._results()?.combined ?? []);
     readonly metadata = computed(() => this._results()?.metadata);
 
     readonly totalCount = computed(() => this.metadata()?.totalCount ?? 0);

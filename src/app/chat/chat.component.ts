@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
 import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
 import { ChatServerService } from '../providers/services/chat.server.service';
 import { Subscription } from 'rxjs';
-import { Conversation, UserDetail } from '../components/global-search/search.models';
+import { Conversation, Participant, UserDetail } from '../components/global-search/search.models';
 
 @Component({
     selector: 'app-chat',
@@ -43,7 +43,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     private shouldScrollToBottom = false;
 
     currentUserId: string = "";
-    activeConversation: Conversation = null;
+    receiver: Conversation = null;
 
     readonly destroyRef = inject(DestroyRef);
 
@@ -100,6 +100,33 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                 }
             }
         });
+    }
+
+    getCurrentInitiaLetter(conversation: Conversation): string {
+        let participants = conversation.participants.filter((x) => x.userId != this.currentUserId);
+        if (participants.length == 0) return '';
+
+        if (participants.length == 1) {
+            return this.getUserInitiaLetter(participants[0].firstName, participants[0].lastName);
+        } else
+            return this.getUserInitiaLetter("GRP", '');
+    }
+
+    getConversationName(conversation: Conversation): string {
+        if (conversation.conversationType == 'group') {
+            return this.getUserInitiaLetter(conversation.conversationType, '');
+        } else {
+            let participants = conversation.participants.filter((x) => x.userId != this.currentUserId);
+            if (participants.length == 0) return 'Unknown';
+
+            if (participants.length == 1) {
+                return participants[0].firstName + ' ' + participants[0].lastName;
+            } else if (participants.length > 2) {
+                return participants[0].firstName + ' and ' + participants[1].firstName;
+            } else {
+                return participants[0].firstName + ', ' + participants[1].firstName + ' +' + `${participants.length - 2}`;
+            }
+        }
     }
 
     getUserInitiaLetter(fname: string, lname: string): string {
@@ -214,7 +241,28 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                 conversationName: selectedUser.username,
                 conversationAvatar: selectedUser.avatar,
                 participantIds: [selectedUser.userId, this.currentUserId],
-                participants: [],
+                participants: [
+                    <Participant>{
+                        userId: selectedUser.userId,
+                        username: selectedUser.username,
+                        firstName: selectedUser.firstName,
+                        lastName: selectedUser.lastName,
+                        email: selectedUser.email,
+                        avatar: selectedUser.avatar,
+                        joinedAt: new Date(),
+                        role: 'user'
+                    },
+                    <Participant>{
+                        userId: this.user.userId,
+                        username: "",
+                        firstName: this.user.firstName,
+                        lastName: this.user.lastName,
+                        email: this.user.email,
+                        avatar: "",
+                        joinedAt: new Date(),
+                        role: 'user'
+                    }
+                ],
                 createdBy: this.currentUserId,
                 createdAt: new Date(),
                 updatedAt: null,
@@ -233,8 +281,8 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     selectUser(conversation: Conversation) {
-        this.recieverId = conversation.id;
-        this.activeConversation = conversation;
+        // this.recieverId = conversation.id;
+        this.receiver = conversation;
         this.pageIndex = 1;
         this.messages = []; // Clear existing messages
         this.loadMoreMessages(true); // Pass true to scroll to bottom on first load
@@ -249,9 +297,9 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     loadMoreMessages(scrollToBottom: boolean = false) {
-        if (!this.activeConversation) return;
+        if (!this.receiver) return;
 
-        this.http.get(`messages/get?id=${this.activeConversation.id ?? ''}&page=${this.pageIndex}&limit=20`).then((res: ResponseModel) => {
+        this.http.get(`messages/get?id=${this.receiver.id ?? ''}&page=${this.pageIndex}&limit=20`).then((res: ResponseModel) => {
             if (res.ResponseBody && res.ResponseBody.messages && res.ResponseBody.messages.length > 0) {
                 console.log("messages loaded", res.ResponseBody.messages.length);
                 const newMessages = res.ResponseBody.messages;
@@ -268,14 +316,14 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     sendMessage() {
-        if (this.recieverId != null) {
+        if (this.receiver.conversationAvatar == null) {
             // call java to insert or create conversation channel
-            this.http.post(`conversations/create/${this.currentUserId}`, this.activeConversation).then((res: any) => {
+            this.http.post(`conversations/create/${this.currentUserId}`, this.receiver).then((res: any) => {
                 console.log("channel created", res);
                 this.send(res);
             });
         } else {
-            this.send(this.activeConversation);
+            this.send(this.receiver);
         }
     }
 

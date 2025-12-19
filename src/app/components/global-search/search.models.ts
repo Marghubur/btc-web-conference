@@ -36,6 +36,8 @@ export interface Conversation {
 export interface Participant {
   userId: string;
   username: string;
+  firstName: string;
+  lastName: string;
   email: string;
   avatar: string;
   joinedAt: Date;
