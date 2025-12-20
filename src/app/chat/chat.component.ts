@@ -241,7 +241,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     sendMessage() {
-        if (this.receiver.conversationAvatar == null) {
+        if (this.receiver.id == null) {
             // call java to insert or create conversation channel
             this.chatService.createConversation(this.currentUserId, this.receiver).then((res: any) => {
                 console.log("channel created", res);
