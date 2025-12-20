@@ -5,13 +5,13 @@ import { Router } from '@angular/router';
 import { NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
 import { Observable, of, OperatorFunction } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, switchMap, tap, map } from 'rxjs/operators';
-import { ChatServerService } from '../../providers/services/chat.server.service';
 import { LocalService } from '../../providers/services/local.service';
 import { User } from '../../providers/model';
 import { AjaxService } from '../../providers/services/ajax.service';
 import { iNavigation } from '../../providers/services/iNavigation';
 import { UserFilter } from '../../models/user.filter';
 import { GlobalSearchComponent } from "../../components/global-search/global-search.component";
+import { ChatService } from '../../chat/chat.service';
 
 @Component({
     selector: 'app-header',
@@ -27,7 +27,7 @@ export class HeaderComponent {
     user: User;
 
     private http = inject(AjaxService);
-    private chatService = inject(ChatServerService);
+    private chatService = inject(ChatService);
     private router = inject(Router);
     private localService = inject(LocalService);
     private nav = inject(iNavigation);

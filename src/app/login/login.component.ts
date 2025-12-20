@@ -5,6 +5,7 @@ import { ResponseModel } from '../providers/model';
 import { AjaxService } from '../providers/services/ajax.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { Dashboard } from '../providers/constant';
+import { HttpService } from '../providers/services/http.service';
 
 @Component({
   selector: 'app-login',
@@ -21,8 +22,10 @@ export class LoginComponent implements OnInit {
   password: string = '';
   isLoading: boolean = false;
   rememberMe: boolean = false;
-  constructor(private nav: iNavigation,
-    private http: AjaxService
+  constructor(
+    private nav: iNavigation,
+    private http: AjaxService,
+    private httpService: HttpService
   ) { }
 
   ngOnInit(): void {
@@ -47,7 +50,7 @@ export class LoginComponent implements OnInit {
       email: this.email,
       password: this.password
     }
-    this.http.login("auth/authenticateUser", user).then((res: ResponseModel) => {
+    this.httpService.login("auth/authenticateUser", user).then((res: any) => {
       if (res.ResponseBody) {
         this.isLoading = false;
         if (this.rememberMe) {

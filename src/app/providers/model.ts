@@ -1,8 +1,12 @@
 export interface ResponseModel {
-  AuthenticationToken: string;
+  AccessToken: string;
   HttpStatusCode: number;
   HttpStatusMessage: string;
   ResponseBody: any;
+  ErrorCode: string;
+  ErrorMessage: string;
+  IsSuccess: boolean;
+  Message: string;
 }
 
 export interface MeetingDetail {

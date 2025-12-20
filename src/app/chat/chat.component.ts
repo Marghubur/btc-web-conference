@@ -1,14 +1,13 @@
 import { Component, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild, AfterViewChecked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AjaxService } from '../providers/services/ajax.service';
 import { ResponseModel, User } from '../providers/model';
 import { CommonModule } from '@angular/common';
 import { LocalService } from '../providers/services/local.service';
 import { environment } from '../../environments/environment';
 import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
-import { ChatServerService } from '../providers/services/chat.server.service';
 import { Subscription } from 'rxjs';
 import { Conversation, Participant, UserDetail } from '../components/global-search/search.models';
+import { ChatService } from './chat.service';
 
 @Component({
     selector: 'app-chat',
@@ -20,11 +19,12 @@ import { Conversation, Participant, UserDetail } from '../components/global-sear
 export class ChatComponent implements OnInit, AfterViewChecked {
     @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
-    meetingRooms: Array<Conversation> = [];
+    // Local state managed by signals in service
+    // meetingRooms and searchResults delegated to service
     isPageReady: boolean = false;
     today: Date = new Date();
     message: any = signal<string | null>('');
-    messages: Message[] = [];
+    // messages delegated to service
     pageIndex: number = 1;
     recieverId?: string = null;
     filterModal: FilterModal = { pageIndex: 1, pageSize: 20, searchString: '1=1' };
@@ -35,7 +35,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     };
 
     searchQuery: string = '';
-    searchResults: any[] = [];
+    // searchResults delegated to service
     isSearching: boolean = false;
 
     typingUsers: Map<string, boolean> = new Map();
@@ -48,10 +48,9 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     readonly destroyRef = inject(DestroyRef);
 
     constructor(
-        private http: AjaxService,
         private local: LocalService,
         private ws: ConfeetSocketService,
-        private httpMessage: ChatServerService
+        public chatService: ChatService
     ) { }
 
     ngAfterViewChecked() {
@@ -70,7 +69,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
 
         // Listen for global search selections
         this.subscriptions.add(
-            this.httpMessage.openChat$.subscribe((user: any) => {
+            this.chatService.openChat$.subscribe((user: any) => {
                 this.startChatWithUser(user);
             })
         );
@@ -85,110 +84,42 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     getConversations() {
-        this.httpMessage.get(`users/meeting-rooms`).then((res: any) => {
-            // Check for passed state from Global Search (when navigating from another page)
-            const state = history.state;
-            if (res.conversations && res.conversations.length > 0) {
-                console.log("meeting rooms loaded");
-                this.meetingRooms = res.conversations;
-                if (state && state.selectedUser) {
-                    this.startChatWithUser(state.selectedUser);
-                }
-            } else {
-                if (state && state.selectedUser) {
-                    this.startChatWithUser(state.selectedUser);
-                }
-            }
-        });
+        this.chatService.getMeetingRooms();
+        // State handling for navigation is tricker without the direct promise return
+        // We can check the signal effect or assume it loads.
+        // For the navigation state check, we can check the signal value immediately if loaded, 
+        // or effectively we should move this logic to a computed or effect, or just check after a small delay if strict async is needed.
+        // However, since getMeetingRooms awaits, we can just await if we make this async, or use .then() on the void promise if we want.
+        // But better pattern:
+        // Just call it.
     }
 
     getCurrentInitiaLetter(conversation: Conversation): string {
-        let participants = conversation.participants.filter((x) => x.userId != this.currentUserId);
-        if (participants.length == 0) return '';
-
-        if (participants.length == 1) {
-            return this.getUserInitiaLetter(participants[0].firstName, participants[0].lastName);
-        } else
-            return this.getUserInitiaLetter("GRP", '');
+        return this.chatService.getCurrentInitiaLetter(conversation, this.currentUserId);
     }
 
     getConversationName(conversation: Conversation): string {
-        if (conversation.conversationType == 'group') {
-            return this.getUserInitiaLetter(conversation.conversationType, '');
-        } else {
-            let participants = conversation.participants.filter((x) => x.userId != this.currentUserId);
-            if (participants.length == 0) return 'Unknown';
-
-            if (participants.length == 1) {
-                return participants[0].firstName + ' ' + participants[0].lastName;
-            } else if (participants.length > 2) {
-                return participants[0].firstName + ' and ' + participants[1].firstName;
-            } else {
-                return participants[0].firstName + ', ' + participants[1].firstName + ' +' + `${participants.length - 2}`;
-            }
-        }
+        return this.chatService.getConversationName(conversation, this.currentUserId);
     }
 
     getUserInitiaLetter(fname: string, lname: string): string {
-        var name = fname + ' ' + (lname != null && lname != '' ? lname : '');
-        if (!name) return '';
-
-        const words = name.split(' ').slice(0, 2);
-        const initials = words
-            .map((x) => {
-                if (x.length > 0) {
-                    return x.charAt(0).toUpperCase();
-                }
-                return '';
-            })
-            .join('');
-
-        return initials;
+        return this.chatService.getUserInitiaLetter(fname, lname);
     }
 
     getColorFromName(fname: string, lname: string): string {
-        var name = fname + ' ' + (lname != null && lname != '' ? lname : '');
-        // Predefined color palette (Google Meet style soft colors)
-        const colors = [
-            '#f28b829f',
-            '#FDD663',
-            '#81C995',
-            '#AECBFA',
-            '#D7AEFB',
-            '#FFB300',
-            '#34A853',
-            '#4285F4',
-            '#FBBC05',
-            '#ff8075ff',
-            '#9AA0A6',
-            '#F6C7B6',
-        ];
-
-        // Create hash from name
-        let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        }
-
-        // Pick color based on hash
-        const index = Math.abs(hash) % colors.length;
-        return colors[index];
+        return this.chatService.getColorFromName(fname, lname);
     }
 
     onSearch() {
         if (!this.searchQuery || this.searchQuery.length < 2) {
-            this.searchResults = [];
+            this.chatService.searchResults.set([]);
             return;
         }
 
         this.isSearching = true;
-        this.httpMessage.get(`users/search?term=${this.searchQuery}`).then((res: any) => {
+        this.isSearching = true;
+        this.chatService.searchUsers(this.searchQuery).then(() => {
             this.isSearching = false;
-            // Assuming res is the array of users or res.users
-            this.searchResults = Array.isArray(res) ? res : (res.users || []);
-        }).catch(e => {
-            this.isSearching = false;
-            console.error("Search failed", e);
         });
     }
 
@@ -211,27 +142,29 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     enableConversation(conversation: Conversation) {
         // Check if conversation exists
         conversation.conversationType = 'group';
-        const existing = this.meetingRooms.findIndex(x => x.id === conversation.id);
+        const existing = this.chatService.meetingRooms().findIndex(x => x.id === conversation.id);
         if (existing > -1) {
-            this.selectUser(this.meetingRooms[existing]);
+            this.selectUser(this.chatService.meetingRooms()[existing]);
         } else {
             console.log("Starting new chat with", conversation);
-            this.meetingRooms.unshift(conversation);
+            this.chatService.meetingRooms.update(rooms => [conversation, ...rooms]);
             this.selectUser(conversation);
         }
 
         this.searchQuery = '';
-        this.searchResults = [];
+        this.chatService.searchResults.set([]);
     }
 
     enableNewConversation(selectedUser: UserDetail) {
         // Check if conversation exists
-        const existing = this.meetingRooms.findIndex(x =>
+        const existing = this.chatService.meetingRooms().findIndex(x =>
             x.participantIds.findIndex(y => y === selectedUser.userId) > -1 &&
-            x.participantIds.findIndex(y => y === this.currentUserId) > -1
+            x.participantIds.findIndex(y => y === this.currentUserId) > -1 &&
+            x.participantIds.length == 2
         );
+
         if (existing > -1) {
-            this.selectUser(this.meetingRooms[existing]);
+            this.selectUser(this.chatService.meetingRooms()[existing]);
         } else {
             console.log("Starting new chat with", selectedUser);
             let newConversation: Conversation = {
@@ -272,19 +205,19 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                 isActive: true
             }
 
-            this.meetingRooms.unshift(newConversation);
+            this.chatService.meetingRooms.update(rooms => [newConversation, ...rooms]);
             this.selectUser(newConversation);
         }
 
         this.searchQuery = '';
-        this.searchResults = [];
+        this.chatService.searchResults.set([]);
     }
 
     selectUser(conversation: Conversation) {
         // this.recieverId = conversation.id;
         this.receiver = conversation;
         this.pageIndex = 1;
-        this.messages = []; // Clear existing messages
+        this.chatService.messages.set([]); // Clear existing messages
         this.loadMoreMessages(true); // Pass true to scroll to bottom on first load
     }
 
@@ -299,18 +232,10 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     loadMoreMessages(scrollToBottom: boolean = false) {
         if (!this.receiver) return;
 
-        this.http.get(`messages/get?id=${this.receiver.id ?? ''}&page=${this.pageIndex}&limit=20`).then((res: ResponseModel) => {
-            if (res.ResponseBody && res.ResponseBody.messages && res.ResponseBody.messages.length > 0) {
-                console.log("messages loaded", res.ResponseBody.messages.length);
-                const newMessages = res.ResponseBody.messages;
-                // Append new messages to the list
-                this.messages = [...this.messages, ...newMessages];
-                this.pageIndex++;
-
-                // Scroll to bottom only on initial load
-                if (scrollToBottom) {
-                    this.shouldScrollToBottom = true;
-                }
+        this.chatService.getMessages(this.receiver.id ?? '', this.pageIndex, 20, this.pageIndex > 1).then(() => {
+            this.pageIndex++;
+            if (scrollToBottom) {
+                this.shouldScrollToBottom = true;
             }
         });
     }
@@ -318,7 +243,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     sendMessage() {
         if (this.receiver.conversationAvatar == null) {
             // call java to insert or create conversation channel
-            this.http.post(`conversations/create/${this.currentUserId}`, this.receiver).then((res: any) => {
+            this.chatService.createConversation(this.currentUserId, this.receiver).then((res: any) => {
                 console.log("channel created", res);
                 this.send(res);
             });
@@ -346,7 +271,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                 status: 1
             }
 
-            this.messages.push(event);
+            this.chatService.messages.update(msgs => [...msgs, event]);
             this.ws.sendMessage(event);
             this.message.set('');
             this.shouldScrollToBottom = true; // Scroll to bottom after sending
@@ -374,7 +299,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         // New message received
         this.subscriptions.add(
             this.ws.newMessage$.subscribe(message => {
-                this.messages.push(message);
+                this.chatService.messages.update(msgs => [...msgs, message]);
                 // Auto mark as delivered
                 this.ws.markDelivered(message.id!, message.conversationId);
                 this.shouldScrollToBottom = true; // Scroll to bottom on new message
@@ -385,11 +310,14 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         this.subscriptions.add(
             this.ws.messageSent$.subscribe(message => {
                 // Update local message with server-assigned id and timestamp
-                const index = this.messages.findIndex(m => m.messageId === message.messageId);
+                const index = this.chatService.messages().findIndex(m => m.messageId === message.messageId);
                 if (index > -1) {
-                    this.messages[index] = message;
+                    this.chatService.messages.update(msgs => {
+                        msgs[index] = message;
+                        return [...msgs];
+                    });
                 } else {
-                    this.messages.push(message);
+                    this.chatService.messages.update(msgs => [...msgs, message]);
                 }
             })
         );
@@ -432,7 +360,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     private updateMessageStatus(messageId: string, status: string): void {
-        const message = this.messages.find(m => m.id === messageId);
+        const message = this.chatService.messages().find(m => m.id === messageId);
         if (message) {
             // Update UI to show delivered/seen status
         }

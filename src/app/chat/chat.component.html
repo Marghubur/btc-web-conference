@@ -17,7 +17,7 @@
                     <small class="text-success d-flex align-items-center">
                         <span class="status-dot bg-success me-1"
                             style="width: 8px; height: 8px; border-radius: 50%;"></span>
-                        Online
+                        {{ user.email }}
                     </small>
                 </div>
             </div>
@@ -49,10 +49,11 @@
                 </div>
                 <!-- Search Results Dropdown -->
                 <div class="search-results-dropdown position-absolute w-100 bg-white shadow rounded mt-1"
-                    style="z-index: 1000; max-height: 300px; overflow-y: auto;" *ngIf="searchResults.length > 0">
+                    style="z-index: 1000; max-height: 300px; overflow-y: auto;"
+                    *ngIf="chatService.searchResults().length > 0">
                     <div class="list-group">
                         <button type="button" class="list-group-item list-group-item-action d-flex align-items-center"
-                            *ngFor="let result of searchResults" (click)="startChat(result)">
+                            *ngFor="let result of chatService.searchResults()" (click)="startChatWithUser(result)">
                             <div class="avatar-container me-2">
                                 <div class="avatar" style="width: 32px; height: 32px; font-size: 14px;"
                                     [ngStyle]="{ 'background-color': getColorFromName(result.firstName, result.lastName) }">
@@ -68,7 +69,7 @@
 
         <!-- Conversation List -->
         <div class="conversation-list">
-            @for (item of meetingRooms; track $index) {
+            @for (item of chatService.meetingRooms(); track $index) {
             <a href="javascript:void(0)" class="conversation-item" [class.selected]="item.userId == user.userId"
                 (click)="selectUser(item)">
 
@@ -101,13 +102,13 @@
             <div class="chat-header-left">
                 <div class="avatar-container">
                     <div class="avatar avatar-large"
-                        [ngStyle]="{ 'background-color': getColorFromName(user.firstName, user.lastName) }">
-                        {{ getUserInitiaLetter(user.firstName, user.lastName) }}
+                        [ngStyle]="{ 'background-color': getColorFromName(receiver.conversationName, '') }">
+                        {{ getCurrentInitiaLetter(receiver) }}
                     </div>
                 </div>
                 <div class="chat-user-info">
                     <span class="chat-user-name">
-                        {{ user.firstName }}{{ user.lastName ? ' ' + user.lastName : '' }}
+                        {{ getConversationName(receiver) }}
                     </span>
                     <span class="chat-user-status">
                         <span class="status-dot"></span>
@@ -141,7 +142,7 @@
 
         <!-- Messages Container -->
         <div class="messages-container" #messagesContainer (scroll)="onScroll($event)">
-            @for (msg of messages; track $index) {
+            @for (msg of chatService.messages(); track $index) {
             @if (msg.senderId == currentUserId) {
             <!-- Sent Message -->
             <div class="message-wrapper sent">

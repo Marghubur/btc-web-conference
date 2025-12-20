@@ -17,9 +17,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { GlobalSearchService } from './global-search.service';
-import { GlobalSearchResponse, UserDetail, Conversation } from './search.models';
+import { UserDetail, Conversation } from './search.models';
 import { LocalService } from '../../providers/services/local.service';
-import { ChatServerService } from '../../providers/services/chat.server.service';
+import { ChatService } from '../../chat/chat.service';
 
 @Component({
     selector: 'global-search',
@@ -32,7 +32,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     public readonly searchService = inject(GlobalSearchService);
     private readonly router = inject(Router);
     private readonly localService = inject(LocalService);
-    private readonly chatServerService = inject(ChatServerService);
+    private readonly chatService = inject(ChatService);
     private readonly platformId = inject(PLATFORM_ID);
     private keyboardShortcutHandler: ((event: KeyboardEvent) => void) | null = null;
     currentUserId: string = '';
@@ -204,7 +204,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
 
             // Check if we are already on the chat page
             if (this.router.url.includes('/btc/chat')) {
-                this.chatServerService.openChat$.next(groupChat);
+                this.chatService.openChat$.next(groupChat);
             } else {
                 this.router.navigate(['/btc/chat'], { state: { selectedUser: groupChat } });
             }
@@ -215,7 +215,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
 
             // Check if we are already on the chat page
             if (this.router.url.includes('/btc/chat')) {
-                this.chatServerService.openChat$.next(userDetail);
+                this.chatService.openChat$.next(userDetail);
             } else {
                 this.router.navigate(['/btc/chat'], { state: { selectedUser: userDetail } });
             }
