@@ -16,6 +16,7 @@ import { BehaviorSubject, lastValueFrom, Subject } from 'rxjs';
 import { HttpHandlerService } from './http-handler.service';
 import { environment } from '../../../environments/environment';
 import { Chat, ClappingHands, CryingFace, FacewithOpenMouth, FacewithTearsofJoy, hand_down, hand_raise, PartyPopper, reaction, SparklingHeart, ThinkingFace, ThumbsDown, ThumbsUp } from '../../models/constant';
+import { ResponseModel } from '../../models/model';
 
 type TrackInfo = {
   trackPublication: RemoteTrackPublication;
@@ -73,13 +74,13 @@ export class RoomService {
   }
 
   async getToken(roomName: string, participantName: string): Promise<string> {
-    const response = await lastValueFrom(
-      this.httpClient.post<{ token: string }>(
+    let response: ResponseModel = await lastValueFrom(
+      this.httpClient.post<ResponseModel>(
         this.APPLICATION_SERVER_URL + 'conference/token',
         { roomName, participantName }
       )
     );
-    return response.token;
+    return response.AccessToken;
   }
 
   async joinRoom(roomName: string, participantName: string): Promise<Room> {

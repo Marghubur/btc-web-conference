@@ -1,4 +1,21 @@
 <div class="sidebar-container">
+    <!-- User Profile Section -->
+    <div class="user-profile-section">
+        <div class="profile-avatar">
+            {{ getUserInitiaLetter() }}
+            <span class="profile-status" [ngClass]="{
+                'online': currentUser?.status === 'online' || !currentUser?.status,
+                'away': currentUser?.status === 'away',
+                'busy': currentUser?.status === 'busy',
+                'offline': currentUser?.status === 'offline'
+            }"></span>
+        </div>
+        <div class="profile-info">
+            <p class="profile-name" [title]="getFullName()">{{ getFullName() }}</p>
+            <p class="profile-status-text">{{ currentUser?.status || 'Online' }}</p>
+        </div>
+    </div>
+
     <!-- Logo -->
     <div class="sidebar-logo">
         <div class="logo-wrapper">

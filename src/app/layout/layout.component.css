@@ -11,11 +11,11 @@
     width: 7rem;
     flex-shrink: 0;
     background-color: #fff;
-    height: calc(100vh - 3rem);
+    /* height: calc(100vh - 3rem); */
     position: fixed;
     left: 0;
-    top: 3rem;
-    z-index: 100;
+    /* top: 3rem; */
+    z-index: 1000;
 }
 
 .content-panel {
@@ -24,6 +24,7 @@
     width: calc(100% - 7rem);
     max-width: calc(100vw - 7rem);
     height: 100vh;
+    padding-top: 3rem;
     max-height: 100vh;
     overflow: hidden;
     display: flex;
@@ -42,6 +43,5 @@
 }
 
 .body-content {
-    padding-top: 3rem;
     width: 100%;
 }

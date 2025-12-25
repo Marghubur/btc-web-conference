@@ -23,7 +23,7 @@
 .sidebar-container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 3rem);
+    height: 100vh;
     width: 100%;
     background: var(--sidebar-bg-gradient);
     padding: 16px 8px;
@@ -75,6 +75,87 @@
     width: 24px;
     height: 24px;
     color: white;
+}
+
+/* User Profile Section */
+.user-profile-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px 16px 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--sidebar-divider);
+}
+
+.profile-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    margin-bottom: 8px;
+}
+
+.profile-status {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--sidebar-bg);
+    border-radius: 50%;
+}
+
+.profile-status.online {
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.profile-status.away {
+    background: #f59e0b;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.profile-status.busy {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.profile-status.offline {
+    background: #6b7280;
+    box-shadow: 0 0 8px rgba(107, 114, 128, 0.5);
+}
+
+.profile-info {
+    text-align: center;
+    width: 100%;
+    min-width: 0;
+}
+
+.profile-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sidebar-text-hover);
+    margin: 0 0 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 4px;
+}
+
+.profile-status-text {
+    font-size: 10px;
+    color: var(--sidebar-text);
+    margin: 0;
+    text-transform: capitalize;
 }
 
 /* Navigation Section */

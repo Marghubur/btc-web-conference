@@ -77,47 +77,56 @@ export class PreviewComponent implements OnDestroy {
                 return;
             }
         }
+
         this.saveUser();
         this.meetingService.meetingId = this.meetingId;
         this.meetingService.maximize();
         this.meetingService.userJoinRoom();
-        //this.router.navigate(['/btc/meeting', this.meetingId]);
     }
 
     async ngOnInit() {
         this.selectedCamera = this.deviceService.selectedCamera();
         this.selectedMic = this.deviceService.selectedMic();
         this.selectedSpeaker = this.deviceService.selectedSpeaker();
-        if (this.isLoggedIn && !this.meetingId) {
-            // Use history.state to read navigation state (getCurrentNavigation() is null after navigation completes)
-            const state = history.state;
-
-            if (state?.id) {
-                this.meetingId = state.id;
-            }
-
-            if (state?.title) {
-                this.meetingTitle = state.title;
-            }
-
-            // Fallback to nav service if state is not available
-            if (!this.meetingId || !this.meetingTitle) {
-                let meetingDetail = this.nav.getValue();
-                if (meetingDetail) {
-                    this.meetingId = this.meetingId || meetingDetail.meetingId;
-                    this.meetingTitle = this.meetingTitle || meetingDetail.title;
-                    this.isValidMeetingId = true;
-                    this.enableStream();
-                    return;
+        if (this.isLoggedIn) {
+            this.setMeetingDetail();
+            this.enableStream();
+            this.subscription = this.mediaPerm.permissions$.subscribe(
+                permissions => {
+                    this.permissions = permissions;
+                    if (permissions.camera == 'granted' &&
+                        permissions.microphone == 'granted') {
+                        this.joinRoom();
+                    }
                 }
-            } else {
-                this.isValidMeetingId = true;
-                this.enableStream();
-                return;
-            }
+            );
+        } else {
+            this.validatMeetingId();
+        }
+    }
+
+    setMeetingDetail() {
+        const state = history.state;
+
+        if (state?.id) {
+            this.meetingId = state.id;
         }
 
-        this.validatMeetingId();
+        if (state?.title) {
+            this.meetingTitle = state.title;
+        }
+
+        // Fallback to nav service if state is not available
+        if (!this.meetingId || !this.meetingTitle) {
+            let meetingDetail = this.nav.getValue();
+            if (meetingDetail) {
+                this.meetingId = this.meetingId || meetingDetail.meetingId;
+                this.meetingTitle = this.meetingTitle || meetingDetail.title;
+                this.isValidMeetingId = true;
+            }
+        } else {
+            this.isValidMeetingId = true;
+        }
     }
 
     async validatMeetingId() {

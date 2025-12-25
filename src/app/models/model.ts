@@ -35,4 +35,5 @@ export interface User {
   userId?: string;
   token?: string;
   isLogin?: boolean;
+  status?: 'online' | 'away' | 'busy' | 'offline';
 }
