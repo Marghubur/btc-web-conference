@@ -206,7 +206,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
             if (this.router.url.includes('/btc/chat')) {
                 this.chatService.openChat$.next(groupChat);
             } else {
-                this.router.navigate(['/btc/chat'], { state: { selectedUser: groupChat } });
+                this.router.navigate(['/btc/chat'], { state: { channel: groupChat } });
             }
 
         } else {

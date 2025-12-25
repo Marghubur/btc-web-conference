@@ -1,6 +1,6 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { filter, map, Observable, Subject, takeUntil } from 'rxjs';
-import { User } from '../model';
+import { User } from '../../models/model';
 
 @Injectable({
     providedIn: 'root',
@@ -17,15 +17,15 @@ export class ConfeetSocketService {
     userTyping$: Observable<TypingIndicator>;
     error$: Observable<ErrorPayload>;
 
-
     //--------------------------------------------------------------
 
     private reconnectInterval = 3000;
 
 
 
-    private userId!: string;
-    private channelId!: string;
+    private senderId!: string;
+    private receiverId!: string;
+    private groupId!: string;
     private url!: string;
     private user: User = {
         isMicOn: false,
@@ -42,10 +42,9 @@ export class ConfeetSocketService {
         this.error$ = this.onEvent<ErrorPayload>(WsEvents.ERROR);
     }
 
-    connect(url: string, userId: string, channelId: string) {
+    connect(url: string, senderId: string) {
         this.url = url;
-        this.userId = userId;
-        this.channelId = channelId;
+        this.senderId = senderId;
 
         if (this.ws) return;
 
@@ -54,14 +53,13 @@ export class ConfeetSocketService {
 
     private initSocket() {
         console.log("Connecting to: " + this.url);
-        this.ws = new WebSocket(`${this.url}?userId=${this.userId}&conversationId=${this.channelId}`);
+        this.ws = new WebSocket(`${this.url}?userId=${this.senderId}`);
 
         this.ws.onopen = () => {
             console.log('WS connected');
         };
 
         this.ws.onmessage = (event) => {
-
             this.messageSubject.next(JSON.parse(event.data));
         };
 
@@ -91,19 +89,21 @@ export class ConfeetSocketService {
     }
 
     // Mark as delivered
-    markDelivered(messageId: string, conversationId: string): void {
+    markDelivered(id: string, userId: string, conversationId: string): void {
         this.send(WsEvents.MARK_DELIVERED, {
-            messageId,
+            id,
             conversationId,
+            userId,
             deliveredAt: new Date().toISOString()
         });
     }
 
     // Mark as seen
-    markSeen(messageId: string, conversationId: string): void {
+    markSeen(id: string, userId: string, conversationId: string): void {
         this.send(WsEvents.MARK_SEEN, {
-            messageId,
+            id,
             conversationId,
+            userId,
             seenAt: new Date().toISOString()
         });
     }
@@ -114,6 +114,16 @@ export class ConfeetSocketService {
             conversationId,
             isTyping
         });
+    }
+
+    // Expose messageSubject for other services (like CallEventService)
+    getMessageSubject() {
+        return this.messageSubject;
+    }
+
+    // Expose send method for other services
+    sendEvent<T>(event: string, payload: T): void {
+        this.send(event, payload);
     }
 
     // Generic send method
@@ -155,14 +165,14 @@ export interface Reactions {
 }
 
 export interface MessageDelivered {
-    messageId: string;
+    id: string;
     conversationId: string;
     deliveredTo: string;
     deliveredAt: string;
 }
 
 export interface MessageSeen {
-    messageId: string;
+    id: string;
     conversationId: string;
     seenBy: string;
     seenAt: string;
@@ -191,6 +201,7 @@ export const WsEvents = {
     MARK_DELIVERED: 'mark_delivered',
     MARK_SEEN: 'mark_seen',
     TYPING: 'typing',
+    AUDIO_CALL_REQUEST: 'audio_call_request',
 
     // Server -> Client
     NEW_MESSAGE: 'new_message',

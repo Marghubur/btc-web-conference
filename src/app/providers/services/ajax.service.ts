@@ -1,8 +1,8 @@
 import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { ResponseModel } from '../model';
 import { JwtService } from './jwt.service';
+import { ResponseModel } from '../../models/model';
 
 @Injectable({
     providedIn: 'root',
@@ -11,8 +11,8 @@ export class AjaxService {
     protected baseUrl: string = environment.appServerBaseUrl;
 
     constructor(
-      protected http: HttpClient,
-      protected jwtService: JwtService
+        protected http: HttpClient,
+        protected jwtService: JwtService
     ) {
     }
 

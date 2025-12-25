@@ -11,15 +11,15 @@ import { MediaPermissions, MediaPermissionsService } from '../providers/services
 import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../providers/services/video-background.service';
 import { LocalService } from '../providers/services/local.service';
 import { ScreenRecorderService } from '../providers/services/screen-recorder.service';
-import { hand_down, hand_raise } from '../providers/constant';
 import { NgbTooltipConfig, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
-import { User } from '../providers/model';
 import { MeetingService } from '../providers/services/meeting.service';
 import { NetworkService } from '../providers/services/network.service';
 import { CameraService } from '../providers/services/camera.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { Offcanvas } from 'bootstrap';
+import { User } from '../models/model';
+import { hand_down, hand_raise } from '../models/constant';
 @Component({
     selector: 'app-meeting',
     standalone: true,

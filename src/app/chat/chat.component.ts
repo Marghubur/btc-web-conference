@@ -1,13 +1,15 @@
-import { Component, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, DestroyRef, effect, ElementRef, inject, OnDestroy, OnInit, signal, ViewChild, AfterViewChecked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ResponseModel, User } from '../providers/model';
 import { CommonModule } from '@angular/common';
 import { LocalService } from '../providers/services/local.service';
-import { environment } from '../../environments/environment';
 import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
 import { Subscription } from 'rxjs';
 import { Conversation, Participant, UserDetail } from '../components/global-search/search.models';
 import { ChatService } from './chat.service';
+import { NotificationService } from '../providers/services/notification.service';
+import { Router } from '@angular/router';
+import { User } from '../models/model';
+import { CallEventService } from '../providers/socket/call-event.service';
 
 @Component({
     selector: 'app-chat',
@@ -16,7 +18,7 @@ import { ChatService } from './chat.service';
     templateUrl: './chat.component.html',
     styleUrl: './chat.component.css',
 })
-export class ChatComponent implements OnInit, AfterViewChecked {
+export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
     // Local state managed by signals in service
@@ -38,49 +40,76 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     // searchResults delegated to service
     isSearching: boolean = false;
 
-    typingUsers: Map<string, boolean> = new Map();
+    // typingUsers now comes from NotificationService
     private subscriptions = new Subscription();
     private shouldScrollToBottom = false;
+    private shouldPreserveScrollPosition = false;
+    private previousScrollHeight = 0;
 
     currentUserId: string = "";
-    receiver: Conversation = null;
+    currentConversation: Conversation = null;
 
     readonly destroyRef = inject(DestroyRef);
 
     constructor(
         private local: LocalService,
         private ws: ConfeetSocketService,
-        public chatService: ChatService
-    ) { }
+        public chatService: ChatService,
+        private router: Router,
+        public notificationService: NotificationService,
+        private callEventService: CallEventService
+    ) {
+        // React to new messages by scrolling to bottom
+        effect(() => {
+            const messages = this.chatService.messages();
+            if (messages.length > 0 && this.pageIndex === 1) {
+                this.shouldScrollToBottom = true;
+            }
+        });
+    }
 
     ngAfterViewChecked() {
         if (this.shouldScrollToBottom) {
             this.scrollToBottom();
             this.shouldScrollToBottom = false;
         }
+
+        // Preserve scroll position when older messages are prepended
+        if (this.shouldPreserveScrollPosition && this.messagesContainer) {
+            const container = this.messagesContainer.nativeElement;
+            const newScrollHeight = container.scrollHeight;
+            const scrollDiff = newScrollHeight - this.previousScrollHeight;
+            container.scrollTop = scrollDiff;
+            this.shouldPreserveScrollPosition = false;
+        }
     }
 
     ngOnInit() {
         this.user = this.local.getUser();
         this.currentUserId = this.user.userId;
-        this.socketHandShake();
-
-        this.registerEvents();
 
         // Listen for global search selections
         this.subscriptions.add(
             this.chatService.openChat$.subscribe((user: any) => {
-                this.startChatWithUser(user);
+                this.startConversation(user);
             })
         );
 
         this.getConversations();
+
+        var navigation = this.router.getCurrentNavigation();
+        if (navigation?.extras.state?.['channel']) {
+            this.startConversation(navigation?.extras.state['channel']);
+        } else if (navigation?.extras.state?.['id']) {
+            const conversationId = navigation?.extras.state['id'];
+        }
+
         this.isPageReady = true;
     }
 
-    socketHandShake() {
-        var socketEndPoint = `${environment.socketBaseUrl}/${environment.socketHandshakEndpoint}`;
-        this.ws.connect(socketEndPoint, this.user.userId, '675459a1b1c2d3e4f5a6b7c1');
+    // Get typingUsers from NotificationService
+    get typingUsers(): Map<string, boolean> {
+        return this.notificationService.typingUsers();
     }
 
     getConversations() {
@@ -127,15 +156,15 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         return (obj as Conversation).conversationType !== undefined;
     }
 
-    isUserDetail(obj: UserDetail | Conversation): obj is UserDetail {
-        return (obj as UserDetail).userId !== undefined;
+    isGroupConversation(obj: UserDetail | Conversation): obj is Conversation {
+        return (obj as Conversation).conversationType === 'group';
     }
 
-    startChatWithUser(selectedUser: UserDetail | Conversation) {
-        if (this.isUserDetail(selectedUser)) {
-            this.enableNewConversation(selectedUser as UserDetail);
+    startConversation(selectedConversation: UserDetail | Conversation) {
+        if (this.isGroupConversation(selectedConversation)) {
+            this.enableConversation(selectedConversation as Conversation);
         } else {
-            this.enableConversation(selectedUser as Conversation);
+            this.enableNewConversation(selectedConversation as UserDetail);
         }
     }
 
@@ -144,11 +173,11 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         conversation.conversationType = 'group';
         const existing = this.chatService.meetingRooms().findIndex(x => x.id === conversation.id);
         if (existing > -1) {
-            this.selectUser(this.chatService.meetingRooms()[existing]);
+            this.selectChannelForConversation(this.chatService.meetingRooms()[existing]);
         } else {
             console.log("Starting new chat with", conversation);
             this.chatService.meetingRooms.update(rooms => [conversation, ...rooms]);
-            this.selectUser(conversation);
+            this.selectChannelForConversation(conversation);
         }
 
         this.searchQuery = '';
@@ -164,7 +193,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         );
 
         if (existing > -1) {
-            this.selectUser(this.chatService.meetingRooms()[existing]);
+            this.selectChannelForConversation(this.chatService.meetingRooms()[existing]);
         } else {
             console.log("Starting new chat with", selectedUser);
             let newConversation: Conversation = {
@@ -206,18 +235,21 @@ export class ChatComponent implements OnInit, AfterViewChecked {
             }
 
             this.chatService.meetingRooms.update(rooms => [newConversation, ...rooms]);
-            this.selectUser(newConversation);
+            this.selectChannelForConversation(newConversation);
         }
 
         this.searchQuery = '';
         this.chatService.searchResults.set([]);
     }
 
-    selectUser(conversation: Conversation) {
-        // this.recieverId = conversation.id;
-        this.receiver = conversation;
+    selectChannelForConversation(conversation: Conversation) {
+        this.currentConversation = conversation;
         this.pageIndex = 1;
         this.chatService.messages.set([]); // Clear existing messages
+
+        // Notify the NotificationService which conversation is now active
+        this.notificationService.setActiveConversation(conversation.id);
+
         this.loadMoreMessages(true); // Pass true to scroll to bottom on first load
     }
 
@@ -230,25 +262,33 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     loadMoreMessages(scrollToBottom: boolean = false) {
-        if (!this.receiver) return;
+        if (!this.currentConversation) return;
 
-        this.chatService.getMessages(this.receiver.id ?? '', this.pageIndex, 20, this.pageIndex > 1).then(() => {
-            this.pageIndex++;
+        // Save current scroll height before loading older messages
+        if (!scrollToBottom && this.messagesContainer) {
+            this.previousScrollHeight = this.messagesContainer.nativeElement.scrollHeight;
+        }
+
+        this.chatService.getMessages(this.currentConversation.id ?? '', this.pageIndex, 20, this.pageIndex > 1).then(() => {
+            this.pageIndex = this.pageIndex + 1;
             if (scrollToBottom) {
                 this.shouldScrollToBottom = true;
+            } else {
+                // Flag to preserve scroll position for older messages
+                this.shouldPreserveScrollPosition = true;
             }
         });
     }
 
     sendMessage() {
-        if (this.receiver.id == null) {
+        if (this.currentConversation.id == null) {
             // call java to insert or create conversation channel
-            this.chatService.createConversation(this.currentUserId, this.receiver).then((res: any) => {
+            this.chatService.createConversation(this.currentUserId, this.currentConversation).then((res: any) => {
                 console.log("channel created", res);
                 this.send(res);
             });
         } else {
-            this.send(this.receiver);
+            this.send(this.currentConversation);
         }
     }
 
@@ -295,80 +335,30 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         });
     }
 
-    registerEvents() {
-        // New message received
-        this.subscriptions.add(
-            this.ws.newMessage$.subscribe(message => {
-                this.chatService.messages.update(msgs => [...msgs, message]);
-                // Auto mark as delivered
-                this.ws.markDelivered(message.id!, message.conversationId);
-                this.shouldScrollToBottom = true; // Scroll to bottom on new message
-            })
-        );
-
-        // Message sent confirmation
-        this.subscriptions.add(
-            this.ws.messageSent$.subscribe(message => {
-                // Update local message with server-assigned id and timestamp
-                const index = this.chatService.messages().findIndex(m => m.messageId === message.messageId);
-                if (index > -1) {
-                    this.chatService.messages.update(msgs => {
-                        msgs[index] = message;
-                        return [...msgs];
-                    });
-                } else {
-                    this.chatService.messages.update(msgs => [...msgs, message]);
-                }
-            })
-        );
-
-        // Delivery receipt
-        this.subscriptions.add(
-            this.ws.delivered$.subscribe(delivered => {
-                this.updateMessageStatus(delivered.messageId, 'delivered');
-            })
-        );
-
-        // Read receipt
-        this.subscriptions.add(
-            this.ws.seen$.subscribe(seen => {
-                this.updateMessageStatus(seen.messageId, 'seen');
-            })
-        );
-
-        // Typing indicator
-        this.subscriptions.add(
-            this.ws.userTyping$.subscribe(typing => {
-                this.typingUsers.set(typing.userId, typing.isTyping);
-            })
-        );
-
-        // Error handling
-        this.subscriptions.add(
-            this.ws.error$.subscribe(error => {
-                console.error('Server error:', error.message);
-            })
-        );
-    }
-
     onTyping(isTyping: boolean): void {
-        this.ws.sendTyping('current-conversation-id', isTyping);
+        if (this.currentConversation?.id) {
+            this.ws.sendTyping(this.currentConversation.id, isTyping);
+        }
     }
 
     markAsSeen(messageId: string, conversationId: string): void {
-        this.ws.markSeen(messageId, conversationId);
+        this.ws.markSeen(messageId, this.currentUserId, conversationId);
     }
 
-    private updateMessageStatus(messageId: string, status: string): void {
-        const message = this.chatService.messages().find(m => m.id === messageId);
-        if (message) {
-            // Update UI to show delivered/seen status
-        }
+    startAudioCall() {
+        this.router.navigate(['/btc/preview'], {
+            state: {
+                id: this.currentConversation.id,
+                title: this.currentConversation.conversationName ? this.currentConversation.conversationName : 'NEW'
+            }
+        });
+        this.callEventService.initiateAudioCall(this.currentUserId, this.currentConversation.id);
     }
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe();
-        this.ws.disconnect();
+        // Clear active conversation when leaving chat page
+        this.notificationService.setActiveConversation(null);
     }
 }
 

@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 // @ts-ignore
 import * as bootstrap from 'bootstrap';
-import { Home } from '../constant';
 import { BehaviorSubject } from 'rxjs';
+import { Home } from '../../models/constant';
 
 @Injectable({
   providedIn: 'root'
@@ -69,20 +69,20 @@ function removeBackdrop(): void {
 }
 
 export function ToLocateDate(date: any) {
-  if(date) {
-    let type = typeof(date);
-    switch(type) {
+  if (date) {
+    let type = typeof (date);
+    switch (type) {
       case "string":
         if (date.indexOf("Z") == -1)
           return new Date(date + ".000Z");
         else
           return new Date(date)
       default:
-          var newDate = new Date(date.getTime() + date.getTimezoneOffset() * 60 * 1000);
-          var offset = date.getTimezoneOffset() / 60;
-          var hours = date.getHours();
-          newDate.setHours(hours - offset);
-          return newDate;
+        var newDate = new Date(date.getTime() + date.getTimezoneOffset() * 60 * 1000);
+        var offset = date.getTimezoneOffset() / 60;
+        var hours = date.getHours();
+        newDate.setHours(hours - offset);
+        return newDate;
     }
   }
 

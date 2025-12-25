@@ -6,10 +6,11 @@ import { MediaPermissions, MediaPermissionsService } from '../providers/services
 import { Subscription } from 'rxjs';
 import { LocalService } from '../providers/services/local.service';
 import { iNavigation } from '../providers/services/iNavigation';
-import { Dashboard, MeetingId } from '../providers/constant';
-import { ResponseModel, User } from '../providers/model';
 import { MeetingService } from '../providers/services/meeting.service';
 import { AjaxService } from '../providers/services/ajax.service';
+import { Dashboard, MeetingId } from '../models/constant';
+import { ResponseModel, User } from '../models/model';
+import { DeviceService } from '../layout/device.service';
 
 @Component({
     selector: 'app-preview',
@@ -20,14 +21,13 @@ import { AjaxService } from '../providers/services/ajax.service';
 })
 export class PreviewComponent implements OnDestroy {
     @ViewChild('previewVideo') previewVideo!: ElementRef<HTMLVideoElement>;
-    cameras: MediaDeviceInfo[] = [];
-    microphones: MediaDeviceInfo[] = [];
-    speakers: MediaDeviceInfo[] = [];
-    room = signal<Room | undefined>(undefined);
-    localTrack = signal<LocalVideoTrack | undefined>(undefined);
+
     selectedCamera: string | null = null;
     selectedMic: string | null = null;
     selectedSpeaker: string | null = null;
+
+    room = signal<Room | undefined>(undefined);
+    localTrack = signal<LocalVideoTrack | undefined>(undefined);
     meetingId: string | null = null;
     private previewStream?: MediaStream;
     private subscription?: Subscription;
@@ -43,13 +43,15 @@ export class PreviewComponent implements OnDestroy {
     passCode: string = "";
     isSubmitted: boolean = false;
     isValidMeetingId: boolean = false;
+
     constructor(private nav: iNavigation,
         private route: ActivatedRoute,
         private router: Router,
         private mediaPerm: MediaPermissionsService,
         private local: LocalService,
         private meetingService: MeetingService,
-        private http: AjaxService
+        private http: AjaxService,
+        private deviceService: DeviceService
     ) {
         this.isLoggedIn = local.isLoggedIn();
         this.route.queryParamMap.subscribe(paramm => {
@@ -83,10 +85,36 @@ export class PreviewComponent implements OnDestroy {
     }
 
     async ngOnInit() {
+        this.selectedCamera = this.deviceService.selectedCamera();
+        this.selectedMic = this.deviceService.selectedMic();
+        this.selectedSpeaker = this.deviceService.selectedSpeaker();
         if (this.isLoggedIn && !this.meetingId) {
-            let meetingDetail = this.nav.getValue();
-            this.meetingId = meetingDetail.meetingId;
-            this.meetingTitle = meetingDetail.title;
+            // Use history.state to read navigation state (getCurrentNavigation() is null after navigation completes)
+            const state = history.state;
+
+            if (state?.id) {
+                this.meetingId = state.id;
+            }
+
+            if (state?.title) {
+                this.meetingTitle = state.title;
+            }
+
+            // Fallback to nav service if state is not available
+            if (!this.meetingId || !this.meetingTitle) {
+                let meetingDetail = this.nav.getValue();
+                if (meetingDetail) {
+                    this.meetingId = this.meetingId || meetingDetail.meetingId;
+                    this.meetingTitle = this.meetingTitle || meetingDetail.title;
+                    this.isValidMeetingId = true;
+                    this.enableStream();
+                    return;
+                }
+            } else {
+                this.isValidMeetingId = true;
+                this.enableStream();
+                return;
+            }
         }
 
         this.validatMeetingId();
@@ -105,7 +133,7 @@ export class PreviewComponent implements OnDestroy {
                 if (res.ResponseBody) {
                     this.isValidMeetingId = true;
                     this.meetingTitle = res.ResponseBody.title;
-                    this.loadDevices();
+                    this.enableStream();
                     this.subscription = this.mediaPerm.permissions$.subscribe(
                         permissions => {
                             this.permissions = permissions;
@@ -122,25 +150,10 @@ export class PreviewComponent implements OnDestroy {
 
 
     /** Load available media devices */
-    async loadDevices() {
+    async enableStream() {
         try {
             // Request permission first - this is required to get real device IDs
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-
-            // Get the device IDs from the active tracks (these are the default devices)
-            const videoTrack = stream.getVideoTracks()[0];
-            const audioTrack = stream.getAudioTracks()[0];
-
-            // Now enumerate devices - after permission granted, we get real device IDs
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            this.cameras = devices.filter(d => d.kind === 'videoinput');
-            this.microphones = devices.filter(d => d.kind === 'audioinput');
-            this.speakers = devices.filter(d => d.kind === 'audiooutput');
-
-            // Set selected devices from the active stream tracks (these are the actual defaults)
-            this.selectedCamera = videoTrack?.getSettings().deviceId || this.cameras[0]?.deviceId || null;
-            this.selectedMic = audioTrack?.getSettings().deviceId || this.microphones[0]?.deviceId || null;
-            this.selectedSpeaker = this.speakers[0]?.deviceId || null;
 
             // Use the existing stream for preview instead of creating a new one
             this.previewStream = stream;
@@ -154,11 +167,6 @@ export class PreviewComponent implements OnDestroy {
             this.isMicOn = true;
         } catch (err) {
             console.error('Error accessing media devices', err);
-            // Fallback: try to enumerate without permission (will have empty deviceIds)
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            this.cameras = devices.filter(d => d.kind === 'videoinput');
-            this.microphones = devices.filter(d => d.kind === 'audioinput');
-            this.speakers = devices.filter(d => d.kind === 'audiooutput');
         }
     }
 

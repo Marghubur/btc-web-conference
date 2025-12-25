@@ -2,11 +2,11 @@ import { Injectable, signal } from '@angular/core';
 import { RoomService } from './room.service';
 import { LocalService } from './local.service';
 import { iNavigation } from './iNavigation';
-import { Dashboard, Login } from '../constant';
 import { LocalVideoTrack, Room } from 'livekit-client';
-import { User } from '../model';
 import { CameraService } from './camera.service';
 import { VideoBackgroundService } from './video-background.service';
+import { User } from '../../models/model';
+import { Dashboard, Login } from '../../models/constant';
 
 @Injectable({
   providedIn: 'root'
@@ -77,7 +77,7 @@ export class MeetingService {
       // Enable default camera & mic
       if (this.isMicOn() && hasMic) {
         await this.cameraService.enableMic(joinedRoom);
-        joinedRoom.localParticipant.setMicrophoneEnabled(this.isMicOn()); 
+        joinedRoom.localParticipant.setMicrophoneEnabled(this.isMicOn());
       }
 
       if (hasCam && this.room) {
@@ -130,7 +130,7 @@ export class MeetingService {
   private getFullName(): string {
     if (!this.user)
       this.user = this.local.getUser();
-    
+
     let fullName = this.user?.firstName;
     if (this.user?.lastName)
       fullName = fullName + " " + this.user.lastName;

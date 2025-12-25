@@ -1,7 +1,6 @@
 import {
     HttpClient,
     HttpErrorResponse,
-    HttpResponse,
     HttpHeaders,
     HttpParams
 } from '@angular/common/http';
@@ -9,8 +8,8 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom, timer } from 'rxjs';
 import { retry, timeout as rxTimeout } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { ResponseModel } from '../model';
 import { JwtService } from './jwt.service';
+import { ResponseModel } from '../../models/model';
 
 export interface RequestOptions {
     headers?: HttpHeaders | { [header: string]: string | string[] };

@@ -1,24 +1,38 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal, Signal } from '@angular/core';
 import { SidemenuComponent } from "../sidemenu/sidemenu.component";
 import { HeaderComponent } from "./header/header.component";
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { LocalService } from '../providers/services/local.service';
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { MeetingService } from '../providers/services/meeting.service';
+import { ConfeetSocketService } from '../providers/socket/confeet-socket.service';
+import { environment } from '../../environments/environment';
+import { NotificationService } from '../providers/services/notification.service';
+import { ToastNotificationComponent } from '../components/toast-notification/toast-notification.component';
+import { User } from '../models/model';
+import { CallEventService } from '../providers/socket/call-event.service';
+import { IncomingCallComponent } from '../components/incoming-call/incoming-call.component';
+import { DeviceService } from './device.service';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [SidemenuComponent, RouterOutlet, NgbTooltipModule, HeaderComponent],
+  imports: [SidemenuComponent, RouterOutlet, NgbTooltipModule, HeaderComponent, ToastNotificationComponent, IncomingCallComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
   isLoggedIn: boolean = false;
   userName: string = null;
+  user: User = null;
+
   constructor(private local: LocalService,
     public meetingService: MeetingService,
-    private router: Router
+    private ws: ConfeetSocketService,
+    private callEvents: CallEventService,
+    private notificationService: NotificationService,
+    private router: Router,
+    private deviceService: DeviceService
   ) {
     this.isLoggedIn = local.isLoggedIn();
 
@@ -39,5 +53,18 @@ export class LayoutComponent {
     });
   }
 
+  ngOnInit(): void {
+    this.deviceService.loadDevices();
+    this.user = this.local.getUser();
+    if (this.user.userId) {
+      this.socketHandShake();
+      this.notificationService.initialize();
+      this.callEvents.initialize();
+    }
+  }
 
+  socketHandShake() {
+    var socketEndPoint = `${environment.socketBaseUrl}/${environment.socketHandshakEndpoint}`;
+    this.ws.connect(socketEndPoint, this.user.userId);
+  }
 }

@@ -1,14 +1,16 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { NgbDatepickerModule, NgbDateStruct, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
-import { MeetingDetail, ResponseModel } from '../providers/model';
 import { AjaxService } from '../providers/services/ajax.service';
 import { HideModal, ShowModal, ToLocateDate } from '../providers/services/common.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { CommonModule } from '@angular/common';
-import { Preview } from '../providers/constant';
 import { LocalService } from '../providers/services/local.service';
 import { environment } from '../../environments/environment';
+import { ConfeetSocketService } from '../providers/socket/confeet-socket.service';
+import { MeetingDetail, ResponseModel, User } from '../models/model';
+import { Preview } from '../models/constant';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
@@ -34,10 +36,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   today: Date = new Date();
   allQuickMeeting: Array<MeetingDetail> = [];
   allSchedularMeeting: Array<MeetingDetail> = [];
+  user: User = null;
+
   private timer!: any;
   constructor(private nav: iNavigation,
     private local: LocalService,
+    private ws: ConfeetSocketService,
     private fb: FormBuilder,
+    private router: Router,
     private http: AjaxService
   ) {
     const today = new Date();
@@ -192,8 +198,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   joinMeeting(item: MeetingDetail) {
     // this.router.navigate(['/btc/preview'], {queryParams: {meetingid: item.meetingId}});
-    item.meetingId = `${item.meetingId}_${item.meetingDetailId}`;
-    this.nav.navigate(Preview, item);
+    // item.meetingId = `${item.meetingId}_${item.meetingDetailId}`;
+    // this.nav.navigate(Preview, item);
+    this.router.navigate(['/btc/preview'], {
+      state: {
+        id: item.meetingId,
+        title: item.title ? item.title : 'Unknown'
+      }
+    });
   }
 
   scheduleMeetingPopup() {
@@ -242,7 +254,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   copyLink(item: MeetingDetail, tooltip: any) {
-    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
+    let url = environment.production ? `www.confeet.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
     navigator.clipboard.writeText(url).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();
@@ -333,11 +345,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
     let shareUrl = `${item.organizerName} invited you to a BottomHalf Meeting:
 
-${item.title}
-${this.toFullDateString(item.startDate)}
-${item.startTime} - ${item.endTime} (IST)
+                    ${item.title}
+                    ${this.toFullDateString(item.startDate)}
+                    ${item.startTime} - ${item.endTime} (IST)
+                    Meeting link: ${url}`;
 
-Meeting link: ${url}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();
@@ -349,12 +361,8 @@ Meeting link: ${url}`;
 
   shareIdPasscodeLink(item: MeetingDetail, tooltip: any) {
     let shareUrl = `BottomHalf Meeting:
-
-Meeting ID: ${item.meetingId}
-
-Passcode: ${item.meetingPassword}
-
-`;
+                    Meeting ID: ${item.meetingId}
+                    Passcode: ${item.meetingPassword}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();

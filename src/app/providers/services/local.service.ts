@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BTCUSer } from '../constant';
-import { User } from '../model';
+import { BTCUSer } from '../../models/constant';
+import { User } from '../../models/model';
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +34,7 @@ export class LocalService {
     }
   }
 
-  isLoggedIn():boolean {
+  isLoggedIn(): boolean {
     var user = this.getUser();
     if (user && user.isLogin == true)
       return true;

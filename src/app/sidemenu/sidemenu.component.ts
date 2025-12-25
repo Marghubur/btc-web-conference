@@ -2,12 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { iNavigation } from '../providers/services/iNavigation';
-import { CalendarPage, ChatPage, Dashboard, Login } from '../providers/constant';
 import { LocalService } from '../providers/services/local.service';
 import { NgbDropdownConfig, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { JwtService } from '../providers/services/jwt.service';
-import { User } from '../providers/model';
 import { MeetingService } from '../providers/services/meeting.service';
+import { CalendarPage, ChatPage, Dashboard, Login } from '../models/constant';
+import { User } from '../models/model';
 
 @Component({
   selector: 'app-sidemenu',

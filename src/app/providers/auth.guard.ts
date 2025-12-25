@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { LocalService } from './services/local.service';
 import { iNavigation } from './services/iNavigation';
-import { Login } from './constant';
+import { Login } from '../models/constant';
 
 export const authGuard: CanActivateFn = (route, state) => {
   const local = inject(LocalService);

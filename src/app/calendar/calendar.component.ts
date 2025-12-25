@@ -2,13 +2,13 @@ import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, NgZ
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { NgbDatepickerModule, NgbDateStruct, NgbTooltipModule, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
-import { MeetingDetail, ResponseModel } from '../providers/model';
 import { AjaxService } from '../providers/services/ajax.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { LocalService } from '../providers/services/local.service';
-import { Preview } from '../providers/constant';
 import { HideModal, ShowModal } from '../providers/services/common.service';
 import { environment } from '../../environments/environment';
+import { MeetingDetail, ResponseModel } from '../models/model';
+import { Preview } from '../models/constant';
 
 interface CalendarDay {
     date: Date;

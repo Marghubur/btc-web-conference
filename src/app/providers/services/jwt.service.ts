@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
-import { AccessToken, BTCUSer } from '../constant';
+import { AccessToken, BTCUSer } from '../../models/constant';
 
 @Injectable({
-  providedIn: 'root' 
+  providedIn: 'root'
 })
 export class JwtService {
-  constructor() {}
+  constructor() { }
 
   getJwtToken() {
     let Token = localStorage.getItem(AccessToken);

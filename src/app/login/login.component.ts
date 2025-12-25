@@ -1,11 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ResponseModel } from '../providers/model';
-import { AjaxService } from '../providers/services/ajax.service';
 import { iNavigation } from '../providers/services/iNavigation';
-import { Dashboard } from '../providers/constant';
 import { HttpService } from '../providers/services/http.service';
+import { Dashboard } from '../models/constant';
 
 @Component({
   selector: 'app-login',
@@ -24,7 +22,6 @@ export class LoginComponent implements OnInit {
   rememberMe: boolean = false;
   constructor(
     private nav: iNavigation,
-    private http: AjaxService,
     private httpService: HttpService
   ) { }
 

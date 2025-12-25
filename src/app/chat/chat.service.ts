@@ -1,10 +1,9 @@
 import { Injectable, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { Conversation, UserDetail } from '../components/global-search/search.models';
-import { ResponseModel } from '../providers/model';
 import { HttpService } from '../providers/services/http.service';
-import { environment } from '../../environments/environment';
 import { Message } from '../providers/socket/confeet-socket.service';
+import { ResponseModel } from '../models/model';
 
 @Injectable({
     providedIn: 'root'
@@ -56,12 +55,12 @@ export class ChatService {
                 // COMPLEXITY: State in Service for pagination is tricky. 
                 // Let's append if page > 1, else set.
                 if (page > 1) {
-                    this.messages.update(current => [...current, ...res.ResponseBody.messages]);
+                    this.messages.update(current => [...res.ResponseBody.messages.reverse(), ...current]);
                 } else {
-                    this.messages.set(res.ResponseBody.messages);
+                    this.messages.set(res.ResponseBody.messages.reverse());
                 }
             } else {
-                this.messages.set(res.ResponseBody.messages);
+                this.messages.set(res.ResponseBody.messages.reverse());
             }
         }
     }
