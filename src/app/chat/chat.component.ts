@@ -6,10 +6,10 @@ import { ConfeetSocketService, Message } from '../providers/socket/confeet-socke
 import { Subscription } from 'rxjs';
 import { Conversation, Participant, UserDetail } from '../components/global-search/search.models';
 import { ChatService } from './chat.service';
-import { NotificationService } from '../providers/services/notification.service';
 import { Router } from '@angular/router';
 import { User } from '../models/model';
 import { CallEventService } from '../providers/socket/call-event.service';
+import { NotificationService } from '../notifications/services/notification.service';
 
 @Component({
     selector: 'app-chat',
@@ -346,13 +346,13 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     startAudioCall() {
+        this.callEventService.initiateAudioCall(this.currentUserId, this.currentConversation.id);
         this.router.navigate(['/btc/preview'], {
             state: {
                 id: this.currentConversation.id,
                 title: this.currentConversation.conversationName ? this.currentConversation.conversationName : 'NEW'
             }
         });
-        this.callEventService.initiateAudioCall(this.currentUserId, this.currentConversation.id);
     }
 
     ngOnDestroy(): void {

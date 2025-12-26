@@ -356,9 +356,12 @@ export class IncomingCallComponent implements OnDestroy {
             this.stopRingtone();
             this.stopTimer();
             this.callEventService.acceptCall(call.conversationId, call.callerId);
-
-            // Navigate to meeting/call page or handle call connection
-            // this.router.navigate(['/btc/meeting'], { queryParams: { callId: call.conversationId } });
+            this.router.navigate(['/btc/preview'], {
+                state: {
+                    id: call.conversationId,
+                    title: call.callerName || 'NEW'
+                }
+            });
         }
     }
 

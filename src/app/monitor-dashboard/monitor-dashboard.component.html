@@ -1,0 +1,300 @@
+@if (isLoading() && !monitorData()) {
+<div class="monitor-loading">
+    <div class="spinner-custom"></div>
+    <p>Loading monitor data...</p>
+</div>
+} @else {
+<div class="monitor-container" [class.dark-mode]="isDarkMode()">
+    <!-- Header with Status Banner -->
+    <div class="monitor-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="header-title">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    WebSocket Monitor
+                </h1>
+                <p class="header-subtitle">Real-time connection health and statistics</p>
+            </div>
+            <div class="header-right">
+                <div class="status-badge" [class]="statusBadgeClass()">
+                    <i class="fa-solid" [class]="statusIcon()"></i>
+                    <span class="status-text">{{ status() | titlecase }}</span>
+                    <span class="status-pulse"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="header-controls">
+            <div class="refresh-info">
+                @if (lastUpdated()) {
+                <span class="last-updated">
+                    <i class="fa-regular fa-clock"></i>
+                    Last updated: {{ lastUpdated() | date:'HH:mm:ss' }}
+                </span>
+                }
+            </div>
+            <div class="control-buttons">
+                <button class="btn-theme" (click)="toggleTheme()">
+                    <i class="fa-solid" [class.fa-moon]="!isDarkMode()" [class.fa-sun]="isDarkMode()"></i>
+                    {{ isDarkMode() ? 'Light Mode' : 'Dark Mode' }}
+                </button>
+                <button class="btn-refresh" (click)="refreshNow()" [disabled]="isLoading()">
+                    <i class="fa-solid fa-rotate" [class.fa-spin]="isLoading()"></i>
+                    Refresh
+                </button>
+                <button class="btn-toggle" [class.active]="isAutoRefreshEnabled()" (click)="toggleAutoRefresh()">
+                    <i class="fa-solid" [class.fa-pause]="isAutoRefreshEnabled()"
+                        [class.fa-play]="!isAutoRefreshEnabled()"></i>
+                    {{ isAutoRefreshEnabled() ? 'Auto-refresh On' : 'Auto-refresh Off' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Banner -->
+    @if (error()) {
+    <div class="error-banner">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ error() }}</span>
+        <button class="btn-retry" (click)="refreshNow()">Retry</button>
+    </div>
+    }
+
+    <!-- Connection Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card stat-connected">
+            <div class="stat-icon">
+                <i class="fa-solid fa-plug"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ connections()?.totalConnected ?? 0 }}</h3>
+                <p class="stat-label">Total Connected</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-online">
+            <div class="stat-icon">
+                <i class="fa-solid fa-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ connections()?.totalOnline ?? 0 }}</h3>
+                <p class="stat-label">Online</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-busy">
+            <div class="stat-icon">
+                <i class="fa-solid fa-minus-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ connections()?.totalBusy ?? 0 }}</h3>
+                <p class="stat-label">Busy</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-incall">
+            <div class="stat-icon">
+                <i class="fa-solid fa-phone"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ connections()?.totalInCall ?? 0 }}</h3>
+                <p class="stat-label">In Call</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-away">
+            <div class="stat-icon">
+                <i class="fa-solid fa-moon"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ connections()?.totalAway ?? 0 }}</h3>
+                <p class="stat-label">Away</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two-column layout for Rooms and Calls -->
+    <div class="content-grid">
+        <!-- Rooms Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fa-solid fa-door-open"></i>
+                    Rooms
+                </h2>
+                <div class="section-badge">
+                    <span class="badge-active">{{ rooms()?.activeRooms ?? 0 }} active</span>
+                    <span class="badge-total">/ {{ rooms()?.totalRooms ?? 0 }} total</span>
+                </div>
+            </div>
+
+            <div class="section-search">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" placeholder="Search rooms..." [value]="roomSearch()"
+                    (input)="onRoomSearchChange($event)">
+            </div>
+
+            <div class="table-container">
+                @if (filteredRooms().length > 0) {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Conversation ID</th>
+                            <th>Members</th>
+                            <th>Online</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (room of filteredRooms(); track trackByConversationId($index, room)) {
+                        <tr>
+                            <td class="cell-id">{{ room.conversationId }}</td>
+                            <td class="cell-count">{{ room.totalMembers }}</td>
+                            <td class="cell-count">
+                                <span class="online-badge">{{ room.onlineMembers }}</span>
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+                } @else {
+                <div class="empty-state">
+                    <i class="fa-solid fa-inbox"></i>
+                    <p>No rooms found</p>
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Active Calls Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fa-solid fa-phone-volume"></i>
+                    Active Calls
+                </h2>
+                <div class="section-badge">
+                    <span class="badge-active">{{ calls()?.totalActiveCalls ?? 0 }} active</span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                @if (calls()?.callDetails && calls()!.callDetails.length > 0) {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Caller</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (call of calls()!.callDetails; track trackByConversationId($index, call)) {
+                        <tr>
+                            <td class="cell-id">{{ call.callerId }}</td>
+                            <td>
+                                <span class="call-type" [class.video]="call.callType === 'video'">
+                                    <i class="fa-solid" [class.fa-video]="call.callType === 'video'"
+                                        [class.fa-phone]="call.callType === 'audio'"></i>
+                                    {{ call.callType | titlecase }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="call-status">{{ getStatusLabel(call.status) }}</span>
+                            </td>
+                            <td class="cell-duration">{{ getCallDuration(call.startedAt) }}</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+                } @else {
+                <div class="empty-state">
+                    <i class="fa-solid fa-phone-slash"></i>
+                    <p>No active calls</p>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Connected Clients Section -->
+    <div class="section-card clients-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fa-solid fa-users"></i>
+                Connected Clients
+            </h2>
+            <div class="section-badge">
+                <span class="badge-total">{{ clients().length }} clients</span>
+            </div>
+        </div>
+
+        <div class="clients-filters">
+            <div class="filter-search">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" placeholder="Search by Client ID, User ID..." [value]="searchQuery()"
+                    (input)="onSearchChange($event)">
+            </div>
+            <div class="filter-status">
+                <select [value]="statusFilter()" (change)="onStatusFilterChange($event)">
+                    <option value="all">All Status</option>
+                    <option value="online">Online</option>
+                    <option value="busy">Busy</option>
+                    <option value="in_call">In Call</option>
+                    <option value="away">Away</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            @if (filteredClients().length > 0) {
+            <table class="data-table clients-table">
+                <thead>
+                    <tr>
+                        <th>Client ID</th>
+                        <th>User ID</th>
+                        <th>Status</th>
+                        <th>Conversation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (client of filteredClients(); track trackByClientId($index, client)) {
+                    <tr>
+                        <td class="cell-id">{{ client.clientId }}</td>
+                        <td class="cell-id">{{ client.userId }}</td>
+                        <td>
+                            <span class="client-status" [class]="'status-' + client.status">
+                                {{ client.status | titlecase }}
+                            </span>
+                        </td>
+                        <td class="cell-id">{{ client.currentConversationId ?? '-' }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+            } @else {
+            <div class="empty-state">
+                <i class="fa-solid fa-user-slash"></i>
+                <p>No clients match your filters</p>
+            </div>
+            }
+        </div>
+    </div>
+
+    <!-- Status Count Summary -->
+    @if (statusCountKeys().length > 0) {
+    <div class="status-summary">
+        <h3 class="summary-title">Status Distribution</h3>
+        <div class="status-pills">
+            @for (status of statusCountKeys(); track status) {
+            <div class="status-pill" [class]="'pill-' + status">
+                <span class="pill-label">{{ status | titlecase }}</span>
+                <span class="pill-count">{{ statusCount()[status] }}</span>
+            </div>
+            }
+        </div>
+    </div>
+    }
+</div>
+}

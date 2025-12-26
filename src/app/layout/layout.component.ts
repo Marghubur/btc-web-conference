@@ -7,11 +7,11 @@ import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { MeetingService } from '../providers/services/meeting.service';
 import { ConfeetSocketService } from '../providers/socket/confeet-socket.service';
 import { environment } from '../../environments/environment';
-import { NotificationService } from '../providers/services/notification.service';
-import { ToastNotificationComponent } from '../components/toast-notification/toast-notification.component';
+import { NotificationService } from '../notifications/services/notification.service';
+import { ToastNotificationComponent } from '../notifications/toast-notification/toast-notification.component';
 import { User } from '../models/model';
 import { CallEventService } from '../providers/socket/call-event.service';
-import { IncomingCallComponent } from '../components/incoming-call/incoming-call.component';
+import { IncomingCallComponent } from '../notifications/incoming-call/incoming-call.component';
 import { DeviceService } from './device.service';
 
 @Component({

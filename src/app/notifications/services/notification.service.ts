@@ -1,10 +1,15 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { ConfeetSocketService, Message, MessageDelivered, MessageSeen, TypingIndicator, ErrorPayload } from '../socket/confeet-socket.service';
-import { Conversation, LastMessage } from '../../components/global-search/search.models';
+import {
+    ConfeetSocketService, Message, MessageDelivered,
+    MessageSeen, TypingIndicator, ErrorPayload
+}
+    from '../../providers/socket/confeet-socket.service';
+
+import { LastMessage } from '../../components/global-search/search.models';
 import { ChatService } from '../../chat/chat.service';
 import { User } from '../../models/model';
-import { LocalService } from './local.service';
+import { LocalService } from '../../providers/services/local.service';
 
 export interface AppNotification {
     id: string;

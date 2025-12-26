@@ -18,6 +18,7 @@ export interface RequestOptions {
     withCredentials?: boolean;
     timeoutMs?: number;
     maxRetries?: number;
+    baseUrl?: string; // Optional: override default baseUrl for this request
 }
 
 @Injectable({
@@ -87,7 +88,9 @@ export class HttpService {
         body?: any,
         options: RequestOptions = {}
     ): Promise<ResponseModel> {
-        const fullUrl = url.startsWith('http') ? url : `${this.baseUrl}${url.startsWith('/') ? '' : url}`;
+        // Use custom baseUrl from options if provided, otherwise use default
+        const effectiveBaseUrl = options.baseUrl ?? this.baseUrl;
+        const fullUrl = url.startsWith('http') ? url : `${effectiveBaseUrl}${url.startsWith('/') ? '' : url}`;
 
         const timeoutMs = options.timeoutMs ?? this.DEFAULT_TIMEOUT;
         const maxRetries = options.maxRetries ?? this.MAX_RETRIES;
