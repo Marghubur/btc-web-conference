@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import { Conversation, UserDetail } from '../components/global-search/search.models';
+import { Conversation, Participant, SearchResult, UserDetail } from '../components/global-search/search.models';
 import { HttpService } from '../providers/services/http.service';
 import { Message } from '../providers/socket/confeet-socket.service';
 import { ResponseModel } from '../models/model';
@@ -14,7 +14,8 @@ export class ChatService {
     // Signals for State Management
     public meetingRooms = signal<Conversation[]>([]);
     public messages = signal<Message[]>([]);
-    public searchResults = signal<UserDetail[]>([]);
+    public searchResults = signal<SearchResult[]>([]);
+    public userSearchResults = signal<UserDetail[]>([]);
     public isLoading = signal<boolean>(false);
 
     constructor(private http: HttpService) { }
@@ -35,11 +36,53 @@ export class ChatService {
             return;
         }
         this.isLoading.set(true);
-        const res = await this.http.get(`conversation/search-user?term=${term}`);
+        const res = await this.http.get(`search/typeahead?q=${term}&fs=y`);
         if (res.IsSuccess) {
-            this.searchResults.set(res.ResponseBody || []);
+            this.filterSearchResults(res.ResponseBody['results']);
         }
         this.isLoading.set(false);
+    }
+
+    filterSearchResults(results: any): SearchResult[] {
+        this.searchResults.set([]);
+        if (!results || (!results['users'] && !results['conversations'])) return this.searchResults();
+
+        if (results['users']) {
+            this.searchResults.set((results['users'] as UserDetail[]).map(user => ({
+                avatar: user.avatar,
+                conversationId: user.id,
+                participants: [{
+                    userId: user.userId,
+                    username: user.username,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    avatar: user.avatar,
+                    joinedAt: null,
+                    role: 'member'
+                }],
+                name: user.firstName + ' ' + user.lastName,
+                type: 'user',
+                userId: user.userId,
+                designation: user.designation
+            })));
+        }
+
+        if (results['conversations']) {
+            let conversations = (results['conversations'] as Conversation[]).map(conversation => (<SearchResult>{
+                avatar: conversation.conversationAvatar,
+                conversationId: conversation.conversationId,
+                participants: conversation.participants,
+                name: conversation.conversationName,
+                type: 'group',
+                userId: null,
+                designation: null
+            }));
+
+            this.searchResults.update((current) => [...current, ...conversations]);
+        }
+
+        return this.searchResults();
     }
 
     async getMessages(conversationId: string, page: number, limit: number, append: boolean = false): Promise<void> {
@@ -75,10 +118,20 @@ export class ChatService {
         return res; // Keep return for Component to know ID of new chat
     }
 
+    async createGroupConversation(userId: string, groupName: string, participants: Participant[]): Promise<ResponseModel> {
+        const res = await this.http.post(`conversations/create-group/${userId}/${groupName}`, participants);
+        // If successful, we might want to refresh meeting rooms or add this one
+        if (res.IsSuccess) {
+            // Optionally refresh list
+            // this.getMeetingRooms(); 
+        }
+        return res; // Keep return for Component to know ID of new chat
+    }
+
     // Helper Methods
     getConversationName(conversation: Conversation, currentUserId: string): string {
         if (conversation.conversationType == 'group') {
-            return this.getUserInitiaLetter(conversation.conversationType, '');
+            return conversation.conversationName || 'Group';
         } else {
             let participants = conversation.participants.filter((x) => x.userId != currentUserId);
             if (participants.length == 0) return 'Unknown';

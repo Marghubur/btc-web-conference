@@ -5,6 +5,7 @@ export interface UserDetail {
   userId: string;
   username: string;
   email: string;
+  designation: string,
   firstName: string;
   lastName: string;
   avatar: string;
@@ -30,6 +31,16 @@ export interface Conversation {
   lastMessageAt: Date;
   isActive: boolean;
   settings: ConversationSettings;
+}
+
+export interface SearchResult {
+  avatar: string;
+  conversationId: string;
+  participants: Participant[];
+  name: string,
+  type: 'user' | 'group';
+  userId: string;
+  designation: string;
 }
 
 

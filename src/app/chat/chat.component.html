@@ -50,10 +50,10 @@
                 <!-- Search Results Dropdown -->
                 <div class="search-results-dropdown position-absolute w-100 bg-white shadow rounded mt-1"
                     style="z-index: 1000; max-height: 300px; overflow-y: auto;"
-                    *ngIf="chatService.searchResults().length > 0">
+                    *ngIf="chatService.userSearchResults().length > 0">
                     <div class="list-group">
                         <button type="button" class="list-group-item list-group-item-action d-flex align-items-center"
-                            *ngFor="let result of chatService.searchResults()" (click)="startChatWithUser(result)">
+                            *ngFor="let result of chatService.userSearchResults()" (click)="startChatWithUser(result)">
                             <div class="avatar-container me-2">
                                 <div class="avatar" style="width: 32px; height: 32px; font-size: 14px;"
                                     [ngStyle]="{ 'background-color': getColorFromName(result.firstName, result.lastName) }">
@@ -130,6 +130,131 @@
                             d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                     </svg>
                 </button>
+                <!-- Members Button with Dropdown -->
+                <div class="members-dropdown-container" [class.open]="showMembersDropdown">
+                    <button class="header-action-btn" title="Members" (click)="toggleMembersDropdown()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    </button>
+                    <!-- Dropdown Panel -->
+                    @if (showMembersDropdown) {
+                    <div class="members-dropdown-panel" (click)="$event.stopPropagation()">
+                        <!-- Members Section -->
+                        <div class="dropdown-section">
+                            <h4 class="dropdown-section-title">Members ({{ currentConversation.participants?.length || 0
+                                }})</h4>
+                            <div class="members-list">
+                                @for (member of currentConversation.participants; track member.userId) {
+                                <div class="member-item">
+                                    <div class="member-avatar"
+                                        [ngStyle]="{ 'background-color': getColorFromName(member.firstName, member.lastName) }">
+                                        {{ getUserInitiaLetter(member.firstName, member.lastName) }}
+                                    </div>
+                                    <div class="member-info">
+                                        <span class="member-name">{{ member.firstName }} {{ member.lastName }}</span>
+                                        <span class="member-email">{{ member.email }}</span>
+                                    </div>
+                                </div>
+                                }
+                            </div>
+                        </div>
+                        <!-- Divider -->
+                        <div class="dropdown-divider"></div>
+                        <!-- Create Group Section -->
+                        <div class="dropdown-section">
+                            @if (!showCreateGroupInput) {
+                            <button class="create-group-btn" (click)="showCreateGroupInput = true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                <span>Create a Group</span>
+                            </button>
+                            } @else {
+                            <div class="create-group-form">
+                                <!-- Auto-generated Group Name -->
+                                <div class="form-group">
+                                    <label class="form-label">Group Name</label>
+                                    <input type="text" class="group-name-input" [(ngModel)]="newGroupName"
+                                        [placeholder]="getDefaultGroupName()" />
+                                </div>
+
+                                <!-- Selected Members -->
+                                <div class="form-group">
+                                    <label class="form-label">Members</label>
+                                    <div class="selected-members">
+                                        @for (member of currentConversation.participants; track member.userId) {
+                                        <div class="selected-member-chip">
+                                            <div class="chip-avatar"
+                                                [ngStyle]="{ 'background-color': getColorFromName(member.firstName, member.lastName) }">
+                                                {{ getUserInitiaLetter(member.firstName, member.lastName) }}
+                                            </div>
+                                            <span>{{ member.firstName }}</span>
+                                        </div>
+                                        }
+                                        @for (member of newGroupMembers; track member.userId) {
+                                        <div class="selected-member-chip new-member">
+                                            <div class="chip-avatar"
+                                                [ngStyle]="{ 'background-color': getColorFromName(member.name, null) }">
+                                                {{ getUserInitiaLetter(member.name, null) }}
+                                            </div>
+                                            <span>{{ member.name.split(' ')[0] }}</span>
+                                            <button class="remove-member-btn"
+                                                (click)="removeNewGroupMember(member)">×</button>
+                                        </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Add Members Search -->
+                                <div class="form-group">
+                                    <label class="form-label">Add Members</label>
+                                    <div class="add-member-search">
+                                        <svg class="search-icon-small" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8" />
+                                            <path d="M21 21l-4.35-4.35" />
+                                        </svg>
+                                        <input type="text" class="member-search-input"
+                                            placeholder="Search users to add..." [(ngModel)]="memberSearchQuery"
+                                            (input)="onMemberSearch()" (keydown)="onMemberSearchKeydown($event)" />
+                                    </div>
+                                    <!-- Search Results -->
+                                    @if (memberSearchResults.length > 0) {
+                                    <div class="member-search-results">
+                                        @for (result of memberSearchResults; track result.conversationId; let idx =
+                                        $index) {
+                                        <div class="member-search-item"
+                                            [class.selected]="memberSearchSelectedIndex === idx"
+                                            (click)="addMemberToGroup(result)"
+                                            (mouseenter)="memberSearchSelectedIndex = idx">
+                                            <div class="member-avatar"
+                                                [ngStyle]="{ 'background-color': getColorFromName(result.name, null) }">
+                                                {{ getUserInitiaLetter(result.name, null) }}
+                                            </div>
+                                            <div class="member-info">
+                                                <span class="member-name">{{ result.name }}</span>
+                                                <span class="member-email">{{ result.designation }}</span>
+                                            </div>
+                                        </div>
+                                        }
+                                    </div>
+                                    }
+                                </div>
+
+                                <div class="create-group-actions">
+                                    <button class="btn-cancel" (click)="cancelCreateGroup()">Cancel</button>
+                                    <button class="btn-create" (click)="createGroup()">Create</button>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
                 <button class="header-action-btn" title="More options">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <circle cx="12" cy="5" r="2" />

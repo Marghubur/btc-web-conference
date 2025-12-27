@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { LocalService } from '../providers/services/local.service';
 import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
 import { Subscription } from 'rxjs';
-import { Conversation, Participant, UserDetail } from '../components/global-search/search.models';
+import { Conversation, Participant, SearchResult, UserDetail } from '../components/global-search/search.models';
 import { ChatService } from './chat.service';
 import { Router } from '@angular/router';
 import { User } from '../models/model';
@@ -39,6 +39,15 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     searchQuery: string = '';
     // searchResults delegated to service
     isSearching: boolean = false;
+
+    // Members dropdown state
+    showMembersDropdown: boolean = false;
+    showCreateGroupInput: boolean = false;
+    newGroupName: string = '';
+    newGroupMembers: SearchResult[] = [];
+    memberSearchQuery: string = '';
+    memberSearchResults: SearchResult[] = [];
+    memberSearchSelectedIndex: number = -1;
 
     // typingUsers now comes from NotificationService
     private subscriptions = new Subscription();
@@ -353,6 +362,118 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
                 title: this.currentConversation.conversationName ? this.currentConversation.conversationName : 'NEW'
             }
         });
+    }
+
+    // Members Dropdown Methods
+    toggleMembersDropdown(): void {
+        this.showMembersDropdown = !this.showMembersDropdown;
+        if (!this.showMembersDropdown) {
+            this.cancelCreateGroup();
+        }
+    }
+
+    cancelCreateGroup(): void {
+        this.showCreateGroupInput = false;
+        this.newGroupName = '';
+        this.newGroupMembers = [];
+        this.memberSearchQuery = '';
+        this.memberSearchResults = [];
+    }
+
+    getDefaultGroupName(): string {
+        const participants = this.currentConversation?.participants || [];
+        if (participants.length === 0) return 'New Group';
+
+        // Get first two names
+        const names = participants.slice(0, 2).map(p => p.firstName);
+        const othersCount = participants.length + this.newGroupMembers.length - 2;
+
+        if (othersCount > 0) {
+            return `${names.join(', ')} +${othersCount} others`;
+        }
+        return names.join(', ');
+    }
+
+    onMemberSearch(): void {
+        this.memberSearchSelectedIndex = -1; // Reset selection on new search
+        if (!this.memberSearchQuery || this.memberSearchQuery.length < 2) {
+            this.memberSearchResults = [];
+            return;
+        }
+
+        // Use the existing search functionality
+        this.chatService.searchUsers(this.memberSearchQuery).then(() => {
+            // Filter out members who are already in the group
+            const existingIds = [
+                ...this.currentConversation.participants.map(p => p.userId),
+                ...this.newGroupMembers.map(m => m.userId)
+            ];
+            this.memberSearchResults = this.chatService.searchResults()
+                .filter(user => !existingIds.includes(user.userId));
+        });
+    }
+
+    onMemberSearchKeydown(event: KeyboardEvent): void {
+        const total = this.memberSearchResults.length;
+        if (total === 0) return;
+
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                this.memberSearchSelectedIndex = Math.min(this.memberSearchSelectedIndex + 1, total - 1);
+                break;
+
+            case 'ArrowUp':
+                event.preventDefault();
+                this.memberSearchSelectedIndex = Math.max(this.memberSearchSelectedIndex - 1, -1);
+                break;
+
+            case 'Enter':
+                event.preventDefault();
+                if (this.memberSearchSelectedIndex >= 0 && this.memberSearchSelectedIndex < total) {
+                    this.addMemberToGroup(this.memberSearchResults[this.memberSearchSelectedIndex]);
+                }
+                break;
+
+            case 'Escape':
+                event.preventDefault();
+                this.memberSearchQuery = '';
+                this.memberSearchResults = [];
+                this.memberSearchSelectedIndex = -1;
+                break;
+        }
+    }
+
+    addMemberToGroup(member: SearchResult): void {
+        // Check if already added
+        if (!this.newGroupMembers.find(m => m.conversationId === member.conversationId)) {
+            this.newGroupMembers.push(member);
+        }
+        this.memberSearchQuery = '';
+        this.memberSearchResults = [];
+        this.memberSearchSelectedIndex = -1;
+    }
+
+    removeNewGroupMember(member: SearchResult): void {
+        this.newGroupMembers = this.newGroupMembers.filter(m => m.conversationId !== member.conversationId);
+    }
+
+    createGroup(): void {
+        const groupName = this.newGroupName.trim() || this.getDefaultGroupName();
+        const newGroupMembers = this.newGroupMembers.reduce((acc, m) => [...acc, ...m.participants], []);
+
+        const allMembers: Participant[] = [
+            ...this.currentConversation.participants,
+            ...newGroupMembers
+        ];
+
+        // TODO: Call API to create group
+        this.chatService.createGroupConversation(this.currentUserId, groupName, allMembers).then((res: any) => {
+            // Reset state
+            this.cancelCreateGroup();
+            this.showMembersDropdown = false;
+        });
+
     }
 
     ngOnDestroy(): void {
