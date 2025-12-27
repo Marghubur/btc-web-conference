@@ -112,22 +112,22 @@ export type CallEndReasonValue = typeof CallEndReason[keyof typeof CallEndReason
 // Call Model - Database/State Model
 // ============================================
 
-/** Call represents a call session (can be stored in DB for call history) */
-export interface Call {
-    id?: string;                    // MongoDB ObjectID as string
-    conversationId: string;         // Associated conversation
-    callerId: string;               // User who initiated the call
-    calleeIds: string[];            // User(s) being called
-    callType: CallTypeValue;        // "audio" or "video"
-    status: CallStatusValue;        // Current call status
-    roomName?: string;              // LiveKit room name
-    startedAt?: Date;               // When call was accepted
-    endedAt?: Date;                 // When call ended
-    duration: number;               // Call duration in seconds
-    endReason?: CallEndReasonValue; // Why call ended
-    createdAt: Date;                // When call was initiated
-    updatedAt: Date;                // Last update time
-}
+// /** Call represents a call session (can be stored in DB for call history) */
+// export interface Call {
+//     id?: string;                    // MongoDB ObjectID as string
+//     conversationId: string;         // Associated conversation
+//     callerId: string;               // User who initiated the call
+//     calleeIds: string[];            // User(s) being called
+//     callType: CallTypeValue;        // "audio" or "video"
+//     status: CallStatusValue;        // Current call status
+//     roomName?: string;              // LiveKit room name
+//     startedAt?: Date;               // When call was accepted
+//     endedAt?: Date;                 // When call ended
+//     duration: number;               // Call duration in seconds
+//     endReason?: CallEndReasonValue; // Why call ended
+//     createdAt: Date;                // When call was initiated
+//     updatedAt: Date;                // Last update time
+// }
 
 /** CallParticipant tracks individual participant status in a call */
 export interface CallParticipant {

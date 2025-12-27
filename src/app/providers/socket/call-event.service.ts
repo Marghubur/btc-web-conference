@@ -29,7 +29,6 @@ import {
     CallEndedEvent,
     CallBusyEvent,
     CallErrorEvent,
-    Call
 } from '../../models/conference_call/call_model';
 
 @Injectable({
@@ -68,14 +67,8 @@ export class CallEventService {
     // Call State Management
     // =========================================================
 
-    /** Current active call (if any) */
-    public activeCall = signal<Call | null>(null);
-
     /** Call status for UI display */
     public callStatus = signal<CallStatusValue | null>(null);
-
-    /** Is currently in a call */
-    public inCall = computed(() => this.activeCall() !== null);
 
     /** Is receiving an incoming call */
     public hasIncomingCall = signal<boolean>(false);
@@ -329,7 +322,6 @@ export class CallEventService {
      * Reset all call state
      */
     private resetCallState(): void {
-        this.activeCall.set(null);
         this.hasIncomingCall.set(false);
         this.incomingCall.set(null);
     }
