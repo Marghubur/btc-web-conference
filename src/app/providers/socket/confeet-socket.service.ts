@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { filter, map, Observable, Subject, takeUntil } from 'rxjs';
 import { User } from '../../models/model';
+import { Conversation } from '../../components/global-search/search.models';
 
 @Injectable({
     providedIn: 'root',
@@ -18,19 +19,12 @@ export class ConfeetSocketService {
     error$: Observable<ErrorPayload>;
 
     //--------------------------------------------------------------
+    currentConversation = signal<Conversation | null>(null);
+    currentConversationId = signal<string | null>(null);
 
     private reconnectInterval = 3000;
-
-
-
     private senderId!: string;
-    private receiverId!: string;
-    private groupId!: string;
     private url!: string;
-    private user: User = {
-        isMicOn: false,
-        isCameraOn: false,
-    };
 
     constructor() {
         // Setup filtered observables

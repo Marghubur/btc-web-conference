@@ -350,6 +350,17 @@ export class RoomService {
   }
 
   async leaveRoom() {
+    // Stop all local tracks before disconnecting
+    const room = this.room();
+    if (room) {
+      // Stop all published tracks (camera, mic, screen share)
+      room.localParticipant.trackPublications.forEach((publication) => {
+        if (publication.track) {
+          publication.track.stop();
+          console.log(`Stopped track: ${publication.track.kind}`);
+        }
+      });
+    }
     await this.room()?.disconnect();
     this.room.set(undefined);
     this.remoteTracksMap.set(new Map());

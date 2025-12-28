@@ -56,7 +56,6 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     private previousScrollHeight = 0;
 
     currentUserId: string = "";
-    currentConversation: Conversation = null;
 
     readonly destroyRef = inject(DestroyRef);
 
@@ -252,7 +251,8 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     selectChannelForConversation(conversation: Conversation) {
-        this.currentConversation = conversation;
+        this.ws.currentConversation.set(conversation);
+        this.ws.currentConversationId.set(conversation.id);
         this.pageIndex = 1;
         this.chatService.messages.set([]); // Clear existing messages
 
@@ -271,14 +271,14 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     loadMoreMessages(scrollToBottom: boolean = false) {
-        if (!this.currentConversation) return;
+        if (!this.ws.currentConversation()) return;
 
         // Save current scroll height before loading older messages
         if (!scrollToBottom && this.messagesContainer) {
             this.previousScrollHeight = this.messagesContainer.nativeElement.scrollHeight;
         }
 
-        this.chatService.getMessages(this.currentConversation.id ?? '', this.pageIndex, 20, this.pageIndex > 1).then(() => {
+        this.chatService.getMessages(this.ws.currentConversation().id ?? '', this.pageIndex, 20, this.pageIndex > 1).then(() => {
             this.pageIndex = this.pageIndex + 1;
             if (scrollToBottom) {
                 this.shouldScrollToBottom = true;
@@ -290,14 +290,14 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     sendMessage() {
-        if (this.currentConversation.id == null) {
+        if (this.ws.currentConversation().id == null) {
             // call java to insert or create conversation channel
-            this.chatService.createConversation(this.currentUserId, this.currentConversation).then((res: any) => {
+            this.chatService.createConversation(this.currentUserId, this.ws.currentConversation()).then((res: any) => {
                 console.log("channel created", res);
                 this.send(res);
             });
         } else {
-            this.send(this.currentConversation);
+            this.send(this.ws.currentConversation());
         }
     }
 
@@ -345,8 +345,8 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     onTyping(isTyping: boolean): void {
-        if (this.currentConversation?.id) {
-            this.ws.sendTyping(this.currentConversation.id, isTyping);
+        if (this.ws.currentConversation().id) {
+            this.ws.sendTyping(this.ws.currentConversation().id, isTyping);
         }
     }
 
@@ -355,11 +355,11 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     startAudioCall() {
-        this.callEventService.initiateAudioCall(this.currentUserId, this.currentConversation.id);
+        this.callEventService.initiateAudioCall(this.currentUserId, this.ws.currentConversation().id);
         this.router.navigate(['/btc/preview'], {
             state: {
-                id: this.currentConversation.id,
-                title: this.currentConversation.conversationName ? this.currentConversation.conversationName : 'NEW'
+                id: this.ws.currentConversation().id,
+                title: this.ws.currentConversation().conversationName ? this.ws.currentConversation().conversationName : 'NEW'
             }
         });
     }
@@ -381,7 +381,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     getDefaultGroupName(): string {
-        const participants = this.currentConversation?.participants || [];
+        const participants = this.ws.currentConversation()?.participants || [];
         if (participants.length === 0) return 'New Group';
 
         // Get first two names
@@ -405,7 +405,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
         this.chatService.searchUsers(this.memberSearchQuery).then(() => {
             // Filter out members who are already in the group
             const existingIds = [
-                ...this.currentConversation.participants.map(p => p.userId),
+                ...this.ws.currentConversation().participants.map(p => p.userId),
                 ...this.newGroupMembers.map(m => m.userId)
             ];
             this.memberSearchResults = this.chatService.searchResults()
@@ -463,7 +463,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
         const newGroupMembers = this.newGroupMembers.reduce((acc, m) => [...acc, ...m.participants], []);
 
         const allMembers: Participant[] = [
-            ...this.currentConversation.participants,
+            ...this.ws.currentConversation().participants,
             ...newGroupMembers
         ];
 

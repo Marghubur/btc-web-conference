@@ -23,10 +23,16 @@ export class MediaPermissionsService {
   });
 
   public permissions$ = this.permissionsSubject.asObservable();
-  
+
   private cameraPermission?: PermissionStatus;
   private microphonePermission?: PermissionStatus;
   private eventListeners: (() => void)[] = [];
+
+  // Prevent concurrent permission checks
+  private isChecking = false;
+  private pendingCheck = false;
+  // Debounce timer
+  private checkDebounceTimer?: any;
 
   constructor() {
     this.initializePermissionMonitoring();
@@ -52,7 +58,7 @@ export class MediaPermissionsService {
         }
       };
       document.addEventListener('visibilitychange', visibilityChangeHandler);
-      this.eventListeners.push(() => 
+      this.eventListeners.push(() =>
         document.removeEventListener('visibilitychange', visibilityChangeHandler)
       );
     }
@@ -61,14 +67,14 @@ export class MediaPermissionsService {
     if (typeof window !== 'undefined') {
       const focusHandler = () => this.checkPermissions();
       window.addEventListener('focus', focusHandler);
-      this.eventListeners.push(() => 
+      this.eventListeners.push(() =>
         window.removeEventListener('focus', focusHandler)
       );
 
       // Listen for page show event (back/forward navigation)
       const pageShowHandler = () => this.checkPermissions();
       window.addEventListener('pageshow', pageShowHandler);
-      this.eventListeners.push(() => 
+      this.eventListeners.push(() =>
         window.removeEventListener('pageshow', pageShowHandler)
       );
     }
@@ -80,7 +86,7 @@ export class MediaPermissionsService {
         setTimeout(() => this.checkPermissions(), 100);
       };
       navigator.mediaDevices.addEventListener('devicechange', deviceChangeHandler);
-      this.eventListeners.push(() => 
+      this.eventListeners.push(() =>
         navigator.mediaDevices.removeEventListener('devicechange', deviceChangeHandler)
       );
     }
@@ -114,7 +120,7 @@ export class MediaPermissionsService {
     // Only for browsers that don't support permission change events
     // Check only when page becomes visible and less frequently
     let fallbackInterval: number;
-    
+
     const startFallbackChecking = () => {
       // Check every 10 seconds instead of 2 seconds, and only when page is visible
       fallbackInterval = window.setInterval(() => {
@@ -153,53 +159,71 @@ export class MediaPermissionsService {
   }
 
   async checkPermissions(): Promise<MediaPermissions> {
-    const permissions: MediaPermissions = {
-      camera: 'unknown',
-      microphone: 'unknown',
-      isSupported: this.isPermissionsAPISupported(),
-      lastChecked: new Date()
-    };
+    // Debounce: Don't check if already checking, queue for later
+    if (this.isChecking) {
+      this.pendingCheck = true;
+      return this.permissionsSubject.value;
+    }
 
-    if (permissions.isSupported) {
-      // Use Permissions API if supported
-      try {
-        const [cameraResult, microphoneResult] = await Promise.allSettled([
-          this.queryPermission('camera'),
-          this.queryPermission('microphone')
-        ]);
+    this.isChecking = true;
 
-        permissions.camera = cameraResult.status === 'fulfilled' 
-          ? cameraResult.value 
-          : await this.fallbackPermissionCheck('camera');
+    try {
+      const permissions: MediaPermissions = {
+        camera: 'unknown',
+        microphone: 'unknown',
+        isSupported: this.isPermissionsAPISupported(),
+        lastChecked: new Date()
+      };
 
-        permissions.microphone = microphoneResult.status === 'fulfilled' 
-          ? microphoneResult.value 
-          : await this.fallbackPermissionCheck('microphone');
+      if (permissions.isSupported) {
+        // Use Permissions API if supported - this doesn't activate camera
+        try {
+          const [cameraResult, microphoneResult] = await Promise.allSettled([
+            this.queryPermission('camera'),
+            this.queryPermission('microphone')
+          ]);
 
-      } catch (error) {
-        // Fallback to getUserMedia check
-        permissions.camera = await this.fallbackPermissionCheck('camera');
-        permissions.microphone = await this.fallbackPermissionCheck('microphone');
+          // Only use fallback if query completely fails, not just rejected
+          permissions.camera = cameraResult.status === 'fulfilled'
+            ? cameraResult.value
+            : 'unknown';  // Don't fallback to getUserMedia here
+
+          permissions.microphone = microphoneResult.status === 'fulfilled'
+            ? microphoneResult.value
+            : 'unknown';  // Don't fallback to getUserMedia here
+
+        } catch (error) {
+          // Keep as unknown rather than activating camera
+          permissions.camera = 'unknown';
+          permissions.microphone = 'unknown';
+        }
       }
-    } else {
-      // Fallback for browsers that don't support Permissions API
-      permissions.camera = await this.fallbackPermissionCheck('camera');
-      permissions.microphone = await this.fallbackPermissionCheck('microphone');
-    }
+      // Note: Removed fallback for browsers without Permissions API
+      // The fallback getUserMedia approach causes camera light to turn on
 
-    // Only emit if permissions actually changed
-    const currentPermissions = this.permissionsSubject.value;
-    if (this.hasPermissionsChanged(currentPermissions, permissions)) {
-      this.permissionsSubject.next(permissions);
-    }
+      // Only emit if permissions actually changed
+      const currentPermissions = this.permissionsSubject.value;
+      if (this.hasPermissionsChanged(currentPermissions, permissions)) {
+        this.permissionsSubject.next(permissions);
+      }
 
-    return permissions;
+      return permissions;
+    } finally {
+      this.isChecking = false;
+
+      // Process pending check if any
+      if (this.pendingCheck) {
+        this.pendingCheck = false;
+        // Small delay before next check
+        setTimeout(() => this.checkPermissions(), 100);
+      }
+    }
   }
 
   private hasPermissionsChanged(current: MediaPermissions, updated: MediaPermissions): boolean {
-    return current.camera !== updated.camera || 
-           current.microphone !== updated.microphone ||
-           current.isSupported !== updated.isSupported;
+    return current.camera !== updated.camera ||
+      current.microphone !== updated.microphone ||
+      current.isSupported !== updated.isSupported;
   }
 
   private async queryPermission(name: 'camera' | 'microphone'): Promise<PermissionState> {
@@ -220,7 +244,7 @@ export class MediaPermissionsService {
     try {
       // First check if devices are available
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const hasDevice = type === 'camera' 
+      const hasDevice = type === 'camera'
         ? devices.some(device => device.kind === 'videoinput')
         : devices.some(device => device.kind === 'audioinput');
 
@@ -235,9 +259,9 @@ export class MediaPermissionsService {
 
       // Try to get access with minimal resource usage
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
+
       // Check if we got the requested track
-      const hasRequestedTrack = type === 'camera' 
+      const hasRequestedTrack = type === 'camera'
         ? stream.getVideoTracks().length > 0
         : stream.getAudioTracks().length > 0;
 
@@ -271,14 +295,14 @@ export class MediaPermissionsService {
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
+
       // Clean up the stream immediately after getting permission
       stream.getTracks().forEach(track => track.stop());
 
       // Permissions will be automatically updated via event listeners
       // But we can force a check to get immediate feedback
       await this.checkPermissions();
-      
+
       return this.getCurrentPermissions();
     } catch (error) {
       console.error('Error requesting media permissions:', error);
@@ -294,14 +318,14 @@ export class MediaPermissionsService {
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
+
       // Clean up the stream immediately after getting permission
       stream.getTracks().forEach(track => track.stop());
 
       // Permissions will be automatically updated via event listeners
       // But we can force a check to get immediate feedback
       await this.checkPermissions();
-      
+
       return this.getCurrentPermissions();
     } catch (error) {
       console.error('Error requesting media permissions:', error);

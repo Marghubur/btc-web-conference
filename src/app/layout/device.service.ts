@@ -39,6 +39,9 @@ export class DeviceService implements OnInit {
             this.selectedCamera.set(videoTrack?.getSettings().deviceId || this.cameras()[0]?.deviceId || null);
             this.selectedMic.set(audioTrack?.getSettings().deviceId || this.microphones()[0]?.deviceId || null);
             this.selectedSpeaker.set(this.speakers()[0]?.deviceId || null);
+
+            // ⚠️ THIS IS MISSING - Add this to stop the camera!
+            stream.getTracks().forEach(track => track.stop());
         } catch (err) {
             // Fallback: try to enumerate without permission (will have empty deviceIds)
             console.error('Error accessing media devices', err);

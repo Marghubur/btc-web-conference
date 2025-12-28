@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Observable, filter, map, Subscription } from 'rxjs';
 import { ConfeetSocketService, WsEvent } from './confeet-socket.service';
 import { LocalService } from '../services/local.service';
@@ -76,8 +76,14 @@ export class CallEventService {
     /** Is receiving an incoming call */
     public hasIncomingCall = signal<boolean>(false);
 
+    /** Is receiving a joining request */
+    public hasJoiningRequest = signal<boolean>(false);
+
     /** Incoming call details */
     public incomingCall = signal<CallIncomingEvent | null>(null);
+
+    /** Joining request details */
+    public joiningRequest = signal<CallIncomingEvent | null>(null);
 
     private subscriptions = new Subscription();
 
@@ -109,6 +115,19 @@ export class CallEventService {
     // =========================================================
     // Client to Server Methods (Send Events)
     // =========================================================
+
+    /**
+     * Join a audio call to a user
+     */
+    joinCall(calleeId: string, conversationId: string): void {
+        this.send(CallEvents.CALL_STARTED, <CallInitiatePayload>{
+            conversationId: conversationId,
+            calleeIds: [calleeId],
+            callType: CallType.AUDIO,
+            timeout: CallConfig.DEFAULT_TIMEOUT
+        });
+        this.callStatus.set(CallStatus.INITIATED);
+    }
 
     /**
      * Initiate a audio call to a user
@@ -205,13 +224,34 @@ export class CallEventService {
     /**
      * End an ongoing call
      */
-    endCall(conversationId: string, reason?: string): void {
+    endCall(reason?: string): void {
         this.send(CallEvents.CALL_END, <CallEndPayload>{
-            conversationId: conversationId,
+            conversationId: this.ws.currentConversationId(),
             reason: reason || CallEndReason.NORMAL
         });
         this.callStatus.set(CallStatus.ENDED);
         this.resetCallState();
+    }
+
+    /**
+     * Accept a joining request (join an ongoing call)
+     */
+    acceptJoiningRequest(conversationId: string, callerId: string): void {
+        this.send(CallEvents.CALL_ACCEPT, <CallAcceptPayload>{
+            conversationId: conversationId,
+            callerId: callerId
+        });
+        this.hasJoiningRequest.set(false);
+        this.joiningRequest.set(null);
+        this.callStatus.set(CallStatus.ACCEPTED);
+    }
+
+    /**
+     * Dismiss/ignore a joining request
+     */
+    dismissJoiningRequest(): void {
+        this.hasJoiningRequest.set(false);
+        this.joiningRequest.set(null);
     }
 
     // =========================================================
@@ -257,21 +297,21 @@ export class CallEventService {
             })
         );
 
-        // Handle incoming call (only for callees, not the caller)
+        // Handle joining request (call already in progress, user invited to join)
         this.subscriptions.add(
             this.callJoiningRequest$.subscribe(event => {
                 const currentUser = this.local.getUser();
 
                 // Skip if I am the caller (I should not get notified of my own call)
                 if (currentUser && event.callerId === currentUser.userId) {
-                    console.log('Ignoring incoming call event - I am the caller');
+                    console.log('Ignoring joining request event - I am the caller');
                     return;
                 }
 
-                this.hasIncomingCall.set(true);
-                this.incomingCall.set(event);
+                this.hasJoiningRequest.set(true);
+                this.joiningRequest.set(event);
                 this.callStatus.set(CallStatus.JOINING_REQUEST);
-                console.log('Incoming call from:', event.callerId);
+                console.log('Joining request from:', event.callerId);
             })
         );
 

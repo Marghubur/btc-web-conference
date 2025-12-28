@@ -11,6 +11,7 @@ import { AjaxService } from '../providers/services/ajax.service';
 import { Dashboard, MeetingId } from '../models/constant';
 import { ResponseModel, User } from '../models/model';
 import { DeviceService } from '../layout/device.service';
+import { CallType } from '../models/conference_call/call_model';
 
 @Component({
     selector: 'app-preview',
@@ -43,6 +44,7 @@ export class PreviewComponent implements OnDestroy {
     passCode: string = "";
     isSubmitted: boolean = false;
     isValidMeetingId: boolean = false;
+    callType: string = CallType.AUDIO;
 
     constructor(private nav: iNavigation,
         private route: ActivatedRoute,
@@ -57,6 +59,27 @@ export class PreviewComponent implements OnDestroy {
         this.route.queryParamMap.subscribe(paramm => {
             this.meetingId = paramm.get(MeetingId);
         });
+    }
+
+    async ngOnInit() {
+        this.selectedCamera = this.deviceService.selectedCamera();
+        this.selectedMic = this.deviceService.selectedMic();
+        this.selectedSpeaker = this.deviceService.selectedSpeaker();
+        if (this.isLoggedIn) {
+            this.readRoutedMeetingDetail();
+            this.enableStream();
+            this.subscription = this.mediaPerm.permissions$.subscribe(
+                permissions => {
+                    this.permissions = permissions;
+                    if (permissions.camera == 'granted' &&
+                        permissions.microphone == 'granted') {
+                        this.joinRoom();
+                    }
+                }
+            );
+        } else {
+            this.validatMeetingId();
+        }
     }
 
     async joinRoom() {
@@ -78,34 +101,23 @@ export class PreviewComponent implements OnDestroy {
             }
         }
 
+        // Stop the preview stream before joining to release the camera
+        // LiveKit will create its own stream when joining the room
+        if (this.previewStream) {
+            this.previewStream.getTracks().forEach(track => track.stop());
+            this.previewStream = undefined;
+        }
+        if (this.previewVideo?.nativeElement) {
+            this.previewVideo.nativeElement.srcObject = null;
+        }
+
         this.saveUser();
         this.meetingService.meetingId = this.meetingId;
         this.meetingService.maximize();
         this.meetingService.userJoinRoom();
     }
 
-    async ngOnInit() {
-        this.selectedCamera = this.deviceService.selectedCamera();
-        this.selectedMic = this.deviceService.selectedMic();
-        this.selectedSpeaker = this.deviceService.selectedSpeaker();
-        if (this.isLoggedIn) {
-            this.setMeetingDetail();
-            this.enableStream();
-            this.subscription = this.mediaPerm.permissions$.subscribe(
-                permissions => {
-                    this.permissions = permissions;
-                    if (permissions.camera == 'granted' &&
-                        permissions.microphone == 'granted') {
-                        this.joinRoom();
-                    }
-                }
-            );
-        } else {
-            this.validatMeetingId();
-        }
-    }
-
-    setMeetingDetail() {
+    readRoutedMeetingDetail() {
         const state = history.state;
 
         if (state?.id) {
@@ -114,6 +126,10 @@ export class PreviewComponent implements OnDestroy {
 
         if (state?.title) {
             this.meetingTitle = state.title;
+        }
+
+        if (state?.type) {
+            this.callType = state.type;
         }
 
         // Fallback to nav service if state is not available
@@ -162,17 +178,19 @@ export class PreviewComponent implements OnDestroy {
     async enableStream() {
         try {
             // Request permission first - this is required to get real device IDs
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            this.previewStream = await navigator.mediaDevices.getUserMedia({
+                video: !(this.callType == CallType.AUDIO),
+                audio: true,
+            });
 
             // Use the existing stream for preview instead of creating a new one
-            this.previewStream = stream;
             if (this.previewVideo?.nativeElement) {
-                this.previewVideo.nativeElement.srcObject = stream;
+                this.previewVideo.nativeElement.srcObject = this.previewStream;
                 this.previewVideo.nativeElement.muted = true;
                 this.previewVideo.nativeElement.play();
             }
 
-            this.isCameraOn = true;
+            this.isCameraOn = !(this.callType == CallType.AUDIO);
             this.isMicOn = true;
         } catch (err) {
             console.error('Error accessing media devices', err);
@@ -182,19 +200,21 @@ export class PreviewComponent implements OnDestroy {
     /** Start camera & mic preview */
     async startPreview() {
         try {
+            // Stop existing stream first to prevent orphaned streams
+            if (this.previewStream) {
+                this.previewStream.getTracks().forEach(track => track.stop());
+            }
+
             this.previewStream = await navigator.mediaDevices.getUserMedia({
                 video: this.selectedCamera ? { deviceId: this.selectedCamera } : true,
                 audio: this.selectedMic ? { deviceId: this.selectedMic } : true
             });
 
-            if (this.previewVideo && this.previewStream) {
+            if (this.previewVideo?.nativeElement && this.previewStream) {
                 this.previewVideo.nativeElement.srcObject = this.previewStream;
+                this.previewVideo.nativeElement.muted = true;
+                this.previewVideo.nativeElement.play();
             }
-
-            const videoElement = this.previewVideo.nativeElement;
-            videoElement.srcObject = this.previewStream;
-            videoElement.muted = true; // ✅ Ensure no echo from preview video
-            videoElement.play();
         } catch (err) {
             console.error('Error accessing media devices', err);
         }
@@ -233,7 +253,20 @@ export class PreviewComponent implements OnDestroy {
 
     /** Stop preview when leaving */
     ngOnDestroy() {
-        this.previewStream?.getTracks().forEach(track => track.stop());
+        // Stop all tracks in the preview stream
+        if (this.previewStream) {
+            this.previewStream.getTracks().forEach(track => {
+                track.stop();
+                console.log(`Stopped track: ${track.kind}`);
+            });
+            this.previewStream = undefined;
+        }
+
+        // Clear the video element's srcObject
+        if (this.previewVideo?.nativeElement) {
+            this.previewVideo.nativeElement.srcObject = null;
+        }
+
         if (this.subscription) {
             this.subscription.unsubscribe();
         }

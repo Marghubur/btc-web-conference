@@ -7,6 +7,7 @@ import { CameraService } from './camera.service';
 import { VideoBackgroundService } from './video-background.service';
 import { User } from '../../models/model';
 import { Dashboard, Login } from '../../models/constant';
+import { CallEventService } from '../socket/call-event.service';
 
 @Injectable({
   providedIn: 'root'
@@ -28,6 +29,7 @@ export class MeetingService {
     private local: LocalService,
     private nav: iNavigation,
     private cameraService: CameraService,
+    private callEventService: CallEventService,
     private videoBackgroundService: VideoBackgroundService
   ) {
   }
@@ -39,6 +41,23 @@ export class MeetingService {
   userExitRoom() { this._inMeeting.set(false); }
 
   async leaveRoom(isNavigate: boolean = false) {
+    // CRITICAL: Ensure all camera/mic tracks are fully released before leaving
+    const room = this.room();
+    if (room) {
+      try {
+        // Disable camera and mic via LiveKit - this should release the hardware
+        await room.localParticipant.setCameraEnabled(false);
+        await room.localParticipant.setMicrophoneEnabled(false);
+
+        // Also use cameraService to stop all tracks as a safety measure
+        this.cameraService.stopAllTracks(room);
+
+        console.log('Camera and mic disabled before leaving room');
+      } catch (error) {
+        console.warn('Error disabling camera/mic:', error);
+      }
+    }
+
     await this.roomService.leaveRoom();
     this.room.set(undefined);
     this.localTrack.set(undefined);
@@ -53,6 +72,7 @@ export class MeetingService {
         localStorage.clear();
       }
     }
+    this.callEventService.endCall()
   }
 
   async joinRoom() {

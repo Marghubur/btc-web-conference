@@ -1,20 +1,20 @@
 import { Injectable, signal, WritableSignal } from '@angular/core';
 import {
   createLocalTracks,
-    LocalAudioTrack,
-    LocalTrack,
-    LocalVideoTrack,
-    RemoteParticipant,
-    RemoteTrack,
-    RemoteTrackPublication,
-    Room,
-    RoomEvent,
-    Track,
+  LocalAudioTrack,
+  LocalTrack,
+  LocalVideoTrack,
+  RemoteParticipant,
+  RemoteTrack,
+  RemoteTrackPublication,
+  Room,
+  RoomEvent,
+  Track,
 } from 'livekit-client';
 
 type TrackInfo = {
-    trackPublication: RemoteTrackPublication;
-    participantIdentity: string;
+  trackPublication: RemoteTrackPublication;
+  participantIdentity: string;
 };
 
 @Injectable({
@@ -55,9 +55,9 @@ export class CameraService {
   async enableMic(room: Room, deviceId?: string) {
     // First check if we already have an audio track published
     const existingAudioTrack = room.localParticipant.audioTrackPublications.values().next().value?.track;
-  
+
     if (existingAudioTrack) {
-    // If track exists but is muted, unmute it
+      // If track exists but is muted, unmute it
       await existingAudioTrack.unmute();
     } else {
       // If no audio track exists, create and publish one
@@ -86,7 +86,7 @@ export class CameraService {
       // room.localParticipant.unpublishTrack(trackPub.track!);
     });
   }
-  
+
   //--------------------- other code ---------------------//
 
   async listDevices() {
@@ -212,5 +212,30 @@ export class CameraService {
     const track = pub?.track as LocalVideoTrack | undefined;
     if (!track) return;
     track.detach(el);
+  }
+
+  /** Stop all local tracks (camera, mic, screen share) - comprehensive cleanup */
+  stopAllTracks(room: Room) {
+    // Stop all video tracks
+    room.localParticipant.videoTrackPublications.forEach((trackPub) => {
+      if (trackPub.track) {
+        trackPub.track.stop();
+        room.localParticipant.unpublishTrack(trackPub.track);
+      }
+    });
+
+    // Stop all audio tracks
+    room.localParticipant.audioTrackPublications.forEach((trackPub) => {
+      if (trackPub.track) {
+        trackPub.track.stop();
+        room.localParticipant.unpublishTrack(trackPub.track);
+      }
+    });
+
+    // Stop screen share if active
+    if (this.screenTrack) {
+      this.screenTrack.stop();
+      this.screenTrack = undefined;
+    }
   }
 }

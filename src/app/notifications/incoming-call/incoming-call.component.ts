@@ -3,14 +3,16 @@ import { CommonModule } from '@angular/common';
 import { CallEventService } from '../../providers/socket/call-event.service';
 import { CallType } from '../../models/conference_call/call_model';
 import { Router } from '@angular/router';
+import { ConfeetSocketService } from '../../providers/socket/confeet-socket.service';
 
 @Component({
     selector: 'app-incoming-call',
     standalone: true,
     imports: [CommonModule],
     template: `
+        <!-- Incoming Call Notification (bottom-right, no overlay) -->
         @if (callEventService.hasIncomingCall()) {
-            <div class="incoming-call-overlay">
+            <div class="notification-container">
                 <div class="incoming-call-card" [class.video-call]="isVideoCall()">
                     <!-- Animated rings -->
                     <div class="pulse-ring"></div>
@@ -69,36 +71,84 @@ import { Router } from '@angular/router';
                 </div>
             </div>
         }
+
+        <!-- Join Call Notification (bottom-right, positioned above incoming call if both shown) -->
+        @if (callEventService.hasJoiningRequest()) {
+            <div class="notification-container join-request" [class.stacked]="callEventService.hasIncomingCall()">
+                <div class="join-call-card">
+                    <!-- Join icon with pulse -->
+                    <div class="join-icon-container">
+                        <div class="join-pulse-ring"></div>
+                        <div class="join-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Call info -->
+                    <div class="join-info">
+                        <h4 class="join-title">Call in Progress</h4>
+                        <p class="join-message">{{ getJoinCallerName() }} started a call</p>
+                        <p class="join-subtext">You're invited to join</p>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="join-actions">
+                        <button class="join-btn dismiss" (click)="dismissJoinRequest()" title="Dismiss">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            <span>Dismiss</span>
+                        </button>
+                        <button class="join-btn join" (click)="joinCall()" title="Join Call">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                            <span>Join</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     `,
     styles: [`
-        .incoming-call-overlay {
+        /* Notification Container - positioned bottom-right */
+        .notification-container {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            bottom: 24px;
+            right: 24px;
             z-index: 10000;
-            animation: fadeIn 0.3s ease-out;
+            animation: slideInRight 0.4s ease-out;
         }
 
+        .notification-container.join-request {
+            bottom: 24px;
+        }
+
+        .notification-container.join-request.stacked {
+            bottom: 340px; /* Stack above incoming call card */
+        }
+
+        /* ===============================================
+           INCOMING CALL CARD STYLES
+           =============================================== */
         .incoming-call-card {
             position: relative;
             width: 320px;
-            padding: 40px 30px;
+            padding: 32px 24px;
             background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            border-radius: 24px;
-            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5),
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
                         0 0 0 1px rgba(255, 255, 255, 0.1),
                         inset 0 1px 0 rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
             align-items: center;
-            animation: slideUp 0.4s ease-out;
         }
 
         .incoming-call-card.video-call {
@@ -110,9 +160,9 @@ import { Router } from '@angular/router';
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 120px;
-            height: 120px;
-            margin: -60px 0 0 -60px;
+            width: 100px;
+            height: 100px;
+            margin: -50px 0 0 -50px;
             border: 2px solid rgba(34, 197, 94, 0.4);
             border-radius: 50%;
             animation: pulse 2s ease-out infinite;
@@ -136,26 +186,26 @@ import { Router } from '@angular/router';
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 14px;
+            padding: 5px 12px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
+            border-radius: 16px;
             color: rgba(255, 255, 255, 0.8);
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .call-type-badge svg {
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
         }
 
         /* Caller avatar */
         .caller-avatar {
             position: relative;
-            width: 100px;
-            height: 100px;
-            margin-bottom: 20px;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
             z-index: 1;
         }
 
@@ -175,7 +225,7 @@ import { Router } from '@angular/router';
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 36px;
+            font-size: 28px;
             font-weight: 600;
             color: white;
             text-transform: uppercase;
@@ -185,19 +235,19 @@ import { Router } from '@angular/router';
         /* Caller info */
         .caller-info {
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .caller-name {
             color: #fff;
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 600;
-            margin: 0 0 6px 0;
+            margin: 0 0 4px 0;
         }
 
         .call-status {
             color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
+            font-size: 13px;
             margin: 0;
             animation: blink 1.5s ease-in-out infinite;
         }
@@ -205,20 +255,20 @@ import { Router } from '@angular/router';
         /* Timer */
         .call-timer {
             color: rgba(255, 255, 255, 0.5);
-            font-size: 13px;
+            font-size: 12px;
             font-family: monospace;
-            margin-bottom: 28px;
+            margin-bottom: 20px;
         }
 
         /* Action buttons */
         .call-actions {
             display: flex;
-            gap: 40px;
+            gap: 32px;
         }
 
         .action-btn {
-            width: 64px;
-            height: 64px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             border: none;
             cursor: pointer;
@@ -229,47 +279,167 @@ import { Router } from '@angular/router';
         }
 
         .action-btn svg {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
         }
 
         .action-btn.accept {
             background: linear-gradient(135deg, #22c55e, #16a34a);
             color: white;
-            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
             animation: wiggle 0.5s ease-in-out infinite;
         }
 
         .action-btn.accept:hover {
             transform: scale(1.1);
-            box-shadow: 0 12px 35px rgba(34, 197, 94, 0.5);
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.5);
         }
 
         .action-btn.decline {
             background: linear-gradient(135deg, #ef4444, #dc2626);
             color: white;
-            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
         }
 
         .action-btn.decline:hover {
             transform: scale(1.1);
-            box-shadow: 0 12px 35px rgba(239, 68, 68, 0.5);
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.5);
         }
 
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        /* ===============================================
+           JOIN CALL CARD STYLES
+           =============================================== */
+        .join-call-card {
+            width: 320px;
+            padding: 20px;
+            background: linear-gradient(145deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+            border-radius: 16px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35),
+                        0 0 0 1px rgba(255, 255, 255, 0.08),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
-        @keyframes slideUp {
+        /* Join icon */
+        .join-icon-container {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            align-self: center;
+        }
+
+        .join-pulse-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid rgba(59, 130, 246, 0.4);
+            border-radius: 50%;
+            animation: joinPulse 2s ease-out infinite;
+        }
+
+        .join-icon {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .join-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Join info */
+        .join-info {
+            text-align: center;
+        }
+
+        .join-title {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+        }
+
+        .join-message {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            margin: 0 0 2px 0;
+        }
+
+        .join-subtext {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            margin: 0;
+        }
+
+        /* Join action buttons */
+        .join-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .join-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .join-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .join-btn.dismiss {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .join-btn.dismiss:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .join-btn.join {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+        }
+
+        .join-btn.join:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(59, 130, 246, 0.45);
+        }
+
+        /* ===============================================
+           ANIMATIONS
+           =============================================== */
+        @keyframes slideInRight {
             from {
                 opacity: 0;
-                transform: translateY(30px) scale(0.95);
+                transform: translateX(100px);
             }
             to {
                 opacity: 1;
-                transform: translateY(0) scale(1);
+                transform: translateX(0);
             }
         }
 
@@ -279,7 +449,18 @@ import { Router } from '@angular/router';
                 opacity: 0.8;
             }
             100% {
-                transform: scale(2.5);
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes joinPulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+            100% {
+                transform: scale(1.8);
                 opacity: 0;
             }
         }
@@ -298,6 +479,7 @@ import { Router } from '@angular/router';
 })
 export class IncomingCallComponent implements OnDestroy {
     callEventService = inject(CallEventService);
+    ws = inject(ConfeetSocketService);
     private router = inject(Router);
 
     private ringtoneAudio: HTMLAudioElement | null = null;
@@ -306,6 +488,7 @@ export class IncomingCallComponent implements OnDestroy {
     callDuration = signal(0);
 
     incomingCall = () => this.callEventService.incomingCall();
+    joiningRequest = () => this.callEventService.joiningRequest();
 
     constructor() {
         // Watch for incoming call changes with effect
@@ -344,6 +527,11 @@ export class IncomingCallComponent implements OnDestroy {
         return name.charAt(0).toUpperCase();
     }
 
+    getJoinCallerName(): string {
+        const request = this.joiningRequest();
+        return request?.callerName || request?.callerId || 'Someone';
+    }
+
     formatTime(seconds: number): string {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
@@ -352,7 +540,8 @@ export class IncomingCallComponent implements OnDestroy {
 
     acceptCall(): void {
         const call = this.incomingCall();
-        if (call) {
+        if (call && call.conversationId) {
+            this.ws.currentConversationId.set(call.conversationId);
             this.stopRingtone();
             this.stopTimer();
             this.callEventService.acceptCall(call.conversationId, call.callerId);
@@ -365,6 +554,22 @@ export class IncomingCallComponent implements OnDestroy {
         }
     }
 
+    joinCall(): void {
+        const request = this.joiningRequest();
+        if (request && request.conversationId) {
+            this.ws.currentConversationId.set(request.conversationId);
+            this.stopRingtone();
+            this.stopTimer();
+            this.callEventService.acceptJoiningRequest(request.conversationId, request.callerId);
+            this.router.navigate(['/btc/preview'], {
+                state: {
+                    id: request.conversationId,
+                    title: request.callerName || 'Call'
+                }
+            });
+        }
+    }
+
     declineCall(): void {
         const call = this.incomingCall();
         if (call) {
@@ -372,6 +577,10 @@ export class IncomingCallComponent implements OnDestroy {
             this.stopTimer();
             this.callEventService.rejectCall(call.conversationId, call.callerId, 'declined');
         }
+    }
+
+    dismissJoinRequest(): void {
+        this.callEventService.dismissJoiningRequest();
     }
 
     private startRingtone(): void {

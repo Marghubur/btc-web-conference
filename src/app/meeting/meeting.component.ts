@@ -365,7 +365,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     async activeMic() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        //this.mediaPerm.requestPermissions(true, true);
+        // Stop the stream immediately - we only needed it to trigger permission prompt
+        stream.getTracks().forEach(track => track.stop());
     }
 
     showUseCameraActivePopup() {
@@ -405,7 +406,8 @@ export class MeetingComponent implements OnDestroy, OnInit {
 
     @HostListener('window:beforeunload')
     async ngOnDestroy() {
-        //await this.leaveRoom();
+        // CRITICAL: Stop all tracks and leave room before destroying component
+        await this.leaveRoom();
         if (this.timerSubscription) {
             this.timerSubscription.unsubscribe();
         }

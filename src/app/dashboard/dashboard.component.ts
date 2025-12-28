@@ -14,6 +14,7 @@ import { Router } from '@angular/router';
 import { CallEventService } from '../providers/socket/call-event.service';
 import { UserFilter } from '../models/user.filter';
 import { Conversation } from '../components/global-search/search.models';
+import { CallType } from '../models/conference_call/call_model';
 
 @Component({
   selector: 'app-dashboard',
@@ -59,6 +60,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
+    this.user = this.local.getUser();
     history.pushState(null, '', window.location.href);
     window.addEventListener('popstate', this.popStateListener);
     this.timer = setInterval(() => {
@@ -201,10 +203,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   joinMeeting(item: Conversation) {
-    this.callEventService.initiateAudioCall(item.conversationId, item.conversationId);
+    this.ws.currentConversationId.set(item.id);
+    this.callEventService.joinCall(this.user.userId, item.id);
     this.router.navigate(['/btc/preview'], {
       state: {
-        id: item.conversationId,
+        id: item.id,
+        type: CallType.AUDIO,
         title: item.conversationName ? item.conversationName : 'Unknown'
       }
     });
