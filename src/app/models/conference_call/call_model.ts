@@ -5,6 +5,9 @@ export const CallEvents = {
     // EventCallInitiate - Caller initiates a call to callee(s)
     CALL_INITIATE: 'call:initiate',
 
+    // EventCallStarted - Either party joins an existing call
+    CALL_STARTED: 'call:started',
+
     // EventCallAccept - Callee accepts the incoming call
     CALL_ACCEPT: 'call:accept',
 
@@ -27,6 +30,9 @@ export const CallEvents = {
 export const CallServerEvents = {
     // EventCallIncoming - Notify callee of incoming call
     CALL_INCOMING: 'call:incoming',
+
+    // EventCallJoiningRequest - Notify callee of joining request
+    CALL_JOINING_REQUEST: 'call:joining_request',
 
     // EventCallAccepted - Notify caller that callee accepted
     CALL_ACCEPTED: 'call:accepted',
@@ -71,7 +77,8 @@ export const CallStatus = {
     ENDED: 7,
     BUSY: 8,
     FAILED: 9,
-    MISSED: 10
+    MISSED: 10,
+    JOINING_REQUEST: 11
 } as const;
 
 // ============================================

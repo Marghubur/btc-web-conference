@@ -11,6 +11,9 @@ import { ConfeetSocketService } from '../providers/socket/confeet-socket.service
 import { MeetingDetail, ResponseModel, User } from '../models/model';
 import { Preview } from '../models/constant';
 import { Router } from '@angular/router';
+import { CallEventService } from '../providers/socket/call-event.service';
+import { UserFilter } from '../models/user.filter';
+import { Conversation } from '../components/global-search/search.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -34,7 +37,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showAll: boolean = false;
   duration: string = "00:00";
   today: Date = new Date();
-  allQuickMeeting: Array<MeetingDetail> = [];
+  recentMeetings: Array<Conversation> = [];
   allSchedularMeeting: Array<MeetingDetail> = [];
   user: User = null;
 
@@ -44,7 +47,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private ws: ConfeetSocketService,
     private fb: FormBuilder,
     private router: Router,
-    private http: AjaxService
+    private http: AjaxService,
+    private callEventService: CallEventService
   ) {
     const today = new Date();
     this.minPickerDate = {
@@ -173,9 +177,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private loadData() {
     this.isPageReady = false;
-    this.http.get("meeting/getAllMeetingByOrganizer").then((res: ResponseModel) => {
+    this.http.get("meeting/get-recent-meetings").then((res: ResponseModel) => {
       if (res.ResponseBody) {
-        this.bindMeetings(res.ResponseBody);
+        this.bindMeetings(res.ResponseBody as UserFilter);
         this.isPageReady = true;
       }
     }).catch(e => {
@@ -183,27 +187,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
     })
   }
 
-  private bindMeetings(res: any) {
-    this.allQuickMeeting = (res != null && res.length > 0) ? res.filter(x => x.hasQuickMeeting) : [];
-    this.allSchedularMeeting = (res != null && res.length > 0) ? res.filter(x => !x.hasQuickMeeting) : [];
-    if (this.allSchedularMeeting.length > 0) {
-      this.allSchedularMeeting.forEach(x => {
-        let startDate = new Date(x.startDate);
-        x.startTime = this.formatTime(startDate);
-        x.endDate = new Date(startDate.getTime() + (x.durationInSecond * 1000));
-        x.endTime = this.formatTime(x.endDate);
-      })
-    }
+  private bindMeetings(res: UserFilter) {
+    this.recentMeetings = (res.data != null && res.data.length > 0) ? res.data as Conversation[] : [];
+    // this.allSchedularMeeting = (res.data != null && res.data.length > 0) ? res.data.filter(x => !x.hasQuickMeeting) : [];
+    // if (this.allSchedularMeeting.length > 0) {
+    //   this.allSchedularMeeting.forEach(x => {
+    //     let startDate = new Date(x.startDate);
+    //     x.startTime = this.formatTime(startDate);
+    //     x.endDate = new Date(startDate.getTime() + (x.durationInSecond * 1000));
+    //     x.endTime = this.formatTime(x.endDate);
+    //   })
+    // }
   }
 
-  joinMeeting(item: MeetingDetail) {
-    // this.router.navigate(['/btc/preview'], {queryParams: {meetingid: item.meetingId}});
-    // item.meetingId = `${item.meetingId}_${item.meetingDetailId}`;
-    // this.nav.navigate(Preview, item);
+  joinMeeting(item: Conversation) {
+    this.callEventService.initiateAudioCall(item.conversationId, item.conversationId);
     this.router.navigate(['/btc/preview'], {
       state: {
-        id: item.meetingId,
-        title: item.title ? item.title : 'Unknown'
+        id: item.conversationId,
+        title: item.conversationName ? item.conversationName : 'Unknown'
       }
     });
   }
@@ -264,8 +266,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  get visibleRecords() {
-    return this.showAll ? this.allQuickMeeting : this.allQuickMeeting.slice(0, 3);
+  get visibleRecords(): Conversation[] {
+    return this.showAll ? this.recentMeetings : this.recentMeetings.slice(0, 3);
   }
 
   toggleView() {

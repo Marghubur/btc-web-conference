@@ -93,12 +93,12 @@
                             <i class="fa-solid fa-ellipsis-vertical"></i>
                         </button>
                     </div>
-                    <h5 class="meeting-title text-truncate mb-2" [ngbTooltip]="item.title" placement="top">
-                        {{ item.title }}
+                    <h5 class="meeting-title text-truncate mb-2" [ngbTooltip]="item.conversationName" placement="top">
+                        {{ item.conversationName }}
                     </h5>
                     <div class="meeting-meta mb-3">
                         <i class="fa-regular fa-clock"></i>
-                        {{ item.startDate | date: 'MMM d, y • h:mm a' }}
+                        {{ item.updatedAt | date: 'MMM d, y • h:mm a' }}
                     </div>
                     <div class="d-flex gap-2">
                         <button class="btn-action-primary flex-grow-1" (click)="joinMeeting(item)">

@@ -42,6 +42,9 @@ export class CallEventService {
     /** Emits when receiving an incoming call */
     callIncoming$: Observable<CallIncomingEvent>;
 
+    /** Emits when receiving a joining request */
+    callJoiningRequest$: Observable<CallIncomingEvent>;
+
     /** Emits when callee accepts the call */
     callAccepted$: Observable<CallAcceptedEvent>;
 
@@ -84,6 +87,7 @@ export class CallEventService {
     ) {
         // Setup filtered observables for server events
         this.callIncoming$ = this.onCallEvent<CallIncomingEvent>(CallServerEvents.CALL_INCOMING);
+        this.callJoiningRequest$ = this.onCallEvent<CallIncomingEvent>(CallServerEvents.CALL_JOINING_REQUEST);
         this.callAccepted$ = this.onCallEvent<CallAcceptedEvent>(CallServerEvents.CALL_ACCEPTED);
         this.callRejected$ = this.onCallEvent<CallRejectedEvent>(CallServerEvents.CALL_REJECTED);
         this.callCancelled$ = this.onCallEvent<CallCancelledEvent>(CallServerEvents.CALL_CANCELLED);
@@ -107,7 +111,7 @@ export class CallEventService {
     // =========================================================
 
     /**
-     * Initiate an audio call to a user
+     * Initiate a audio call to a user
      */
     initiateAudioCall(calleeId: string, conversationId: string): void {
         this.send(CallEvents.CALL_INITIATE, <CallInitiatePayload>{
@@ -249,6 +253,24 @@ export class CallEventService {
                 this.hasIncomingCall.set(true);
                 this.incomingCall.set(event);
                 this.callStatus.set(CallStatus.RINGING);
+                console.log('Incoming call from:', event.callerId);
+            })
+        );
+
+        // Handle incoming call (only for callees, not the caller)
+        this.subscriptions.add(
+            this.callJoiningRequest$.subscribe(event => {
+                const currentUser = this.local.getUser();
+
+                // Skip if I am the caller (I should not get notified of my own call)
+                if (currentUser && event.callerId === currentUser.userId) {
+                    console.log('Ignoring incoming call event - I am the caller');
+                    return;
+                }
+
+                this.hasIncomingCall.set(true);
+                this.incomingCall.set(event);
+                this.callStatus.set(CallStatus.JOINING_REQUEST);
                 console.log('Incoming call from:', event.callerId);
             })
         );
