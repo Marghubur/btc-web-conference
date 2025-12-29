@@ -96,19 +96,19 @@
 
     <!-- ===== Main Chat Area ===== -->
     <main class="teams-chat-main">
-        @if (currentConversation) {
+        @if (ws.currentConversation()) {
         <!-- Chat Header -->
         <header class="chat-header">
             <div class="chat-header-left">
                 <div class="avatar-container">
                     <div class="avatar avatar-large"
-                        [ngStyle]="{ 'background-color': getColorFromName(currentConversation.conversationName, '') }">
-                        {{ getCurrentInitiaLetter(currentConversation) }}
+                        [ngStyle]="{ 'background-color': getColorFromName(ws.currentConversation().conversationName, '') }">
+                        {{ getCurrentInitiaLetter(ws.currentConversation()) }}
                     </div>
                 </div>
                 <div class="chat-user-info">
                     <span class="chat-user-name">
-                        {{ getConversationName(currentConversation) }}
+                        {{ getConversationName(ws.currentConversation()) }}
                     </span>
                     <span class="chat-user-status">
                         <span class="status-dot"></span>
@@ -145,10 +145,11 @@
                     <div class="members-dropdown-panel" (click)="$event.stopPropagation()">
                         <!-- Members Section -->
                         <div class="dropdown-section">
-                            <h4 class="dropdown-section-title">Members ({{ currentConversation.participants?.length || 0
+                            <h4 class="dropdown-section-title">Members ({{
+                                ws.currentConversation()?.participants?.length || 0
                                 }})</h4>
                             <div class="members-list">
-                                @for (member of currentConversation.participants; track member.userId) {
+                                @for (member of ws.currentConversation()?.participants; track member.userId) {
                                 <div class="member-item">
                                     <div class="member-avatar"
                                         [ngStyle]="{ 'background-color': getColorFromName(member.firstName, member.lastName) }">
@@ -186,7 +187,7 @@
                                 <div class="form-group">
                                     <label class="form-label">Members</label>
                                     <div class="selected-members">
-                                        @for (member of currentConversation.participants; track member.userId) {
+                                        @for (member of ws.currentConversation()?.participants; track member.userId) {
                                         <div class="selected-member-chip">
                                             <div class="chip-avatar"
                                                 [ngStyle]="{ 'background-color': getColorFromName(member.firstName, member.lastName) }">
