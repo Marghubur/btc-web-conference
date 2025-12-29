@@ -23,30 +23,36 @@ import { CallType } from '../models/conference_call/call_model';
 export class PreviewComponent implements OnDestroy {
     @ViewChild('previewVideo') previewVideo!: ElementRef<HTMLVideoElement>;
 
+    // Device selection
     selectedCamera: string | null = null;
     selectedMic: string | null = null;
     selectedSpeaker: string | null = null;
 
+    // Room state
     room = signal<Room | undefined>(undefined);
     localTrack = signal<LocalVideoTrack | undefined>(undefined);
+
+    // Meeting details
     meetingId: string | null = null;
-    private previewStream?: MediaStream;
+    meetingTitle: string = "";
+    callType: string = CallType.AUDIO;
+
+    // Media state - now managed by MeetingService
     private subscription?: Subscription;
     permissions: MediaPermissions = {
         camera: 'unknown',
         microphone: 'unknown',
     };
-    isMicOn: boolean = true;
-    isCameraOn: boolean = true;
+
+    // UI state
     isLoggedIn: boolean = false;
-    meetingTitle: string = "";
     userName: string = "";
     passCode: string = "";
     isSubmitted: boolean = false;
     isValidMeetingId: boolean = false;
-    callType: string = CallType.AUDIO;
 
-    constructor(private nav: iNavigation,
+    constructor(
+        private nav: iNavigation,
         private route: ActivatedRoute,
         private router: Router,
         private mediaPerm: MediaPermissionsService,
@@ -56,67 +62,83 @@ export class PreviewComponent implements OnDestroy {
         private deviceService: DeviceService
     ) {
         this.isLoggedIn = local.isLoggedIn();
-        this.route.queryParamMap.subscribe(paramm => {
-            this.meetingId = paramm.get(MeetingId);
+        this.route.queryParamMap.subscribe(params => {
+            this.meetingId = params.get(MeetingId);
         });
     }
 
+    // ==================== Lifecycle ====================
+
     async ngOnInit() {
-        this.selectedCamera = this.deviceService.selectedCamera();
-        this.selectedMic = this.deviceService.selectedMic();
-        this.selectedSpeaker = this.deviceService.selectedSpeaker();
+        this.initializeDeviceSelection();
+
         if (this.isLoggedIn) {
             this.readRoutedMeetingDetail();
-            this.enableStream();
-            this.subscription = this.mediaPerm.permissions$.subscribe(
-                permissions => {
-                    this.permissions = permissions;
-                    if (permissions.camera == 'granted' &&
-                        permissions.microphone == 'granted') {
-                        this.joinRoom();
-                    }
-                }
-            );
+            if (this.meetingId) {
+                this.subscribeToPermissions();
+            } else {
+                await this.initializeMediaStream();
+                this.subscribeToPermissions();
+            }
         } else {
             this.validatMeetingId();
         }
     }
 
-    async joinRoom() {
-        this.isSubmitted = true;
-        if (this.permissions.camera != 'granted') {
-            alert("Please allow camera.");
-            return;
-        }
-
-        if (this.permissions.microphone != 'granted') {
-            alert("Please allow microphone.");
-            return;
-        }
-
-        if (!this.isLoggedIn) {
-            if (!this.userName) {
-                alert("Please add your name");
-                return;
-            }
-        }
-
-        // Stop the preview stream before joining to release the camera
-        // LiveKit will create its own stream when joining the room
-        if (this.previewStream) {
-            this.previewStream.getTracks().forEach(track => track.stop());
-            this.previewStream = undefined;
-        }
-        if (this.previewVideo?.nativeElement) {
-            this.previewVideo.nativeElement.srcObject = null;
-        }
-
-        this.saveUser();
-        this.meetingService.meetingId = this.meetingId;
-        this.meetingService.maximize();
-        this.meetingService.userJoinRoom();
+    destroyPermission() {
+        this.permissions = {
+            camera: 'unknown',
+            microphone: 'unknown',
+        };
     }
 
+    ngOnDestroy() {
+        // Use centralized cleanup
+        this.meetingService.releaseAllMedia();
+        this.clearVideoElement();
+        this.subscription?.unsubscribe();
+        this.destroyPermission();
+        this.mediaPerm.destroy();
+    }
+
+    // ==================== Call Type Helpers ====================
+
+    /** Check if this is an audio-only call */
+    isAudioOnlyCall(): boolean {
+        return this.callType === CallType.AUDIO;
+    }
+
+    /** Check if this is a video call */
+    isVideoCall(): boolean {
+        return this.callType === CallType.VIDEO;
+    }
+
+    /** Get the appropriate media constraints based on call type */
+    private getMediaConstraints(deviceId?: string): MediaStreamConstraints {
+        if (this.isAudioOnlyCall()) {
+            // Audio-only call: mic only, no video
+            return {
+                video: false,
+                audio: deviceId ? { deviceId } : true
+            };
+        } else {
+            // Video call: both camera and mic
+            return {
+                video: deviceId ? { deviceId } : true,
+                audio: true
+            };
+        }
+    }
+
+    // ==================== Initialization ====================
+
+    private initializeDeviceSelection() {
+        this.selectedCamera = this.deviceService.selectedCamera();
+        this.selectedMic = this.deviceService.selectedMic();
+        this.selectedSpeaker = this.deviceService.selectedSpeaker();
+    }
+
+    /** Read meeting details from router state */
     readRoutedMeetingDetail() {
         const state = history.state;
 
@@ -132,9 +154,12 @@ export class PreviewComponent implements OnDestroy {
             this.callType = state.type;
         }
 
+        // Update camera state based on call type (will be used by initializeMediaStream)
+        // Note: The actual camera state is now managed by MeetingService
+
         // Fallback to nav service if state is not available
         if (!this.meetingId || !this.meetingTitle) {
-            let meetingDetail = this.nav.getValue();
+            const meetingDetail = this.nav.getValue();
             if (meetingDetail) {
                 this.meetingId = this.meetingId || meetingDetail.meetingId;
                 this.meetingTitle = this.meetingTitle || meetingDetail.title;
@@ -145,105 +170,153 @@ export class PreviewComponent implements OnDestroy {
         }
     }
 
+    /** Validate meeting ID for non-logged-in users */
     async validatMeetingId() {
-        if (this.meetingId) {
-            const match = this.meetingId.match(/_(\d+)$/);
-            let meetingDetailId = match ? +match[1] : null;
-            const updatedId = this.meetingId.replace(/_\d+$/, "");
-            let value = {
+        if (!this.meetingId) {
+            this.isValidMeetingId = false;
+            return;
+        }
+
+        const match = this.meetingId.match(/_(\d+)$/);
+        const meetingDetailId = match ? +match[1] : null;
+        const updatedId = this.meetingId.replace(/_\d+$/, "");
+
+        try {
+            const res: ResponseModel = await this.http.post('meeting/validateMeeting', {
                 meetingId: updatedId,
-                meetingDetailId: meetingDetailId
-            };
-            this.http.post(`meeting/validateMeeting`, value).then((res: ResponseModel) => {
-                if (res.ResponseBody) {
-                    this.isValidMeetingId = true;
-                    this.meetingTitle = res.ResponseBody.title;
-                    this.enableStream();
-                    this.subscription = this.mediaPerm.permissions$.subscribe(
-                        permissions => {
-                            this.permissions = permissions;
-                        }
-                    );
-                }
-            }).catch(e => {
-                this.isValidMeetingId = false;
-            })
-        } else {
+                meetingDetailId
+            });
+
+            if (res.ResponseBody) {
+                this.isValidMeetingId = true;
+                this.meetingTitle = res.ResponseBody.title;
+                await this.initializeMediaStream();
+                this.subscribeToPermissions();
+            }
+        } catch (e) {
             this.isValidMeetingId = false;
         }
     }
 
+    private subscribeToPermissions() {
+        this.subscription = this.mediaPerm.permissions$.subscribe(permissions => {
+            this.permissions = permissions;
 
-    /** Load available media devices */
-    async enableStream() {
-        try {
-            // Request permission first - this is required to get real device IDs
-            this.previewStream = await navigator.mediaDevices.getUserMedia({
-                video: !(this.callType == CallType.AUDIO),
-                audio: true,
-            });
+            const hasRequiredPermissions = this.isAudioOnlyCall()
+                ? permissions.microphone === 'granted'
+                : permissions.camera === 'granted' && permissions.microphone === 'granted';
 
-            // Use the existing stream for preview instead of creating a new one
-            if (this.previewVideo?.nativeElement) {
-                this.previewVideo.nativeElement.srcObject = this.previewStream;
-                this.previewVideo.nativeElement.muted = true;
-                this.previewVideo.nativeElement.play();
+            if (hasRequiredPermissions) {
+                this.joinRoom();
             }
+        });
+    }
 
-            this.isCameraOn = !(this.callType == CallType.AUDIO);
-            this.isMicOn = true;
-        } catch (err) {
-            console.error('Error accessing media devices', err);
+    // ==================== Media Stream Management ====================
+
+    /** Initialize media stream based on call type - uses centralized MeetingService */
+    private async initializeMediaStream() {
+        const stream = await this.meetingService.requestMediaPreview(
+            this.isVideoCall(),
+            this.selectedCamera ?? undefined,
+            this.selectedMic ?? undefined
+        );
+
+        if (stream) {
+            this.attachStreamToVideo(stream);
         }
     }
 
-    /** Start camera & mic preview */
+    /** Start camera & mic preview with selected devices - uses centralized MeetingService */
     async startPreview() {
-        try {
-            // Stop existing stream first to prevent orphaned streams
-            if (this.previewStream) {
-                this.previewStream.getTracks().forEach(track => track.stop());
-            }
+        const stream = await this.meetingService.requestMediaPreview(
+            this.isVideoCall(),
+            this.selectedCamera ?? undefined,
+            this.selectedMic ?? undefined
+        );
 
-            this.previewStream = await navigator.mediaDevices.getUserMedia({
-                video: this.selectedCamera ? { deviceId: this.selectedCamera } : true,
-                audio: this.selectedMic ? { deviceId: this.selectedMic } : true
-            });
-
-            if (this.previewVideo?.nativeElement && this.previewStream) {
-                this.previewVideo.nativeElement.srcObject = this.previewStream;
-                this.previewVideo.nativeElement.muted = true;
-                this.previewVideo.nativeElement.play();
-            }
-        } catch (err) {
-            console.error('Error accessing media devices', err);
+        if (stream) {
+            this.attachStreamToVideo(stream);
         }
     }
 
+    /** Stop preview - uses centralized MeetingService */
     async stopPreview() {
-        try {
-            this.previewStream?.getTracks().forEach(track => track.stop());
-            if (this.previewVideo?.nativeElement) {
-                this.previewVideo.nativeElement.srcObject = null;
-            }
-        } catch (err) {
-            console.error('Error accessing media devices', err);
+        this.meetingService.stopMediaPreview();
+        this.clearVideoElement();
+    }
+
+    private attachStreamToVideo(stream?: MediaStream) {
+        const mediaStream = stream || this.meetingService.previewStream();
+        if (this.previewVideo?.nativeElement && mediaStream) {
+            this.previewVideo.nativeElement.srcObject = mediaStream;
+            this.previewVideo.nativeElement.muted = true;
+            this.previewVideo.nativeElement.play();
         }
     }
 
-    /** Switch camera */
+    private clearVideoElement() {
+        if (this.previewVideo?.nativeElement) {
+            this.previewVideo.nativeElement.srcObject = null;
+        }
+    }
+
+    // Removed cleanupMediaStream - now using meetingService.releaseAllMedia()
+
+    // ==================== Room Actions ====================
+
+    async joinRoom() {
+        this.isSubmitted = true;
+
+        // Validate permissions based on call type
+        if (!this.validatePermissions()) {
+            return;
+        }
+
+        // Validate user name for non-logged-in users
+        if (!this.isLoggedIn && !this.userName) {
+            alert("Please add your name");
+            return;
+        }
+
+        // Stop the preview stream before joining - LiveKit will create its own stream
+        this.meetingService.stopMediaPreview();
+        this.clearVideoElement();
+
+        this.saveUser();
+        this.meetingService.meetingId = this.meetingId;
+        this.meetingService.maximize();
+        this.meetingService.userJoinRoom();
+    }
+
+    private validatePermissions(): boolean {
+        if (this.isVideoCall() && this.permissions.camera !== 'granted') {
+            alert("Please allow camera access for video calls.");
+            return false;
+        }
+
+        if (this.permissions.microphone !== 'granted') {
+            alert("Please allow microphone access.");
+            return false;
+        }
+
+        return true;
+    }
+
+    // ==================== Device Selection ====================
+
     async onCameraChange(event: any) {
         this.selectedCamera = event.target.value;
-        await this.startPreview();
+        if (this.isVideoCall()) {
+            await this.startPreview();
+        }
     }
 
-    /** Switch microphone */
     async onMicChange(event: any) {
         this.selectedMic = event.target.value;
         await this.startPreview();
     }
 
-    /** Switch speaker */
     onSpeakerChange(event: any) {
         this.selectedSpeaker = event.target.value;
         if (this.previewVideo?.nativeElement && typeof this.previewVideo.nativeElement.setSinkId === 'function') {
@@ -251,57 +324,56 @@ export class PreviewComponent implements OnDestroy {
         }
     }
 
-    /** Stop preview when leaving */
-    ngOnDestroy() {
-        // Stop all tracks in the preview stream
-        if (this.previewStream) {
-            this.previewStream.getTracks().forEach(track => {
-                track.stop();
-                console.log(`Stopped track: ${track.kind}`);
-            });
-            this.previewStream = undefined;
+    // ==================== Toggle Controls ====================
+
+    /** Toggle camera - uses centralized MeetingService */
+    async toggleCamera() {
+        if (!this.isVideoCall()) {
+            return; // Cannot toggle camera in audio-only calls
         }
 
-        // Clear the video element's srcObject
-        if (this.previewVideo?.nativeElement) {
-            this.previewVideo.nativeElement.srcObject = null;
-        }
+        await this.meetingService.togglePreviewCamera(this.selectedCamera ?? undefined);
 
-        if (this.subscription) {
-            this.subscription.unsubscribe();
+        // Re-attach stream to video element
+        const stream = this.meetingService.previewStream();
+        if (stream) {
+            this.attachStreamToVideo(stream);
+        } else {
+            this.clearVideoElement();
         }
-        this.mediaPerm.destroy();
     }
+
+    /** Toggle mic - uses centralized MeetingService */
+    toggleMic() {
+        this.meetingService.togglePreviewMic();
+    }
+
+    // ==================== User Management ====================
 
     private saveUser() {
-        var user: User = null;
+        let user: User;
+
+        // Use centralized state from MeetingService
+        const isCameraOn = this.meetingService.isCameraOn();
+        const isMicOn = this.meetingService.isMicOn();
+
         if (this.local.isLoggedIn()) {
             user = this.local.getUser();
-            user.isCameraOn = this.selectedCamera != null ? this.isCameraOn : false,
-                user.isMicOn = this.selectedMic != null ? this.isMicOn : false;
+            user.isCameraOn = this.isVideoCall() && isCameraOn;
+            user.isMicOn = isMicOn;
         } else {
             user = {
-                isMicOn: this.selectedMic != null ? this.isMicOn : false,
-                isCameraOn: this.selectedCamera != null ? this.isCameraOn : false,
+                isMicOn: isMicOn,
+                isCameraOn: this.isVideoCall() && isCameraOn,
                 firstName: this.userName,
                 isLogin: false,
-            }
+            };
         }
-        this.local.setUser(user)
+
+        this.local.setUser(user);
     }
 
-    async toggleCamera() {
-        if (this.isCameraOn) {
-            await this.stopPreview()
-        } else {
-            await this.startPreview();
-        }
-        this.isCameraOn = !this.isCameraOn;
-    }
-
-    toggleMic() {
-        this.isMicOn = !this.isMicOn;
-    }
+    // ==================== Navigation ====================
 
     navToDahsboard() {
         this.nav.navigate(Dashboard, null);

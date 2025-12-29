@@ -31,12 +31,22 @@ export class CameraService {
   }
 
   async enableCamera(room: Room, deviceId?: string) {
-    const tracks = await createLocalTracks({
-      video: { deviceId: deviceId || undefined },
-    });
-    const videoTrack = tracks.find((t) => t.kind === 'video');
-    if (videoTrack) {
-      await room.localParticipant.publishTrack(videoTrack);
+    // First check if we already have a video track published
+    const existingVideoPub = room.localParticipant.videoTrackPublications.values().next().value;
+    const existingVideoTrack = existingVideoPub?.track;
+
+    if (existingVideoTrack) {
+      // If track exists but is muted, unmute it
+      await existingVideoTrack.unmute();
+    } else {
+      // If no video track exists, create and publish one
+      const tracks = await createLocalTracks({
+        video: { deviceId: deviceId || undefined },
+      });
+      const videoTrack = tracks.find((t) => t.kind === 'video');
+      if (videoTrack) {
+        await room.localParticipant.publishTrack(videoTrack);
+      }
     }
   }
 
