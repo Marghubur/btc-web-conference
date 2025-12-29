@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import { User } from '../models/model';
 import { CallEventService } from '../providers/socket/call-event.service';
 import { NotificationService } from '../notifications/services/notification.service';
+import { CallType } from '../models/conference_call/call_model';
 
 @Component({
     selector: 'app-chat',
@@ -359,6 +360,7 @@ export class ChatComponent implements OnInit, AfterViewChecked, OnDestroy {
         this.router.navigate(['/btc/preview'], {
             state: {
                 id: this.ws.currentConversation().id,
+                type: CallType.AUDIO,
                 title: this.ws.currentConversation().conversationName ? this.ws.currentConversation().conversationName : 'NEW'
             }
         });

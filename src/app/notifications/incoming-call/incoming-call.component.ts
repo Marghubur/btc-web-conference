@@ -548,6 +548,7 @@ export class IncomingCallComponent implements OnDestroy {
             this.router.navigate(['/btc/preview'], {
                 state: {
                     id: call.conversationId,
+                    type: call.callType || CallType.AUDIO,
                     title: call.callerName || 'NEW'
                 }
             });
@@ -564,6 +565,7 @@ export class IncomingCallComponent implements OnDestroy {
             this.router.navigate(['/btc/preview'], {
                 state: {
                     id: request.conversationId,
+                    type: request.callType || CallType.AUDIO,
                     title: request.callerName || 'Call'
                 }
             });

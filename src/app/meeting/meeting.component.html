@@ -46,23 +46,22 @@
                             </div>
                             }
                             }
-                            @for (remoteTrack of remoteTracksMap().values(); track
-                            remoteTrack.trackPublication.trackSid; let index=$index) {
-                            @if (remoteTrack.trackPublication.kind==='video' ) {
-                            @if(isParticipantCameraEnabled(remoteTrack.participantIdentity)) {
+                            @for (participant of remoteParticipants().values(); track participant.identity) {
+                            @if(isParticipantCameraEnabled(participant.identity) && getVideoTrack(participant.identity))
+                            {
                             <div class="mt-3 vh-19 d-flex align-items-center justify-content-center">
-                                <video-component [track]="remoteTrack.trackPublication.videoTrack!"
-                                    [participantIdentity]="remoteTrack.participantIdentity"
-                                    [isMute]="!isParticipantAudioEnabled(remoteTrack.participantIdentity!)"></video-component>
+                                <video-component [track]="getVideoTrack(participant.identity)!"
+                                    [participantIdentity]="participant.identity"
+                                    [isMute]="!isParticipantAudioEnabled(participant.identity)"></video-component>
                             </div>
                             } @else {
                             <div
                                 class="mt-2 d-flex align-items-center justify-content-center vh-19 bg-light rounded w-100 py-2 position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
-                                    [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity)}">
-                                    {{getUserInitiaLetter(remoteTrack.participantIdentity!)}}
+                                    [ngStyle]="{'background-color': getColorFromName(participant.identity)}">
+                                    {{getUserInitiaLetter(participant.identity)}}
                                 </div>
-                                @if (!isParticipantAudioEnabled(remoteTrack.participantIdentity!)) {
+                                @if (!isParticipantAudioEnabled(participant.identity)) {
                                 <div class="position-absolute user-mute-mic">
                                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
                                         width="24px" fill="#000">
@@ -72,13 +71,9 @@
                                 </div>
                                 }
                                 <div class="" style="bottom: 5px; left: 5px;">
-                                    {{remoteTrack.participantIdentity!}}
+                                    {{participant.identity}}
                                 </div>
                             </div>
-                            }
-                            } @else {
-                            <audio-component [track]="remoteTrack.trackPublication.audioTrack!"
-                                hidden></audio-component>
                             }
                             }
                         </div>
@@ -133,23 +128,22 @@
                             </div>
                             }
                             }
-                            @for (remoteTrack of remoteTracksMap().values(); track
-                            remoteTrack.trackPublication.trackSid; let index=$index) {
-                            @if (remoteTrack.trackPublication.kind==='video' ) {
-                            @if(isParticipantCameraEnabled(remoteTrack.participantIdentity)) {
+                            @for (participant of remoteParticipants().values(); track participant.identity) {
+                            @if(isParticipantCameraEnabled(participant.identity) && getVideoTrack(participant.identity))
+                            {
                             <div class="mt-3 vh-19 d-flex align-items-center justify-content-center">
-                                <video-component [track]="remoteTrack.trackPublication.videoTrack!"
-                                    [participantIdentity]="remoteTrack.participantIdentity"
-                                    [isMute]="!isParticipantAudioEnabled(remoteTrack.participantIdentity!)"></video-component>
+                                <video-component [track]="getVideoTrack(participant.identity)!"
+                                    [participantIdentity]="participant.identity"
+                                    [isMute]="!isParticipantAudioEnabled(participant.identity)"></video-component>
                             </div>
                             } @else {
                             <div
                                 class="mt-2 d-flex align-items-center justify-content-center vh-19 bg-light rounded w-100 py-2 position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
-                                    [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity)}">
-                                    {{getUserInitiaLetter(remoteTrack.participantIdentity!)}}
+                                    [ngStyle]="{'background-color': getColorFromName(participant.identity)}">
+                                    {{getUserInitiaLetter(participant.identity)}}
                                 </div>
-                                @if (!isParticipantAudioEnabled(remoteTrack.participantIdentity!)) {
+                                @if (!isParticipantAudioEnabled(participant.identity)) {
                                 <div class="position-absolute user-mute-mic">
                                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
                                         width="24px" fill="#000">
@@ -160,13 +154,9 @@
                                 }
                                 <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
                                     style="bottom: 5px; left: 5px;">
-                                    {{remoteTrack.participantIdentity!}}
+                                    {{participant.identity}}
                                 </div>
                             </div>
-                            }
-                            } @else {
-                            <audio-component [track]="remoteTrack.trackPublication.audioTrack!"
-                                hidden></audio-component>
                             }
                             }
                         </div>
@@ -224,21 +214,21 @@
                                 </div>
                             </div>
                             }
-                            @for (remoteTrack of remoteTracksMap().values(); track
-                            remoteTrack.trackPublication.trackSid) {
-                            @if (remoteTrack.trackPublication.kind === 'video') {
-                            @if (isParticipantCameraEnabled(remoteTrack.participantIdentity)) {
-                            <video-component [track]="remoteTrack.trackPublication.videoTrack!"
-                                [participantIdentity]="remoteTrack.participantIdentity"
-                                [isMute]="!isParticipantAudioEnabled(remoteTrack.participantIdentity!)"></video-component>
+                            @for (participant of remoteParticipants().values(); track participant.identity) {
+                            @if (isParticipantCameraEnabled(participant.identity) &&
+                            getVideoTrack(participant.identity)) {
+                            <video-component [track]="getVideoTrack(participant.identity)!"
+                                [participantIdentity]="participant.identity"
+                                [isMute]="!isParticipantAudioEnabled(participant.identity)"></video-component>
                             } @else {
+                            <!-- Avatar placeholder for participants without camera or with camera off -->
                             <div
                                 class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
-                                    [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity!)}">
-                                    {{getUserInitiaLetter(remoteTrack.participantIdentity!)}}
+                                    [ngStyle]="{'background-color': getColorFromName(participant.identity)}">
+                                    {{getUserInitiaLetter(participant.identity)}}
                                 </div>
-                                @if (!isParticipantAudioEnabled(remoteTrack.participantIdentity!)) {
+                                @if (!isParticipantAudioEnabled(participant.identity)) {
                                 <div class="position-absolute user-mute-mic">
                                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
                                         width="24px" fill="#000">
@@ -249,11 +239,15 @@
                                 }
                                 <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
                                     style="bottom: 5px; left: 5px;">
-                                    {{remoteTrack.participantIdentity!}}
+                                    {{participant.identity}}
                                 </div>
                             </div>
                             }
-                            } @else {
+                            }
+                            <!-- Hidden audio components for all remote tracks -->
+                            @for (remoteTrack of remoteTracksMap().values(); track
+                            remoteTrack.trackPublication.trackSid) {
+                            @if (remoteTrack.trackPublication.kind === 'audio') {
                             <audio-component [track]="remoteTrack.trackPublication.audioTrack!"
                                 hidden></audio-component>
                             }

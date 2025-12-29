@@ -38,6 +38,7 @@ export class RoomService {
   remoteTracksMap = signal<Map<string, any>>(new Map());
   remoteSharescreenTrack = signal<any>(null);
   participantMediaStatus = signal<Map<string, any>>(new Map());
+  remoteParticipants = signal<Map<string, RemoteParticipant>>(new Map());
   latestScreenShare = new BehaviorSubject<{ participant: Participant; track: RemoteVideoTrack; } | null>(null);
   // Expose reactions as observable
   reactions = signal<{ id: string; emoji: string, name: string }[]>([]);
@@ -118,11 +119,6 @@ export class RoomService {
           return;
         }
 
-        const msg = { message: `${participant.identity} joined the meeting`, id: crypto.randomUUID() };
-        this._newMessage.set(msg);
-        this.clearAfterDelay();
-        const audio = new Audio('/assets/notification-tone.wav');
-        audio.play().catch(() => { });
         this.remoteTracksMap.update((map) => {
           map.set(publication.trackSid, {
             trackPublication: publication,
@@ -149,12 +145,6 @@ export class RoomService {
         return;
       }
 
-      const msg = { message: `${participant.identity} left the meeting`, id: crypto.randomUUID() };
-      this._newMessage.set(msg);
-      this.clearAfterDelay();
-      const audio = new Audio('/assets/notification-tone.wav');
-      audio.play().catch(() => { });
-
       this.remoteTracksMap.update((map) => {
         map.delete(publication.trackSid);
         return map;
@@ -179,12 +169,39 @@ export class RoomService {
 
     // Handle participant connected
     room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
-      //this.whisperService._attachParticipantAudio(participant);
+      // Add participant to remoteParticipants map
+      this.remoteParticipants.update((map) => {
+        const newMap = new Map(map);
+        newMap.set(participant.identity, participant);
+        return newMap;
+      });
+
+      // Show join notification
+      const msg = { message: `${participant.identity} joined the meeting`, id: crypto.randomUUID() };
+      this._newMessage.set(msg);
+      this.clearAfterDelay();
+      const audio = new Audio('/assets/notification-tone.wav');
+      audio.play().catch(() => { });
+
       this.updateParticipantMediaStatus(participant);
     });
 
     // Handle participant disconnected
     room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
+      // Remove participant from remoteParticipants map
+      this.remoteParticipants.update((map) => {
+        const newMap = new Map(map);
+        newMap.delete(participant.identity);
+        return newMap;
+      });
+
+      // Show leave notification
+      const msg = { message: `${participant.identity} left the meeting`, id: crypto.randomUUID() };
+      this._newMessage.set(msg);
+      this.clearAfterDelay();
+      const audio = new Audio('/assets/notification-tone.wav');
+      audio.play().catch(() => { });
+
       this.participantMediaStatus.update((map) => {
         map.delete(participant.identity);
         return map;
@@ -193,8 +210,14 @@ export class RoomService {
 
     // Handle existing participants after connection
     room.on(RoomEvent.Connected, () => {
-      room.remoteParticipants.forEach((participant) => {
-        this.updateParticipantMediaStatus(participant);
+      // Initialize remoteParticipants from existing participants in the room
+      this.remoteParticipants.update((map) => {
+        const newMap = new Map(map);
+        room.remoteParticipants.forEach((participant) => {
+          newMap.set(participant.identity, participant);
+          this.updateParticipantMediaStatus(participant);
+        });
+        return newMap;
       });
     });
 
@@ -271,6 +294,20 @@ export class RoomService {
       map.set(participantIdentity, mediaStatus);
       return map;
     });
+  }
+
+  /** Get the video track for a specific participant (for rendering) */
+  getParticipantVideoTrack(participantIdentity: string): RemoteVideoTrack | undefined {
+    for (const [, trackInfo] of this.remoteTracksMap()) {
+      if (
+        trackInfo.participantIdentity === participantIdentity &&
+        trackInfo.trackPublication.kind === 'video' &&
+        trackInfo.trackPublication.source === Track.Source.Camera
+      ) {
+        return trackInfo.trackPublication.videoTrack;
+      }
+    }
+    return undefined;
   }
 
   sendReaction(emoji: string, name: string) {
@@ -364,6 +401,8 @@ export class RoomService {
     await this.room()?.disconnect();
     this.room.set(undefined);
     this.remoteTracksMap.set(new Map());
+    this.remoteParticipants.set(new Map());
+    this.participantMediaStatus.set(new Map());
   }
 
   private clearAfterDelay() {

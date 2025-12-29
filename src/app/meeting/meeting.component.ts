@@ -50,6 +50,7 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     remoteTracksMap = this.roomService.remoteTracksMap;
+    remoteParticipants = this.roomService.remoteParticipants;
     remoteSharescreenTrack = this.roomService.remoteSharescreenTrack;
     cameras: MediaDeviceInfo[] = [];
     microphones: MediaDeviceInfo[] = [];
@@ -76,11 +77,12 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     currentBrowser: string = "";
     textMessage: string = "";
     get remoteUsersCount(): number {
-        const map = this.remoteTracksMap();
-        const uniqueParticipants = new Set(
-            Array.from(map.values()).map(track => track.participantIdentity)
-        );
-        return uniqueParticipants.size;
+        return this.remoteParticipants().size;
+    }
+
+    /** Get video track for a participant */
+    getVideoTrack(participantIdentity: string) {
+        return this.roomService.getParticipantVideoTrack(participantIdentity);
     }
 
     backgroundOptions: BackgroundOption[] = [];
