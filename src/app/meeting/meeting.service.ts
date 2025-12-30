@@ -1,14 +1,14 @@
 import { Injectable, signal } from '@angular/core';
-import { RoomService } from './room.service';
-import { LocalService } from './local.service';
-import { iNavigation } from './iNavigation';
+import { RoomService } from './../providers/services/room.service';
+import { LocalService } from './../providers/services/local.service';
+import { iNavigation } from './../providers/services/iNavigation';
 import { LocalVideoTrack, Room } from 'livekit-client';
-import { CameraService } from './camera.service';
-import { VideoBackgroundService } from './video-background.service';
-import { User } from '../../models/model';
-import { Dashboard, Login } from '../../models/constant';
-import { CallEventService } from '../socket/call-event.service';
-import { DeviceService } from '../../layout/device.service';
+import { CameraService } from './../providers/services/camera.service';
+import { VideoBackgroundService } from './../providers/services/video-background.service';
+import { DeviceService } from '../layout/device.service';
+import { CallEventService } from '../providers/socket/call-event.service';
+import { User } from '../models/model';
+import { Dashboard, Login } from '../models/constant';
 
 @Injectable({
   providedIn: 'root'

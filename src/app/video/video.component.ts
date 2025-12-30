@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnDestroy, input, viewChild, effect } from '@angular/core';
 import { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client';
-import { MeetingService } from '../providers/services/meeting.service';
+import { MeetingService } from '../meeting/meeting.service';
 
 @Component({
     selector: 'video-component',

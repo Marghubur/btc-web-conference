@@ -1,5 +1,4 @@
 import { Component, ElementRef, HostListener, OnInit, signal } from '@angular/core';
-import { MeetingService } from '../providers/services/meeting.service';
 import { Room } from 'livekit-client';
 import { LocalService } from '../providers/services/local.service';
 import { CommonModule } from '@angular/common';
@@ -8,6 +7,7 @@ import { Observable } from 'rxjs';
 import { VideoComponent } from '../video/video.component';
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { User } from '../models/model';
+import { MeetingService } from '../meeting/meeting.service';
 
 @Component({
   selector: 'app-meeting-mini',

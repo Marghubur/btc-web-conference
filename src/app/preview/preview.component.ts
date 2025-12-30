@@ -6,12 +6,12 @@ import { MediaPermissions, MediaPermissionsService } from '../providers/services
 import { Subscription } from 'rxjs';
 import { LocalService } from '../providers/services/local.service';
 import { iNavigation } from '../providers/services/iNavigation';
-import { MeetingService } from '../providers/services/meeting.service';
 import { AjaxService } from '../providers/services/ajax.service';
 import { Dashboard, MeetingId } from '../models/constant';
 import { ResponseModel, User } from '../models/model';
 import { DeviceService } from '../layout/device.service';
 import { CallType } from '../models/conference_call/call_model';
+import { MeetingService } from '../meeting/meeting.service';
 
 @Component({
     selector: 'app-preview',

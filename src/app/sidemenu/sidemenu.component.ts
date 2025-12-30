@@ -5,9 +5,9 @@ import { iNavigation } from '../providers/services/iNavigation';
 import { LocalService } from '../providers/services/local.service';
 import { NgbDropdownConfig, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { JwtService } from '../providers/services/jwt.service';
-import { MeetingService } from '../providers/services/meeting.service';
 import { CalendarPage, ChatPage, Dashboard, Login, MonitorDashboard } from '../models/constant';
 import { User } from '../models/model';
+import { MeetingService } from '../meeting/meeting.service';
 
 @Component({
   selector: 'app-sidemenu',

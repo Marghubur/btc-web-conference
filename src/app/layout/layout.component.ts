@@ -4,7 +4,6 @@ import { HeaderComponent } from "./header/header.component";
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { LocalService } from '../providers/services/local.service';
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
-import { MeetingService } from '../providers/services/meeting.service';
 import { ConfeetSocketService } from '../providers/socket/confeet-socket.service';
 import { environment } from '../../environments/environment';
 import { NotificationService } from '../notifications/services/notification.service';
@@ -13,6 +12,7 @@ import { User } from '../models/model';
 import { CallEventService } from '../providers/socket/call-event.service';
 import { IncomingCallComponent } from '../notifications/incoming-call/incoming-call.component';
 import { DeviceService } from './device.service';
+import { MeetingService } from '../meeting/meeting.service';
 
 @Component({
   selector: 'app-layout',

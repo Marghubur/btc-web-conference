@@ -12,7 +12,6 @@ import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../pro
 import { LocalService } from '../providers/services/local.service';
 import { ScreenRecorderService } from '../providers/services/screen-recorder.service';
 import { NgbTooltipConfig, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
-import { MeetingService } from '../providers/services/meeting.service';
 import { NetworkService } from '../providers/services/network.service';
 import { CameraService } from '../providers/services/camera.service';
 import { iNavigation } from '../providers/services/iNavigation';
@@ -20,6 +19,7 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 import { Offcanvas } from 'bootstrap';
 import { User } from '../models/model';
 import { hand_down, hand_raise } from '../models/constant';
+import { MeetingService } from './meeting.service';
 @Component({
     selector: 'app-meeting',
     standalone: true,
@@ -264,7 +264,7 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
             if (!this.room()) return;
 
             const [screenTrack] = await createLocalScreenTracks({
-                audio: false, // set to true to share system audio
+                audio: this.meetingService.isMicOn(), // set to true to share system audio
                 resolution: { width: 1920, height: 1080 },
             });
 

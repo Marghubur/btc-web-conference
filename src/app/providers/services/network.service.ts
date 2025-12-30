@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject, interval, Subscription } from 'rxjs';
-import { MeetingService } from './meeting.service'; // import your LiveKit service
+import { MeetingService } from '../../meeting/meeting.service';
 
 @Injectable({ providedIn: 'root' })
 export class NetworkService {

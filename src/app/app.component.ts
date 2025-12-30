@@ -4,7 +4,7 @@ import { filter, Subscription } from 'rxjs';
 import { CommonService } from './providers/services/common.service';
 import { iNavigation } from './providers/services/iNavigation';
 import { MeetingContainerComponent } from "./meeting-container/meeting-container.component";
-import { MeetingService } from './providers/services/meeting.service';
+import { MeetingService } from './meeting/meeting.service';
 
 @Component({
     selector: 'app-root',
