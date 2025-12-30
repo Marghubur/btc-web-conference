@@ -1,3 +1,70 @@
+/* =====================================================
+   Global Theme Variables - Light/Dark Mode
+   ===================================================== */
+
+/* Light Theme (Default) */
+body[data-theme="light"] {
+    --theme-bg-primary: #f5f5f5;
+    --theme-bg-secondary: #ffffff;
+    --theme-bg-tertiary: #e8e8e8;
+    --theme-bg-hover: #ebebeb;
+    --theme-accent: #5b5fc7;
+    --theme-accent-hover: #4f52b2;
+    --theme-text-primary: #242424;
+    --theme-text-secondary: #616161;
+    --theme-text-muted: #8a8886;
+    --theme-danger: #c4314b;
+    --theme-danger-hover: #a52a40;
+    --theme-success: #237b4b;
+    --theme-border: rgba(0, 0, 0, 0.1);
+    --theme-shadow: rgba(0, 0, 0, 0.15);
+    --theme-card-bg: #ffffff;
+    --theme-input-bg: #ffffff;
+    --theme-sidebar-bg: #f0f0f0;
+}
+
+/* Dark Theme */
+body[data-theme="dark"] {
+    --theme-bg-primary: #201f1e;
+    --theme-bg-secondary: #292827;
+    --theme-bg-tertiary: #3d3d3d;
+    --theme-bg-hover: #3a3a3a;
+    --theme-accent: #6264a7;
+    --theme-accent-hover: #464775;
+    --theme-text-primary: #ffffff;
+    --theme-text-secondary: #c8c6c4;
+    --theme-text-muted: #8a8886;
+    --theme-danger: #c4314b;
+    --theme-danger-hover: #a52a40;
+    --theme-success: #237b4b;
+    --theme-border: rgba(255, 255, 255, 0.1);
+    --theme-shadow: rgba(0, 0, 0, 0.4);
+    --theme-card-bg: #292827;
+    --theme-input-bg: #3d3d3d;
+    --theme-sidebar-bg: #1f1f1f;
+}
+
+/* Default to dark theme if no data-theme attribute */
+body:not([data-theme]) {
+    --theme-bg-primary: #201f1e;
+    --theme-bg-secondary: #292827;
+    --theme-bg-tertiary: #3d3d3d;
+    --theme-bg-hover: #3a3a3a;
+    --theme-accent: #6264a7;
+    --theme-accent-hover: #464775;
+    --theme-text-primary: #ffffff;
+    --theme-text-secondary: #c8c6c4;
+    --theme-text-muted: #8a8886;
+    --theme-danger: #c4314b;
+    --theme-danger-hover: #a52a40;
+    --theme-success: #237b4b;
+    --theme-border: rgba(255, 255, 255, 0.1);
+    --theme-shadow: rgba(0, 0, 0, 0.4);
+    --theme-card-bg: #292827;
+    --theme-input-bg: #3d3d3d;
+    --theme-sidebar-bg: #1f1f1f;
+}
+
 html {
     height: 100%;
     overflow: hidden;
@@ -10,6 +77,9 @@ body {
     flex-direction: column;
     height: 100%;
     overflow: hidden;
+    background-color: var(--theme-bg-primary);
+    color: var(--theme-text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 header {

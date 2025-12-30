@@ -8,6 +8,7 @@ import { JwtService } from '../providers/services/jwt.service';
 import { CalendarPage, ChatPage, Dashboard, Login, MonitorDashboard } from '../models/constant';
 import { User } from '../models/model';
 import { MeetingService } from '../meeting/meeting.service';
+import { ThemeService } from '../providers/services/theme.service';
 
 @Component({
   selector: 'app-sidemenu',
@@ -53,7 +54,8 @@ export class SidemenuComponent {
     private local: LocalService,
     private config: NgbDropdownConfig,
     private jwtService: JwtService,
-    private meetingService: MeetingService
+    private meetingService: MeetingService,
+    public themeService: ThemeService
   ) {
     config.placement = 'top-end';
     config.autoClose = true;
@@ -115,5 +117,9 @@ export class SidemenuComponent {
     this.jwtService.removeJwtToken();
     this.meetingService.leaveRoom()
     this.nav.navigate(Login, null);
+  }
+
+  toggleTheme() {
+    this.themeService.toggleTheme();
   }
 }

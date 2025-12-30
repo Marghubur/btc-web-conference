@@ -3,23 +3,24 @@
    ===================================================== */
 
 /* =====================================================
-   CSS Variables - Teams Dark Theme
+   CSS Variables - Using Global Theme Variables
    ===================================================== */
 :host {
-    --teams-bg-primary: #201f1e;
-    --teams-bg-secondary: #292827;
-    --teams-bg-tertiary: #3d3d3d;
-    --teams-accent: #6264a7;
-    --teams-accent-hover: #464775;
-    --teams-text-primary: #ffffff;
-    --teams-text-secondary: #c8c6c4;
-    --teams-text-muted: #8a8886;
-    --teams-danger: #c4314b;
-    --teams-danger-hover: #a52a40;
-    --teams-success: #237b4b;
-    --teams-border: rgba(255, 255, 255, 0.1);
-    --teams-shadow: rgba(0, 0, 0, 0.4);
+    --teams-bg-primary: var(--theme-bg-primary);
+    --teams-bg-secondary: var(--theme-bg-secondary);
+    --teams-bg-tertiary: var(--theme-bg-tertiary);
+    --teams-accent: var(--theme-accent);
+    --teams-accent-hover: var(--theme-accent-hover);
+    --teams-text-primary: var(--theme-text-primary);
+    --teams-text-secondary: var(--theme-text-secondary);
+    --teams-text-muted: var(--theme-text-muted);
+    --teams-danger: var(--theme-danger);
+    --teams-danger-hover: var(--theme-danger-hover);
+    --teams-success: var(--theme-success);
+    --teams-border: var(--theme-border);
+    --teams-shadow: var(--theme-shadow);
 }
+
 
 /* =====================================================
    Tooltip Styling - Teams Dark Theme
@@ -345,6 +346,250 @@
     border-radius: 8px;
     overflow: hidden;
 }
+
+/* =====================================================
+   Teams-Style Participant Roster
+   ===================================================== */
+.participant-roster {
+    background: var(--teams-bg-secondary);
+    border-radius: 12px;
+    max-height: 87vh;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--teams-border);
+    overflow: hidden;
+}
+
+.roster-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--teams-border);
+    background: var(--teams-bg-primary);
+}
+
+.roster-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--teams-text-primary);
+}
+
+.roster-count {
+    background: var(--teams-accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+}
+
+.roster-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.participant-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    gap: 12px;
+    transition: background-color 0.15s ease;
+    cursor: default;
+}
+
+.participant-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.participant-avatar-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.participant-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+.status-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--teams-bg-secondary);
+}
+
+.status-dot.online {
+    background: #6bb700;
+}
+
+.status-dot.away {
+    background: #ffaa44;
+}
+
+.status-dot.busy {
+    background: #c4314b;
+}
+
+.status-dot.offline {
+    background: #8a8886;
+}
+
+.participant-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.participant-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--teams-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.participant-status-text {
+    font-size: 11px;
+    color: var(--teams-text-muted);
+}
+
+.participant-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    color: var(--teams-text-muted);
+}
+
+.action-icon.muted {
+    color: var(--teams-danger);
+}
+
+.action-icon.camera-off {
+    color: var(--teams-text-muted);
+}
+
+.action-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Filter Search Box */
+.roster-filter {
+    padding: 12px;
+    border-bottom: 1px solid var(--teams-border);
+}
+
+.filter-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: var(--teams-bg-tertiary);
+    border-radius: 6px;
+    padding: 8px 12px;
+    gap: 8px;
+}
+
+.filter-icon {
+    color: var(--teams-text-muted);
+    flex-shrink: 0;
+}
+
+.filter-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--teams-text-primary);
+    font-size: 13px;
+}
+
+.filter-input::placeholder {
+    color: var(--teams-text-muted);
+}
+
+/* Section Headers */
+.roster-section-header {
+    padding: 8px 12px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--teams-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Section Divider */
+.roster-divider {
+    height: 1px;
+    background: var(--teams-border);
+    margin: 8px 12px;
+}
+
+/* Not In Call Participants */
+.participant-item.not-in-call {
+    opacity: 0.7;
+}
+
+.participant-item.not-in-call:hover {
+    opacity: 1;
+}
+
+/* Request to Join Button */
+.request-join-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--teams-accent);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.request-join-btn:hover {
+    background: var(--teams-accent-hover);
+}
+
+.request-join-btn:active {
+    transform: scale(0.95);
+}
+
+.request-join-btn svg {
+    flex-shrink: 0;
+}
+
 
 /* =====================================================
    Video Tile Placeholders

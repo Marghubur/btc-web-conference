@@ -354,13 +354,13 @@
                     </button>
                 </div>
 
-                <input type="text" class="message-input" [disabled]="!currentConversation" [value]="message()"
+                <input type="text" class="message-input" [disabled]="!ws.currentConversation()" [value]="message()"
                     (input)="message.set($event.target.value)" (keyup.enter)="sendMessage()"
                     placeholder="Type a new message" />
 
                 <div class="input-actions-right">
-                    <button class="send-btn" [disabled]="!currentConversation || !message()" (click)="sendMessage()"
-                        title="Send message">
+                    <button class="send-btn" [disabled]="!ws.currentConversation() || !message()"
+                        (click)="sendMessage()" title="Send message">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                         </svg>

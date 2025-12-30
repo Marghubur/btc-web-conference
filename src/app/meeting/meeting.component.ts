@@ -107,6 +107,36 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     handRaised: boolean = false;
     private notified = new Set<string>(); // tracks who is already raised
     isViewParticipant: boolean = false;
+    participantFilter: string = '';
+
+    // Mock invited participants (not yet in call) - can be connected to real API
+    invitedParticipants: InvitedParticipant[] = [
+        { name: 'John Smith', email: 'john.smith@company.com', invited: true },
+        { name: 'Sarah Johnson', email: 'sarah.j@company.com', invited: true },
+        { name: 'Mike Wilson', email: 'mike.w@company.com', invited: true }
+    ];
+
+    get filteredInvitedParticipants(): InvitedParticipant[] {
+        if (!this.participantFilter.trim()) {
+            return this.invitedParticipants;
+        }
+        const filter = this.participantFilter.toLowerCase();
+        return this.invitedParticipants.filter(p =>
+            p.name.toLowerCase().includes(filter) ||
+            p.email.toLowerCase().includes(filter)
+        );
+    }
+
+    filterParticipants(event: Event): void {
+        const target = event.target as HTMLInputElement;
+        this.participantFilter = target.value;
+    }
+
+    requestToJoin(participant: InvitedParticipant): void {
+        // TODO: Implement actual request to join via API/signaling
+        console.log(`Request to join sent to: ${participant.name}`);
+        alert(`Request to join sent to ${participant.name}`);
+    }
 
     // Getter methods to expose meetingService signals reactively
     get room() { return this.meetingService.room; }
@@ -674,4 +704,10 @@ export interface Reaction {
     id: number;
     emoji: string;
     name: string;
+}
+
+export interface InvitedParticipant {
+    name: string;
+    email: string;
+    invited: boolean;
 }

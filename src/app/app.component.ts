@@ -5,6 +5,7 @@ import { CommonService } from './providers/services/common.service';
 import { iNavigation } from './providers/services/iNavigation';
 import { MeetingContainerComponent } from "./meeting-container/meeting-container.component";
 import { MeetingService } from './meeting/meeting.service';
+import { ThemeService } from './providers/services/theme.service';
 
 @Component({
     selector: 'app-root',
@@ -18,7 +19,8 @@ export class AppComponent implements OnInit, OnDestroy {
     constructor(private common: CommonService,
         private nav: iNavigation,
         private router: Router,
-        private meetingService: MeetingService
+        private meetingService: MeetingService,
+        private themeService: ThemeService // Initialize theme on app startup
     ) {
         this.navRouter = this.router.events.subscribe((event: any) => {
             if (event instanceof NavigationStart) {

@@ -1,23 +1,24 @@
 /* ===== Advanced Sidemenu Styles ===== */
 
-/* CSS Variables */
+/* CSS Variables - Using Global Theme */
 :host {
-    --sidebar-bg: #1a1a2e;
-    --sidebar-bg-gradient: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-    --sidebar-text: #a0a0b0;
-    --sidebar-text-hover: #ffffff;
-    --sidebar-accent: #6366f1;
+    --sidebar-bg: var(--theme-sidebar-bg);
+    --sidebar-bg-gradient: linear-gradient(180deg, var(--theme-sidebar-bg) 0%, var(--theme-bg-primary) 100%);
+    --sidebar-text: var(--theme-text-muted);
+    --sidebar-text-hover: var(--theme-text-primary);
+    --sidebar-accent: var(--theme-accent);
     --sidebar-accent-light: rgba(99, 102, 241, 0.15);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+    --sidebar-hover-bg: var(--theme-bg-hover);
     --sidebar-active-bg: linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, transparent 100%);
-    --sidebar-divider: rgba(255, 255, 255, 0.1);
-    --sidebar-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
+    --sidebar-divider: var(--theme-border);
+    --sidebar-shadow: 0 0 40px var(--theme-shadow);
     --transition-fast: 0.2s ease;
     --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     display: block;
     height: 100%;
 }
+
 
 /* Main Sidebar Container */
 .sidebar-container {
@@ -464,6 +465,65 @@
 .dropdown-item.danger:hover {
     background: #fef2f2;
 }
+
+/* Theme Toggle Item */
+.theme-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: #374151;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.theme-toggle-item:hover {
+    background: #f3f4f6;
+}
+
+.theme-toggle-item svg {
+    width: 18px;
+    height: 18px;
+    color: #6b7280;
+}
+
+.theme-toggle-item span {
+    font-size: 14px;
+    font-weight: 500;
+    flex: 1;
+}
+
+/* Toggle Switch */
+.theme-toggle-switch {
+    width: 40px;
+    height: 22px;
+    background: #d1d5db;
+    border-radius: 11px;
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.theme-toggle-switch.active {
+    background: var(--sidebar-accent);
+}
+
+.toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.theme-toggle-switch.active .toggle-knob {
+    transform: translateX(18px);
+}
+
 
 /* Hide default dropdown arrow */
 .dropdown-toggle::after {
