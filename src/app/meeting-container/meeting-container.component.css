@@ -1,5 +1,15 @@
 /* Microsoft Teams Style - Meeting Container */
 
+/* Theme Variables */
+:host {
+    --meet-bg-primary: var(--theme-bg-primary);
+    --meet-bg-secondary: var(--theme-bg-secondary);
+    --meet-accent: var(--theme-accent);
+    --meet-text-primary: var(--theme-text-primary);
+    --meet-text-secondary: var(--theme-text-secondary);
+    --meet-border: var(--theme-border);
+}
+
 /* Mini floating window container */
 .mini-container {
     position: fixed;
@@ -38,14 +48,15 @@
 
 /* Full meeting container */
 .full-container {
-    width: calc(100% - 7rem);
+    width: calc(100% - 4rem);
     position: fixed;
     top: 0;
     right: 0;
     bottom: 0;
-    background: #201f1e;
+    background: var(--meet-bg-primary);
     animation: fadeIn 0.2s ease-out;
     z-index: 20 !important;
+    transition: background-color 0.3s ease;
 }
 
 .full-container.w-100 {
@@ -69,15 +80,16 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    background: linear-gradient(135deg, #201f1e 0%, #292827 100%) !important;
-    color: #ffffff !important;
+    background: var(--meet-bg-primary) !important;
+    color: var(--meet-text-primary) !important;
+    transition: background-color 0.3s ease;
 }
 
 .loader-container .spinner {
     width: 48px;
     height: 48px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top-color: #6264a7;
+    border: 3px solid var(--meet-border);
+    border-top-color: var(--meet-accent);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -91,7 +103,7 @@
 .loader-container .loading-text {
     margin-top: 16px;
     font-size: 14px;
-    color: #c8c6c4;
+    color: var(--meet-text-secondary);
 }
 
 /* Responsive adjustments */

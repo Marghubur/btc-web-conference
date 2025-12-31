@@ -30,7 +30,7 @@ import { MeetingService } from './meeting.service';
     animations: [
         trigger('slideFade', [
             state('hidden', style({ opacity: 0, height: '0px', overflow: 'hidden', width: '0px' })),
-            state('visible', style({ opacity: 1, height: '*', overflow: 'hidden', width: '16.66666667%' })),
+            state('visible', style({ opacity: 1, height: '*', overflow: 'hidden', width: '25%' })),
             transition('hidden <=> visible', animate('300ms ease'))
         ])
     ]
