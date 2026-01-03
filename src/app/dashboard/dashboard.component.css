@@ -1,9 +1,25 @@
 /* ===== Advanced Dashboard Styles ===== */
 
+/* ===== Theme Variables ===== */
+:host {
+    --dash-bg-primary: var(--theme-bg-primary);
+    --dash-bg-secondary: var(--theme-bg-secondary);
+    --dash-bg-tertiary: var(--theme-bg-tertiary);
+    --dash-bg-hover: var(--theme-bg-hover);
+    --dash-text-primary: var(--theme-text-primary);
+    --dash-text-secondary: var(--theme-text-secondary);
+    --dash-text-muted: var(--theme-text-muted);
+    --dash-border: var(--theme-border);
+    --dash-accent: var(--theme-accent);
+    --dash-shadow: var(--theme-shadow);
+    --dash-card-bg: var(--theme-card-bg);
+}
+
 /* Main Container */
 .main-container {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: var(--dash-bg-primary);
     min-height: 100vh;
+    transition: background-color 0.3s ease;
 }
 
 /* ===== HERO BANNER (Option 4 Style) ===== */
@@ -139,7 +155,7 @@
 .page-title {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--dash-text-primary);
     margin: 0;
     display: flex;
     align-items: center;
@@ -147,19 +163,19 @@
 }
 
 .page-title i {
-    color: #6366f1;
+    color: var(--dash-accent);
 }
 
 /* Action Cards */
 .action-card {
-    background: #ffffff;
-    border: none;
+    background: var(--dash-card-bg);
+    border: 1px solid var(--dash-border);
     border-radius: 16px;
     padding: 1.5rem;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 15px var(--dash-shadow);
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -207,13 +223,13 @@
 .action-card h5 {
     font-size: 1rem;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--dash-text-primary);
     margin: 0 0 0.25rem 0;
 }
 
 .action-card p {
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--dash-text-secondary);
     margin: 0;
 }
 
@@ -228,7 +244,7 @@
 .section-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--dash-text-primary);
     margin: 0;
     display: flex;
     align-items: center;
@@ -236,25 +252,25 @@
 }
 
 .section-title i {
-    color: #6366f1;
+    color: var(--dash-accent);
 }
 
 .section-link {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #6366f1;
+    color: var(--dash-accent);
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
 .section-link:hover {
-    color: #4f46e5;
+    color: var(--theme-accent-hover);
 }
 
 /* ===== ENHANCED MEETING CARD (Option 2 Style - Floating/Glassmorphism) ===== */
 .meeting-card {
-    background: #ffffff;
-    border: 1px solid rgba(99, 102, 241, 0.1);
+    background: var(--dash-card-bg);
+    border: 1px solid var(--dash-border);
     border-radius: 20px;
     padding: 1.5rem;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -312,24 +328,24 @@
 .meeting-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--dash-text-primary);
     margin: 0;
 }
 
 .meeting-meta {
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--dash-text-secondary);
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #f8fafc;
+    background: var(--dash-bg-tertiary);
     padding: 0.5rem 0.75rem;
     border-radius: 8px;
 }
 
 .meeting-meta i {
     font-size: 0.8rem;
-    color: #6366f1;
+    color: var(--dash-accent);
 }
 
 /* Buttons */
@@ -351,9 +367,9 @@
 }
 
 .btn-action-secondary {
-    background: #f1f5f9;
+    background: var(--dash-bg-tertiary);
     border: none;
-    color: #475569;
+    color: var(--dash-text-secondary);
     padding: 0.5rem 1.25rem;
     border-radius: 8px;
     font-weight: 500;
@@ -362,32 +378,32 @@
 }
 
 .btn-action-secondary:hover {
-    background: #e2e8f0;
-    color: #1e293b;
+    background: var(--dash-bg-hover);
+    color: var(--dash-text-primary);
 }
 
 .menu-btn {
     width: 32px;
     height: 32px;
     border: none;
-    background: #f8fafc;
+    background: var(--dash-bg-tertiary);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #94a3b8;
+    color: var(--dash-text-muted);
     transition: all 0.2s ease;
 }
 
 .menu-btn:hover {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--dash-bg-hover);
+    color: var(--dash-text-secondary);
 }
 
 /* Schedule Card */
 .schedule-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: var(--dash-card-bg);
+    border: 1px solid var(--dash-border);
     border-radius: 16px;
     padding: 1.25rem;
     transition: all 0.3s ease;
@@ -396,8 +412,8 @@
 }
 
 .schedule-card:hover {
-    border-color: #8b5cf6;
-    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.15);
+    border-color: var(--dash-accent);
+    box-shadow: 0 10px 30px var(--dash-shadow);
 }
 
 .date-badge {

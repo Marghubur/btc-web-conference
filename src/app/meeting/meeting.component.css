@@ -220,7 +220,7 @@
    ===================================================== */
 .footer-section {
     height: 72px;
-    background: linear-gradient(180deg, rgba(32, 31, 30, 0.95) 0%, rgba(41, 40, 39, 0.98) 100%);
+    background: var(--teams-bg-secondary);
     backdrop-filter: blur(20px);
     display: flex;
     justify-content: space-between;
@@ -228,6 +228,7 @@
     padding: 0 24px;
     border-top: 1px solid var(--teams-border);
     gap: 16px;
+    transition: background-color 0.3s ease;
 }
 
 .footer-left {
@@ -265,11 +266,11 @@
 }
 
 .footer-left a:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--teams-bg-tertiary);
 }
 
 .footer-left a:active {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--teams-bg-tertiary);
     transform: scale(0.95);
 }
 
@@ -403,7 +404,7 @@
 }
 
 .participant-item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--teams-bg-tertiary);
 }
 
 .participant-avatar-wrapper {
@@ -616,7 +617,7 @@
 .user-mute-mic {
     top: 8px;
     right: 8px;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--teams-bg-secondary);
     border-radius: 50%;
     padding: 4px;
 }
@@ -655,7 +656,7 @@
 }
 
 .emoji-dropdown a:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--teams-bg-tertiary);
     transform: scale(1.1);
 }
 
@@ -666,7 +667,7 @@
 
 /* Screen Share Dropdown */
 .screenshare-dropdown {
-    background: #292827 !important;
+    background: var(--teams-bg-secondary) !important;
     border-radius: 8px !important;
     padding: 8px 0 !important;
     min-width: 240px !important;
@@ -675,9 +676,9 @@
     left: 0 !important;
     right: auto !important;
     transform: translateY(-8px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid var(--teams-border) !important;
     z-index: 9999 !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 8px 32px var(--teams-shadow) !important;
 }
 
 .screenshare-dropdown.show {
@@ -685,7 +686,7 @@
 }
 
 .screenshare-dropdown .dropdown-item {
-    color: #ffffff !important;
+    color: var(--teams-text-primary) !important;
     padding: 10px 16px !important;
     font-size: 13px;
     transition: background-color 0.15s ease;
@@ -695,11 +696,11 @@
 }
 
 .screenshare-dropdown .dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: var(--teams-bg-tertiary) !important;
 }
 
 .screenshare-dropdown .dropdown-item.text-danger {
-    color: #c4314b !important;
+    color: var(--teams-danger) !important;
 }
 
 .screenshare-dropdown .dropdown-item.text-danger:hover {
@@ -707,13 +708,13 @@
 }
 
 .screenshare-dropdown .dropdown-divider {
-    border-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: var(--teams-border) !important;
     margin: 4px 12px !important;
 }
 
 /* More Actions Dropdown */
 .more-action-dropdown {
-    background: #292827 !important;
+    background: var(--teams-bg-secondary) !important;
     border-radius: 8px !important;
     padding: 8px 0 !important;
     min-width: 220px !important;
@@ -723,9 +724,9 @@
     left: auto !important;
     right: 0 !important;
     transform: translateY(-8px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid var(--teams-border) !important;
     z-index: 9999 !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 8px 32px var(--teams-shadow) !important;
     overflow: hidden !important;
 }
 
@@ -740,7 +741,7 @@
 }
 
 .more-action-dropdown .dropdown-item {
-    color: #ffffff !important;
+    color: var(--teams-text-primary) !important;
     padding: 10px 16px !important;
     font-size: 13px;
     transition: background-color 0.15s ease;
@@ -758,16 +759,25 @@
 }
 
 .more-action-dropdown .dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: var(--teams-bg-tertiary) !important;
 }
 
 .more-action-dropdown .dropdown-item:active {
-    background: rgba(255, 255, 255, 0.12) !important;
+    background: var(--teams-bg-tertiary) !important;
 }
 
 .more-action-dropdown .dropdown-divider {
-    border-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: var(--teams-border) !important;
     margin: 4px 12px !important;
+}
+
+.more-action-dropdown .dropdown-header {
+    color: var(--teams-text-muted) !important;
+    font-size: 11px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    padding: 8px 16px 4px !important;
 }
 
 .more-action-dropdown .dropdown-header {
@@ -780,7 +790,7 @@
 }
 
 .more-action-dropdown .text-danger {
-    color: #c4314b !important;
+    color: var(--teams-danger) !important;
 }
 
 .more-action-dropdown .text-danger:hover {
@@ -884,8 +894,8 @@ textarea {
 }
 
 textarea.form-control {
-    background-color: #eee !important;
-    color: #000 !important;
+    background-color: var(--teams-bg-tertiary) !important;
+    color: var(--teams-text-primary) !important;
 }
 
 textarea:focus {
@@ -1043,12 +1053,12 @@ textarea:focus {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--teams-border);
     border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--teams-text-muted);
 }
 
 /* =====================================================
@@ -1084,7 +1094,7 @@ textarea:focus {
 }
 
 .nav-pills .nav-link:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--teams-bg-tertiary);
     color: var(--teams-text-primary);
 }
 
@@ -1195,4 +1205,70 @@ textarea:focus {
 .container-border {
     border: 1px solid var(--teams-border) !important;
     border-radius: 8px;
+}
+
+.avatar-container {
+    background-color: var(--teams-bg-secondary);
+}
+
+.theme-icon,
+.participant-name {
+    color: var(--teams-text-primary);
+}
+
+/* =====================================================
+   Footer Theme Overrides
+   ===================================================== */
+/* Override Bootstrap text-white in footer for theme support */
+.footer-section .text-white,
+.footer-section span.text-white,
+.footer-center.text-white,
+.footer-center span {
+    color: var(--teams-text-primary) !important;
+}
+
+/* Footer separator */
+.footer-section span.text-white:not(.badge) {
+    color: var(--teams-border) !important;
+}
+
+/* Presenting bar */
+.footer-section .bg-white.text-dark {
+    background-color: var(--teams-bg-tertiary) !important;
+    color: var(--teams-text-primary) !important;
+}
+
+/* Recording indicator border */
+.footer-section .border {
+    border-color: var(--teams-border) !important;
+}
+
+/* Emoji dropdown theme override */
+.emoji-dropdown.bg-dark {
+    background-color: var(--teams-bg-secondary) !important;
+}
+
+.emoji-dropdown.text-white {
+    color: var(--teams-text-primary) !important;
+}
+
+/* Hand raise background override */
+.footer-left a.bg-body-tertiary {
+    background-color: var(--teams-bg-tertiary) !important;
+}
+
+/* Hand raise SVG when active */
+.footer-left a.bg-body-tertiary svg {
+    fill: var(--teams-text-primary) !important;
+}
+
+/* SVG icons in footer - inherit theme colors */
+.footer-left a svg[fill="#FFFFFF"],
+.footer-left button svg[fill="#FFFFFF"] {
+    fill: var(--teams-text-primary);
+}
+
+/* Active presenting indicator */
+.footer-left a svg[fill="#6264a7"] {
+    fill: var(--teams-accent) !important;
 }

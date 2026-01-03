@@ -1,25 +1,25 @@
 /* ===== Microsoft Teams Inspired Chat Styles ===== */
 
-/* ===== CSS Variables for Teams Theme ===== */
+/* ===== CSS Variables for Teams Theme - Using Global Theme ===== */
 :host {
-    --teams-primary: #5b5fc7;
-    --teams-primary-hover: #4f52b2;
-    --teams-primary-light: #e8ebfa;
-    --teams-bg-sidebar: #f5f5f5;
-    --teams-bg-main: #ffffff;
-    --teams-bg-message-sent: #e8ebfa;
-    --teams-bg-message-received: #f0f0f0;
-    --teams-text-primary: #242424;
-    --teams-text-secondary: #616161;
-    --teams-text-muted: #8a8a8a;
-    --teams-border: #e0e0e0;
-    --teams-hover: #ebebeb;
-    --teams-selected: #e0e3f8;
+    --teams-primary: var(--theme-accent);
+    --teams-primary-hover: var(--theme-accent-hover);
+    --teams-primary-light: rgba(91, 95, 199, 0.15);
+    --teams-bg-sidebar: var(--theme-sidebar-bg);
+    --teams-bg-main: var(--theme-bg-secondary);
+    --teams-bg-message-sent: var(--theme-accent);
+    --teams-bg-message-received: var(--theme-bg-tertiary);
+    --teams-text-primary: var(--theme-text-primary);
+    --teams-text-secondary: var(--theme-text-secondary);
+    --teams-text-muted: var(--theme-text-muted);
+    --teams-border: var(--theme-border);
+    --teams-hover: var(--theme-bg-hover);
+    --teams-selected: rgba(91, 95, 199, 0.2);
     --teams-online: #92c353;
     --teams-offline: #c4314b;
     --teams-away: #f8d22a;
-    --teams-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --teams-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
+    --teams-shadow: 0 2px 8px var(--theme-shadow);
+    --teams-shadow-hover: 0 4px 12px var(--theme-shadow);
     --teams-radius: 8px;
     --teams-radius-large: 12px;
     --teams-transition: all 0.2s ease;
@@ -33,7 +33,7 @@
 .teams-chat-wrapper {
     display: flex;
     height: 100vh;
-    max-height: 100vh;
+    /* max-height: 100vh; */
     background-color: var(--teams-bg-main);
     font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
     overflow: hidden;
@@ -392,10 +392,11 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 16px 24px;
-    background-color: #fafafa;
+    background-color: var(--teams-bg-main);
     display: flex;
     flex-direction: column;
     min-height: 0;
+    transition: background-color 0.3s ease;
 }
 
 .messages-container::-webkit-scrollbar {
@@ -407,12 +408,12 @@
 }
 
 .messages-container::-webkit-scrollbar-thumb {
-    background: #d4d4d4;
+    background: var(--teams-border);
     border-radius: 4px;
 }
 
 .messages-container::-webkit-scrollbar-thumb:hover {
-    background: #bdbdbd;
+    background: var(--teams-text-muted);
 }
 
 /* Message Wrapper */
@@ -518,7 +519,7 @@
 .message-input-wrapper {
     display: flex;
     align-items: flex-end;
-    background-color: #f5f5f5;
+    background-color: var(--teams-bg-sidebar);
     border-radius: var(--teams-radius-large);
     border: 1px solid var(--teams-border);
     transition: var(--teams-transition);
@@ -620,7 +621,7 @@
 }
 
 .send-btn:disabled {
-    background-color: #d4d4d4;
+    background-color: var(--teams-border);
     cursor: not-allowed;
 }
 
