@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MonitorService } from '../providers/services/monitor.service';
 import { ClientInfo, MonitorResponse } from '../models/monitor.model';
+import { ParticipantStatus } from '../models/conference_call/call_model';
 
 @Component({
     selector: 'app-monitor-dashboard',
@@ -26,6 +27,7 @@ export class MonitorDashboardComponent implements OnInit, OnDestroy {
     readonly rooms = this.monitorService.rooms;
     readonly calls = this.monitorService.calls;
     readonly clients = this.monitorService.clients;
+    readonly roomParticipantsStats = this.monitorService.roomParticipantsStats;
     readonly statusCount = this.monitorService.statusCount;
 
     // Computed signal for status count keys (Object.keys can't be used in templates)
@@ -35,12 +37,51 @@ export class MonitorDashboardComponent implements OnInit, OnDestroy {
     searchQuery = signal<string>('');
     statusFilter = signal<string>('all');
     roomSearch = signal<string>('');
+    roomParticipantSearch = signal<string>('');
+    roomFilter = signal<string>('');
     isAutoRefreshEnabled = signal<boolean>(true);
     isDarkMode = signal<boolean>(false); // Default to light mode
 
     toggleTheme(): void {
         this.isDarkMode.update(v => !v);
     }
+
+    getRooms(): string[] {
+        let stats = this.roomParticipantsStats();
+        if (stats && stats.length > 0) {
+            return stats.map(s => s.roomName);
+        }
+        return [];
+    }
+
+    // Filtered room participants stats
+    readonly filteredRoomParticipantsStats = computed(() => {
+        let stats = this.roomParticipantsStats();
+
+        if (!stats || stats.length === 0) return [];
+
+        let participants: any[] = [];
+        const roomName = this.roomFilter();
+
+        // If no room selected, return empty
+        if (!roomName) {
+            return [];
+        }
+
+        // Find the specific room
+        let stat = stats.find(s => s.roomName === roomName);
+        if (stat && stat.participants) {
+            participants = Object.keys(stat.participants).map(key => stat.participants[key]);
+        }
+
+        const query = this.roomParticipantSearch().toLowerCase().trim();
+        if (!query) return participants;
+
+        return participants.filter(s =>
+            s.conversationId?.toLowerCase().includes(query) ||
+            s.name?.toLowerCase().includes(query)
+        );
+    });
 
     // Filtered clients
     readonly filteredClients = computed(() => {
@@ -103,6 +144,18 @@ export class MonitorDashboardComponent implements OnInit, OnDestroy {
         this.monitorService.startAutoRefresh();
     }
 
+    getStatus(statusId: number): string {
+        switch (statusId) {
+            case ParticipantStatus.RINGING: return "ringing";
+            case ParticipantStatus.ACCEPTED: return "accepted";
+            case ParticipantStatus.REJECTED: return "rejected";
+            case ParticipantStatus.TIMEOUT: return "timeout";
+            case ParticipantStatus.LEFT: return "left";
+            case ParticipantStatus.DIMISS: return "dismiss";
+            default: return 'Unknown';
+        }
+    }
+
     ngOnDestroy(): void {
         this.monitorService.stopAutoRefresh();
     }
@@ -115,6 +168,11 @@ export class MonitorDashboardComponent implements OnInit, OnDestroy {
     onStatusFilterChange(event: Event): void {
         const select = event.target as HTMLSelectElement;
         this.statusFilter.set(select.value);
+    }
+
+    onRoomFilterChange(event: Event): void {
+        const select = event.target as HTMLSelectElement;
+        this.roomFilter.set(select.value);
     }
 
     onRoomSearchChange(event: Event): void {

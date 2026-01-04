@@ -14,6 +14,9 @@ export const CallEvents = {
     // EventCallReject - Callee rejects the incoming call
     CALL_REJECT: 'call:reject',
 
+    // EventCallDismiss - Caller cancels before callee answers
+    CALL_DISMISS: 'call:dismiss',
+
     // EventCallCancel - Caller cancels before callee answers
     CALL_CANCEL: 'call:cancel',
 
@@ -39,6 +42,9 @@ export const CallServerEvents = {
 
     // EventCallRejected - Notify caller that callee rejected
     CALL_REJECTED: 'call:rejected',
+
+    // EventCallDismissed - Notify caller that callee dismissed
+    CALL_DISMISSED: 'call:dismissed',
 
     // EventCallCancelled - Notify callee that caller cancelled
     CALL_CANCELLED: 'call:cancelled',
@@ -67,6 +73,18 @@ export const CallType = {
 // ============================================
 // Call Status Constants
 // ============================================
+export const ParticipantStatus = {
+    RINGING: 1,
+    ACCEPTED: 2,
+    REJECTED: 3,
+    TIMEOUT: 4,
+    LEFT: 5,
+    DIMISS: 6,
+} as const;
+
+// ============================================
+// Call Status Constants
+// ============================================
 export const CallStatus = {
     INITIATED: 1,
     RINGING: 2,
@@ -78,7 +96,8 @@ export const CallStatus = {
     BUSY: 8,
     FAILED: 9,
     MISSED: 10,
-    JOINING_REQUEST: 11
+    JOINING_REQUEST: 11,
+    DISMISSED: 12
 } as const;
 
 // ============================================
@@ -139,6 +158,9 @@ export type CallEndReasonValue = typeof CallEndReason[keyof typeof CallEndReason
 /** CallParticipant tracks individual participant status in a call */
 export interface CallParticipant {
     userId: string;
+    name: string; // Display name
+    avatar: string; // Avatar URL
+    email: string; // Email address
     status: CallStatusValue;        // Participant-specific status
     joinedAt?: Date;                // When they joined
     leftAt?: Date;                  // When they left
@@ -166,6 +188,13 @@ export interface CallAcceptPayload {
 
 /** CallRejectPayload is sent by callee to reject a call */
 export interface CallRejectPayload {
+    conversationId: string;
+    callerId: string;
+    reason?: string;                // Optional rejection reason
+}
+
+/** CallDismissPayload is sent by caller to dismiss a call */
+export interface CallDismissPayload {
     conversationId: string;
     callerId: string;
     reason?: string;                // Optional rejection reason
@@ -201,6 +230,7 @@ export interface CallIncomingEvent {
     callerName?: string;            // Display name
     callerAvatar?: string;          // Avatar URL
     callType: CallTypeValue;        // "audio" or "video"
+    participants: Record<string, CallParticipant>;
     timeout: number;                // Seconds until timeout
     timestamp: number;              // Unix timestamp
 }
@@ -218,6 +248,14 @@ export interface CallAcceptedEvent {
 export interface CallRejectedEvent {
     conversationId: string;
     rejectedBy: string;
+    reason?: string;
+    timestamp: number;
+}
+
+/** CallDismissedEvent is sent to caller when callee dismisses */
+export interface CallDismissedEvent {
+    callId: string;
+    dismissedBy: string;
     reason?: string;
     timestamp: number;
 }

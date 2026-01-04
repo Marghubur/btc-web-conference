@@ -219,7 +219,7 @@
     </div>
 
     <!-- Connected Clients Section -->
-    <div class="section-card clients-section">
+    <div class="section-card clients-section mb-4">
         <div class="section-header">
             <h2 class="section-title">
                 <i class="fa-solid fa-users"></i>
@@ -269,6 +269,69 @@
                             </span>
                         </td>
                         <td class="cell-id">{{ client.currentConversationId ?? '-' }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+            } @else {
+            <div class="empty-state">
+                <i class="fa-solid fa-user-slash"></i>
+                <p>No clients match your filters</p>
+            </div>
+            }
+        </div>
+    </div>
+
+    <!-- Connected Clients Section -->
+    <div class="section-card clients-section mb-4">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fa-solid fa-users"></i>
+                Active Rooms
+            </h2>
+            <div class="section-badge">
+                <span class="badge-total">{{ clients().length }} clients</span>
+            </div>
+        </div>
+
+        <div class="clients-filters">
+            <div class="filter-search col-md-8">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" placeholder="Search by Client ID, User ID..." [value]="searchQuery()"
+                    (input)="onSearchChange($event)">
+            </div>
+            <div class="filter-status col-md-4">
+                <select [value]="roomFilter()" class="col-md-12" (change)="onRoomFilterChange($event)">
+                    <option value="">Select Room</option>
+                    @for(room of getRooms(); track $index) {
+                    <option value="{{room}}">{{room}}</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            @if (filteredRoomParticipantsStats().length > 0) {
+            <table class="data-table clients-table">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Participant Name</th>
+                        <th>Status</th>
+                        <th>Joined At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (participant of filteredRoomParticipantsStats(); track participant.userId) {
+                    <tr>
+                        <td class="cell-id">{{ participant.userId }}</td>
+                        <td class="cell-id">{{ participant.name }}</td>
+                        <td>
+                            <span class="client-status" [class]="'status-' + getStatus(participant.status)">
+                                {{ getStatus(participant.status) | titlecase }}
+                            </span>
+                        </td>
+                        <td class="cell-id">{{ participant.joinedAt | date }}</td>
                     </tr>
                     }
                 </tbody>

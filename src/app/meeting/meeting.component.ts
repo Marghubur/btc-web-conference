@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, effect, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { createLocalScreenTracks, LocalTrackPublication, LocalVideoTrack, RemoteVideoTrack, Room } from 'livekit-client';
 import { RoomService } from '../providers/services/room.service';
@@ -20,10 +20,17 @@ import { Offcanvas } from 'bootstrap';
 import { User } from '../models/model';
 import { hand_down, hand_raise } from '../models/constant';
 import { MeetingService } from './meeting.service';
+import { CallEventService } from '../providers/socket/call-event.service';
+import { CallParticipant } from '../models/conference_call/call_model';
+import { MeetingScreenshareViewComponent } from './screenshare/screenshare.component';
+import { MeetingViewComponent } from './meeting-view/meeting-view.component';
+
+import { ParticipantRosterComponent } from './participant-roster/participant-roster.component';
+
 @Component({
     selector: 'app-meeting',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule],
+    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule, MeetingScreenshareViewComponent, MeetingViewComponent, ParticipantRosterComponent],
     templateUrl: './meeting.component.html',
     styleUrl: './meeting.component.css',
     providers: [NgbTooltipConfig],
@@ -91,6 +98,7 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     // Subscriptions - consolidated for cleanup
     private subscriptions = new Subscription();
     isMyshareScreen: boolean = false;
+    localScreenTrack: LocalVideoTrack | null = null;
     mediaRecorder!: MediaRecorder;
     recordedChunks: BlobPart[] = [];
     meetingUrl = window.location.href;
@@ -116,20 +124,37 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
         { name: 'Mike Wilson', email: 'mike.w@company.com', invited: true }
     ];
 
-    get filteredInvitedParticipants(): InvitedParticipant[] {
-        if (!this.participantFilter.trim()) {
-            return this.invitedParticipants;
-        }
-        const filter = this.participantFilter.toLowerCase();
-        return this.invitedParticipants.filter(p =>
-            p.name.toLowerCase().includes(filter) ||
-            p.email.toLowerCase().includes(filter)
-        );
+    // Use signal for participant filter to make it reactive
+    private participantFilterSignal = signal('');
+
+    // // Computed signal - only recalculates when incomingCall or filter changes
+    // filteredInvitedParticipants = computed(() => {
+    //     let participants: CallParticipant[] = [];
+    //     const p = this.eventService.incomingCall();
+
+    //     // Check if incomingCall exists and has participants
+    //     if (p && p.participants && Object.keys(p.participants).length > 0) {
+    //         participants = Object.keys(p.participants).map(x => p.participants[x]);
+    //     }
+
+    //     const filterValue = this.participantFilterSignal().toLowerCase().trim();
+    //     if (!filterValue) {
+    //         return participants;
+    //     }
+
+    //     return participants.filter(p =>
+    //         p.name.toLowerCase().includes(filterValue) ||
+    //         p.email.toLowerCase().includes(filterValue)
+    //     );
+    // });
+
+    toggleParticipanatsList() {
+        this.isViewParticipant = !this.isViewParticipant;
     }
 
     filterParticipants(event: Event): void {
         const target = event.target as HTMLInputElement;
-        this.participantFilter = target.value;
+        this.participantFilterSignal.set(target.value);
     }
 
     requestToJoin(participant: InvitedParticipant): void {
@@ -145,6 +170,7 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     constructor(
         private cameraService: CameraService,
         private route: ActivatedRoute,
+        private eventService: CallEventService,
         public roomService: RoomService,
         private nav: iNavigation,
         private router: Router,
@@ -156,7 +182,7 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
         public meetingService: MeetingService,
         private tooltipConfig: NgbTooltipConfig
     ) {
-        // Configure tooltips to close properly on click
+        // Configure tooltips to only show on hover (prevents unintended click events)
         this.tooltipConfig.triggers = 'hover';
         this.tooltipConfig.container = 'body';
 
@@ -304,13 +330,14 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
             }
 
             this.isMyshareScreen = true;
+            this.localScreenTrack = screenTrack as LocalVideoTrack;
+
             // Detect when user presses "Stop sharing" in browser UI
             screenTrack.mediaStreamTrack.onended = () => {
                 this.stopScreenShare(); // 👈 implement cleanup here
             };
 
             await this.room()?.localParticipant.publishTrack(screenTrack);
-            screenTrack.attach(this.screenPreview.nativeElement);
         } catch (error) {
             console.warn('Screen share cancelled or failed:', error);
         }
@@ -320,6 +347,8 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!this.room) return;
 
         this.isMyshareScreen = false;
+        this.localScreenTrack = null;
+
         const publications = this.room()?.localParticipant.videoTrackPublications;
         publications?.forEach((pub: LocalTrackPublication) => {
             if (pub.track?.source === 'screen_share') {
@@ -328,10 +357,6 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
             }
         });
 
-        // Clear the preview
-        if (this.screenPreview?.nativeElement) {
-            this.screenPreview.nativeElement.srcObject = null;
-        }
         this.roomService.latestScreenShare.next(null);
     }
 

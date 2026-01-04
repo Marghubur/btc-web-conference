@@ -33,6 +33,7 @@ export class MonitorService {
     readonly rooms = computed(() => this._monitorData()?.rooms ?? null);
     readonly calls = computed(() => this._monitorData()?.calls ?? null);
     readonly clients = computed(() => this._monitorData()?.clients ?? []);
+    readonly roomParticipantsStats = computed(() => this._monitorData()?.roomParticipantsStats ?? []);
     readonly statusCount = computed(() => this._monitorData()?.statusCount ?? {});
 
     /**

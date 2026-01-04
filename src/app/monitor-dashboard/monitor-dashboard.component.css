@@ -607,6 +607,16 @@
     color: #d97706;
 }
 
+.client-status.status-ringing {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+.client-status.status-accepted {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
+}
+
 .clients-table .table-container {
     max-height: 400px;
 }

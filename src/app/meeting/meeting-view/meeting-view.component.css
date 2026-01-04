@@ -1,0 +1,178 @@
+/* =====================================================
+   Meeting View Component Styles
+   ===================================================== */
+
+/* CSS Variables - Using Global Theme Variables */
+:host {
+    display: block;
+    width: 100%;
+    --teams-bg-primary: var(--theme-bg-primary);
+    --teams-bg-secondary: var(--theme-bg-secondary);
+    --teams-bg-tertiary: var(--theme-bg-tertiary);
+    --teams-text-primary: var(--theme-text-primary);
+    --teams-text-muted: var(--theme-text-muted);
+    --teams-border: var(--theme-border);
+}
+
+/* =====================================================
+   Video Grid Container
+   ===================================================== */
+.meet-container {
+    width: 100%;
+    height: 87vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 8px;
+}
+
+.grid-container {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+    min-height: 0;
+    max-height: 87vh;
+    overflow: hidden;
+    align-items: stretch;
+    align-content: center;
+    justify-content: center;
+    background: var(--teams-bg-primary);
+    border-radius: 12px;
+}
+
+/* Hide audio components from layout */
+.grid-container audio-component[hidden] {
+    display: none !important;
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Base video tile styles */
+.grid-container>video-component,
+.grid-container>div:not([hidden]) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.grid-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover !important;
+    border-radius: 8px;
+}
+
+/* Grid Layouts Based on Participant Count */
+
+/* 1 user: Full screen */
+.grid-container[data-count="1"]>video-component,
+.grid-container[data-count="1"]>div:not([hidden]) {
+    width: calc(100% - 0px);
+    height: calc(100% - 0px);
+}
+
+/* 2 users: One row, two equal columns (50% / 50%) */
+.grid-container[data-count="2"]>video-component,
+.grid-container[data-count="2"]>div:not([hidden]) {
+    width: calc(50% - 4px);
+    height: 100%;
+}
+
+/* 3 users: 2 in first row, 1 centered in second row */
+.grid-container[data-count="3"]>video-component,
+.grid-container[data-count="3"]>div:not([hidden]) {
+    width: calc(50% - 4px);
+    height: calc(50% - 4px);
+}
+
+/* 4 users: Two rows, two columns */
+.grid-container[data-count="4"]>video-component,
+.grid-container[data-count="4"]>div:not([hidden]) {
+    width: calc(50% - 4px);
+    height: calc(50% - 4px);
+}
+
+/* 5 users: 3 in first row, 2 centered in second row */
+.grid-container[data-count="5"]>video-component,
+.grid-container[data-count="5"]>div:not([hidden]) {
+    width: calc(33.333% - 6px);
+    height: calc(50% - 4px);
+}
+
+/* 6 users: 3 in first row, 3 in second row */
+.grid-container[data-count="6"]>video-component,
+.grid-container[data-count="6"]>div:not([hidden]) {
+    width: calc(33.333% - 6px);
+    height: calc(50% - 4px);
+}
+
+/* 7 users: 4 in first row, 3 centered in second row */
+.grid-container[data-count="7"]>video-component,
+.grid-container[data-count="7"]>div:not([hidden]) {
+    width: calc(25% - 6px);
+    height: calc(50% - 4px);
+}
+
+/* 8 or more users: 4 in first row, 4 in second row (max 8 visible) */
+.grid-container[data-count="8"]>video-component,
+.grid-container[data-count="8"]>div:not([hidden]),
+.grid-container[data-count="9"]>video-component,
+.grid-container[data-count="9"]>div:not([hidden]),
+.grid-container[data-count="10"]>video-component,
+.grid-container[data-count="10"]>div:not([hidden]),
+.grid-container[data-count="11"]>video-component,
+.grid-container[data-count="11"]>div:not([hidden]),
+.grid-container[data-count="12"]>video-component,
+.grid-container[data-count="12"]>div:not([hidden]) {
+    width: calc(25% - 6px);
+    height: calc(50% - 4px);
+}
+
+/* Hide extra participants beyond 8 */
+.grid-container[data-count="9"]>video-component:nth-of-type(n+9),
+.grid-container[data-count="9"]>div:not([hidden]):nth-of-type(n+9),
+.grid-container[data-count="10"]>video-component:nth-of-type(n+9),
+.grid-container[data-count="10"]>div:not([hidden]):nth-of-type(n+9),
+.grid-container[data-count="11"]>video-component:nth-of-type(n+9),
+.grid-container[data-count="11"]>div:not([hidden]):nth-of-type(n+9),
+.grid-container[data-count="12"]>video-component:nth-of-type(n+9),
+.grid-container[data-count="12"]>div:not([hidden]):nth-of-type(n+9) {
+    display: none !important;
+}
+
+/* =====================================================
+   Video Tile Placeholders
+   ===================================================== */
+.user-name-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.user-name-icon-lg {
+    width: 80px;
+    height: 80px;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.h-97 {
+    height: 97%;
+    border-radius: 12px;
+}
+
+.user-mute-mic {
+    top: 8px;
+    right: 8px;
+    background: var(--teams-bg-secondary);
+    border-radius: 50%;
+    padding: 4px;
+}

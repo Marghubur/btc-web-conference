@@ -1,7 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import {
-  ChatMessage,
   Participant,
   RemoteParticipant,
   RemoteTrack,
@@ -18,11 +17,6 @@ import { environment } from '../../../environments/environment';
 import { Chat, ClappingHands, CryingFace, FacewithOpenMouth, FacewithTearsofJoy, hand_down, hand_raise, PartyPopper, reaction, SparklingHeart, ThinkingFace, ThumbsDown, ThumbsUp } from '../../models/constant';
 import { ResponseModel } from '../../models/model';
 
-type TrackInfo = {
-  trackPublication: RemoteTrackPublication;
-  participantIdentity: string;
-};
-
 @Injectable({
   providedIn: 'root',
 })
@@ -30,7 +24,6 @@ export class RoomService {
   private APPLICATION_SERVER_URL = '';
   private LIVEKIT_URL = '';
   private ipAddress = 'localhost';
-  private liveAddress: any = 'www.axilcorps.com';
   private sfuProdEnabled: boolean = false;
   private applicationProdEnabled: boolean = false;
 

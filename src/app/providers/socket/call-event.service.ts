@@ -29,6 +29,9 @@ import {
     CallEndedEvent,
     CallBusyEvent,
     CallErrorEvent,
+    CallDismissPayload,
+    CallDismissedEvent,
+    CallParticipant,
 } from '../../models/conference_call/call_model';
 
 @Injectable({
@@ -50,6 +53,9 @@ export class CallEventService {
 
     /** Emits when callee rejects the call */
     callRejected$: Observable<CallRejectedEvent>;
+
+    /** Emits when caller dismisses the call */
+    callDismissed$: Observable<CallDismissedEvent>;
 
     /** Emits when caller cancels before answer */
     callCancelled$: Observable<CallCancelledEvent>;
@@ -73,6 +79,9 @@ export class CallEventService {
     /** Call status for UI display */
     public callStatus = signal<CallStatusValue | null>(null);
 
+    /** Call status for UI display */
+    public participantsInRoom = signal<CallParticipant[] | null>(null);
+
     /** Is receiving an incoming call */
     public hasIncomingCall = signal<boolean>(false);
 
@@ -81,9 +90,6 @@ export class CallEventService {
 
     /** Incoming call details */
     public incomingCall = signal<CallIncomingEvent | null>(null);
-
-    /** Joining request details */
-    public joiningRequest = signal<CallIncomingEvent | null>(null);
 
     private subscriptions = new Subscription();
 
@@ -96,6 +102,7 @@ export class CallEventService {
         this.callJoiningRequest$ = this.onCallEvent<CallIncomingEvent>(CallServerEvents.CALL_JOINING_REQUEST);
         this.callAccepted$ = this.onCallEvent<CallAcceptedEvent>(CallServerEvents.CALL_ACCEPTED);
         this.callRejected$ = this.onCallEvent<CallRejectedEvent>(CallServerEvents.CALL_REJECTED);
+        this.callDismissed$ = this.onCallEvent<CallDismissedEvent>(CallServerEvents.CALL_DISMISSED);
         this.callCancelled$ = this.onCallEvent<CallCancelledEvent>(CallServerEvents.CALL_CANCELLED);
         this.callTimedOut$ = this.onCallEvent<CallTimedOutEvent>(CallServerEvents.CALL_TIMED_OUT);
         this.callEnded$ = this.onCallEvent<CallEndedEvent>(CallServerEvents.CALL_ENDED);
@@ -242,16 +249,21 @@ export class CallEventService {
             callerId: callerId
         });
         this.hasJoiningRequest.set(false);
-        this.joiningRequest.set(null);
+        this.incomingCall.set(null);
         this.callStatus.set(CallStatus.ACCEPTED);
     }
 
     /**
      * Dismiss/ignore a joining request
      */
-    dismissJoiningRequest(): void {
+    dismissJoiningRequest(conversationId: string, callerId: string, reason?: string): void {
+        this.send(CallEvents.CALL_DISMISS, <CallDismissPayload>{
+            conversationId: conversationId,
+            callerId: callerId,
+            reason: reason || CallEndReason.NORMAL
+        });
         this.hasJoiningRequest.set(false);
-        this.joiningRequest.set(null);
+        this.incomingCall.set(null);
     }
 
     // =========================================================
@@ -275,6 +287,15 @@ export class CallEventService {
         this.ws.sendEvent(event, payload);
     }
 
+    private updateParticipantsInRoom(event: Record<string, CallParticipant>): void {
+        // Check if incomingCall exists and has participants
+        if (event && Object.keys(event).length > 0) {
+            this.participantsInRoom.set(Object.keys(event).map(x => event[x]));
+        } else {
+            this.participantsInRoom.set([]);
+        }
+    }
+
     /**
      * Register handlers for incoming call events
      */
@@ -290,8 +311,9 @@ export class CallEventService {
                     return;
                 }
 
-                this.hasIncomingCall.set(true);
+                // Only set data for callees
                 this.incomingCall.set(event);
+                this.hasIncomingCall.set(true);
                 this.callStatus.set(CallStatus.RINGING);
                 console.log('Incoming call from:', event.callerId);
             })
@@ -302,14 +324,16 @@ export class CallEventService {
             this.callJoiningRequest$.subscribe(event => {
                 const currentUser = this.local.getUser();
 
+                this.updateParticipantsInRoom(event.participants);
                 // Skip if I am the caller (I should not get notified of my own call)
                 if (currentUser && event.callerId === currentUser.userId) {
                     console.log('Ignoring joining request event - I am the caller');
                     return;
                 }
 
+                // Only set data for callees
+                this.incomingCall.set(event);
                 this.hasJoiningRequest.set(true);
-                this.joiningRequest.set(event);
                 this.callStatus.set(CallStatus.JOINING_REQUEST);
                 console.log('Joining request from:', event.callerId);
             })
@@ -330,6 +354,13 @@ export class CallEventService {
                 this.callStatus.set(CallStatus.REJECTED);
                 this.resetCallState();
                 console.log('Call rejected by:', event.rejectedBy);
+            })
+        );
+
+        // Handle call dismissed
+        this.subscriptions.add(
+            this.callDismissed$.subscribe(event => {
+                console.log('Call dismissed by:', JSON.stringify(event));
             })
         );
 

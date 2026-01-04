@@ -2,15 +2,29 @@
 // Monitor API Response Models
 // -----------------------------------------------------------------
 
+import { CallParticipant } from "./conference_call/call_model";
+
 // MonitorResponse is the main response for the monitor API
 export interface MonitorResponse {
     status: 'healthy' | 'degraded' | 'unhealthy';
     IsSuccess: boolean;
     connections: ConnectionStats;
+    roomParticipantsStats: RoomParticipantsStats[];
     rooms: RoomStats;
     calls: CallStats;
     clients: ClientInfo[];
     statusCount: { [key: string]: number };
+}
+
+export interface RoomParticipantsStats {
+    conversationId: string;
+    callerId: string;
+    callType: string;
+    status: number;
+    timeout: number;
+    createdAt: Date;
+    participants: Record<string, CallParticipant>;
+    roomName: string;
 }
 
 // ConnectionStats holds connection-related statistics

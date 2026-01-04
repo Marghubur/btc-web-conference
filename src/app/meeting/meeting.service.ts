@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 import { RoomService } from './../providers/services/room.service';
 import { LocalService } from './../providers/services/local.service';
 import { iNavigation } from './../providers/services/iNavigation';
@@ -9,6 +9,7 @@ import { DeviceService } from '../layout/device.service';
 import { CallEventService } from '../providers/socket/call-event.service';
 import { User } from '../models/model';
 import { Dashboard, Login } from '../models/constant';
+import { CallParticipant, ParticipantStatus } from '../models/conference_call/call_model';
 
 @Injectable({
   providedIn: 'root'
@@ -30,6 +31,8 @@ export class MeetingService {
   /** Room and track state */
   room = signal<Room | undefined>(undefined);
   localTrack = signal<LocalVideoTrack | undefined>(undefined);
+
+  private participantFilterSignal = signal('');
 
   /** Preview stream for camera preview before joining */
   private _previewStream = signal<MediaStream | undefined>(undefined);
@@ -68,6 +71,36 @@ export class MeetingService {
   /** Called externally (e.g., from preview) to indicate user is joining a meeting */
   userJoinRoom() {
     this._inMeeting.set(true);
+  }
+
+  // Computed signal - only recalculates when incomingCall or filter changes
+  filteredInvitedParticipants(isInRoom: boolean = true): CallParticipant[] {
+    let participants: CallParticipant[] = this.callEventService.participantsInRoom();
+
+    if (!participants) {
+      return [];
+    }
+
+    if (isInRoom) {
+      participants = participants.filter(p => p.status == ParticipantStatus.ACCEPTED);
+    } else {
+      participants = participants.filter(p => p.status != ParticipantStatus.ACCEPTED);
+    }
+
+    const filterValue = this.participantFilterSignal().toLowerCase().trim();
+    if (!filterValue) {
+      return participants;
+    }
+
+    return participants.filter(p =>
+      p.name.toLowerCase().includes(filterValue) ||
+      p.email.toLowerCase().includes(filterValue)
+    );
+  }
+
+  filterParticipants(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.participantFilterSignal.set(target.value);
   }
 
   // ==================== Meeting Lifecycle ====================

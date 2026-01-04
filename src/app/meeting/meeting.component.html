@@ -10,388 +10,35 @@
         </div>
         } @else {
         <div id="room" class="w-100">
-            @if(currentScreenTrack != null || isMyshareScreen) {
             <div class="row col-md-12 justify-content-center pt-3">
+                <!-- Participant Roster - Shared across both views -->
                 @if (isViewParticipant) {
-                <div class="col-md-2">
-                    <div class="participant-roster">
-                        <!-- Roster Header -->
-                        <div class="roster-header">
-                            <span class="roster-title">People</span>
-                            <span class="roster-count">{{remoteUsersCount + 1}}</span>
-                        </div>
-                        <!-- Filter Search Box -->
-                        <div class="roster-filter">
-                            <div class="filter-input-wrapper">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                    width="16px" fill="currentColor" class="filter-icon">
-                                    <path
-                                        d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z" />
-                                </svg>
-                                <input type="text" class="filter-input" placeholder="Search participants..."
-                                    [value]="participantFilter" (input)="filterParticipants($event)">
-                            </div>
-                        </div>
-                        <!-- Participant List -->
-                        <div class="roster-list">
-                            <!-- Section: In this call -->
-                            <div class="roster-section-header">
-                                <span>In this call ({{remoteUsersCount + 1}})</span>
-                            </div>
-                            <!-- Local Participant (You) -->
-                            <div class="participant-item">
-                                <div class="participant-avatar-wrapper">
-                                    <div class="participant-avatar"
-                                        [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                        {{getUserInitiaLetter(roomForm.value.participantName!)}}
-                                    </div>
-                                    <span class="status-dot online"></span>
-                                </div>
-                                <div class="participant-info">
-                                    <span class="participant-name">{{roomForm.value.participantName!}} (You)</span>
-                                    <span class="participant-status-text">In this meeting</span>
-                                </div>
-                                <div class="participant-actions">
-                                    @if (!meetingService.isMicOn()) {
-                                    <span class="action-icon muted" title="Microphone off">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                            width="16px" fill="currentColor">
-                                            <path
-                                                d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
-                                        </svg>
-                                    </span>
-                                    }
-                                    @if (!meetingService.isCameraOn()) {
-                                    <span class="action-icon camera-off" title="Camera off">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                            width="16px" fill="currentColor">
-                                            <path
-                                                d="M880-260 720-420v67l-80-80v-287H353l-80-80h367q33 0 56.5 23.5T720-720v180l160-160v440ZM822-26 26-822l56-56L878-82l-56 56ZM498-575ZM382-464ZM160-800l80 80h-80v480h480v-80l80 80q0 33-23.5 56.5T640-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800Z" />
-                                        </svg>
-                                    </span>
-                                    }
-                                </div>
-                            </div>
-                            <!-- Remote Participants -->
-                            @for (participant of remoteParticipants().values(); track participant.identity) {
-                            <div class="participant-item">
-                                <div class="participant-avatar-wrapper">
-                                    <div class="participant-avatar"
-                                        [ngStyle]="{'background-color': getColorFromName(participant.identity)}">
-                                        {{getUserInitiaLetter(participant.identity)}}
-                                    </div>
-                                    <span class="status-dot online"></span>
-                                </div>
-                                <div class="participant-info">
-                                    <span class="participant-name">{{participant.identity}}</span>
-                                    <span class="participant-status-text">In this meeting</span>
-                                </div>
-                                <div class="participant-actions">
-                                    @if (!isParticipantAudioEnabled(participant.identity)) {
-                                    <span class="action-icon muted" title="Microphone off">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                            width="16px" fill="currentColor">
-                                            <path
-                                                d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
-                                        </svg>
-                                    </span>
-                                    }
-                                    @if (!isParticipantCameraEnabled(participant.identity)) {
-                                    <span class="action-icon camera-off" title="Camera off">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                            width="16px" fill="currentColor">
-                                            <path
-                                                d="M880-260 720-420v67l-80-80v-287H353l-80-80h367q33 0 56.5 23.5T720-720v180l160-160v440ZM822-26 26-822l56-56L878-82l-56 56ZM498-575ZM382-464ZM160-800l80 80h-80v480h480v-80l80 80q0 33-23.5 56.5T640-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800Z" />
-                                        </svg>
-                                    </span>
-                                    }
-                                </div>
-                            </div>
-                            }
-                            <!-- Section Divider -->
-                            @if (filteredInvitedParticipants.length > 0) {
-                            <div class="roster-divider"></div>
-                            <!-- Section: Not in this call -->
-                            <div class="roster-section-header">
-                                <span>Not in this call ({{filteredInvitedParticipants.length}})</span>
-                            </div>
-                            @for (invited of filteredInvitedParticipants; track invited.email) {
-                            <div class="participant-item not-in-call">
-                                <div class="participant-avatar-wrapper">
-                                    <div class="participant-avatar"
-                                        [ngStyle]="{'background-color': getColorFromName(invited.name)}">
-                                        {{getUserInitiaLetter(invited.name)}}
-                                    </div>
-                                    <span class="status-dot offline"></span>
-                                </div>
-                                <div class="participant-info">
-                                    <span class="participant-name">{{invited.name}}</span>
-                                    <span class="participant-status-text">{{invited.email}}</span>
-                                </div>
-                                <div class="participant-actions">
-                                    <button class="request-join-btn" (click)="requestToJoin(invited)"
-                                        title="Request to join">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960"
-                                            width="14px" fill="currentColor">
-                                            <path
-                                                d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Z" />
-                                        </svg>
-                                        <span>Request</span>
-                                    </button>
-                                </div>
-                            </div>
-                            }
-                            }
-                        </div>
-                    </div>
+                <div class="col-md-3" [@slideFade]="isViewParticipant ? 'visible' : 'hidden'">
+                    <app-participant-roster [roomForm]="roomForm" [participantFilter]="participantFilter"
+                        [remoteUsersCount]="remoteUsersCount" [remoteParticipants]="remoteParticipants"
+                        [invitedParticipants]="invitedParticipants" [getColorFromName]="getColorFromName.bind(this)"
+                        [getUserInitiaLetter]="getUserInitiaLetter.bind(this)"
+                        [isParticipantAudioEnabled]="isParticipantAudioEnabled.bind(this)"
+                        [isParticipantCameraEnabled]="isParticipantCameraEnabled.bind(this)"
+                        (onRequestToJoin)="requestToJoin($event)">
+                    </app-participant-roster>
                 </div>
                 }
-                <div class="" [ngClass]="{'col-md-12': !isViewParticipant, 'col-md-10': isViewParticipant, }">
-                    @if (isMyshareScreen) {
-                    <video #screenPreview autoplay playsinline muted
-                        style="width: 100%; border: 2px solid #007bff; border-radius: 8px; height: 86vh;"></video>
-                    } @else if (remoteSharescreenTrack() != null) {
-                    <div class="meet-container">
-                        <video-component [track]="remoteSharescreenTrack().trackPublication.videoTrack!"
-                            [participantIdentity]="''"></video-component>
-                    </div>
+                <!-- Main Content Area -->
+                <div [ngClass]="{'col-md-12': !isViewParticipant, 'col-md-9': isViewParticipant}">
+                    @if(currentScreenTrack != null || isMyshareScreen) {
+                    <app-screenshare [isMyshareScreen]="isMyshareScreen" [localScreenTrack]="localScreenTrack">
+                    </app-screenshare>
+                    } @else {
+                    <app-meeting-view [roomForm]="roomForm" [getColorFromName]="getColorFromName.bind(this)"
+                        [getUserInitiaLetter]="getUserInitiaLetter.bind(this)"
+                        [isParticipantAudioEnabled]="isParticipantAudioEnabled.bind(this)"
+                        [isParticipantCameraEnabled]="isParticipantCameraEnabled.bind(this)"
+                        [getVideoTrack]="getVideoTrack.bind(this)">
+                    </app-meeting-view>
                     }
-
                 </div>
             </div>
-            } @else {
-            <div class="d-flex col-md-12 justify-content-center pt-3">
-                <div class="col-3 ps-2" [@slideFade]="isViewParticipant ? 'visible' : 'hidden'">
-                    <div class="participant-roster">
-                        <!-- Roster Header -->
-                        <div class="roster-header">
-                            <span class="roster-title">People</span>
-                            <span class="roster-count">{{remoteUsersCount + 1}}</span>
-                        </div>
-                        <!-- Filter Search Box -->
-                        <div class="roster-filter">
-                            <div class="filter-input-wrapper">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                    width="16px" fill="currentColor" class="filter-icon">
-                                    <path
-                                        d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z" />
-                                </svg>
-                                <input type="text" class="filter-input" placeholder="Search participants..."
-                                    [value]="participantFilter" (input)="filterParticipants($event)">
-                            </div>
-                        </div>
-                        <!-- Participant List -->
-                        <div class="roster-list">
-                            <!-- Section: In this call -->
-                            <div class="roster-section-header">
-                                <span>In this call ({{remoteUsersCount + 1}})</span>
-                            </div>
-                            <!-- Local Participant (You) -->
-                            <div class="participant-item">
-                                <div class="participant-avatar-wrapper">
-                                    <div class="participant-avatar"
-                                        [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                        {{getUserInitiaLetter(roomForm.value.participantName!)}}
-                                    </div>
-                                    <span class="status-dot online"></span>
-                                </div>
-                                <div class="participant-info">
-                                    <span class="participant-name">{{roomForm.value.participantName!}} (You)</span>
-                                    <span class="participant-status-text">In this meeting</span>
-                                </div>
-                                <div class="participant-actions">
-                                    @if (!meetingService.isMicOn()) {
-                                    <span class="action-icon muted" title="Microphone off">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                            width="16px" fill="currentColor">
-                                            <path
-                                                d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
-                                        </svg>
-                                    </span>
-                                    }
-                                    @if (!meetingService.isCameraOn()) {
-                                    <span class="action-icon camera-off" title="Camera off">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                            width="16px" fill="currentColor">
-                                            <path
-                                                d="M880-260 720-420v67l-80-80v-287H353l-80-80h367q33 0 56.5 23.5T720-720v180l160-160v440ZM822-26 26-822l56-56L878-82l-56 56ZM498-575ZM382-464ZM160-800l80 80h-80v480h480v-80l80 80q0 33-23.5 56.5T640-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800Z" />
-                                        </svg>
-                                    </span>
-                                    }
-                                </div>
-                            </div>
-                            <!-- Remote Participants -->
-                            @for (participant of remoteParticipants().values(); track participant.identity) {
-                            <div class="participant-item">
-                                <div class="participant-avatar-wrapper">
-                                    <div class="participant-avatar"
-                                        [ngStyle]="{'background-color': getColorFromName(participant.identity)}">
-                                        {{getUserInitiaLetter(participant.identity)}}
-                                    </div>
-                                    <span class="status-dot online"></span>
-                                </div>
-                                <div class="participant-info">
-                                    <span class="participant-name">{{participant.identity}}</span>
-                                    <span class="participant-status-text">In this meeting</span>
-                                </div>
-                                <div class="participant-actions">
-                                    @if (!isParticipantAudioEnabled(participant.identity)) {
-                                    <span class="action-icon muted" title="Microphone off">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                            width="16px" fill="currentColor">
-                                            <path
-                                                d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
-                                        </svg>
-                                    </span>
-                                    }
-                                    @if (!isParticipantCameraEnabled(participant.identity)) {
-                                    <span class="action-icon camera-off" title="Camera off">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960"
-                                            width="16px" fill="currentColor">
-                                            <path
-                                                d="M880-260 720-420v67l-80-80v-287H353l-80-80h367q33 0 56.5 23.5T720-720v180l160-160v440ZM822-26 26-822l56-56L878-82l-56 56ZM498-575ZM382-464ZM160-800l80 80h-80v480h480v-80l80 80q0 33-23.5 56.5T640-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800Z" />
-                                        </svg>
-                                    </span>
-                                    }
-                                </div>
-                            </div>
-                            }
-                            <!-- Section Divider -->
-                            @if (filteredInvitedParticipants.length > 0) {
-                            <div class="roster-divider"></div>
-                            <!-- Section: Not in this call -->
-                            <div class="roster-section-header">
-                                <span>Not in this call ({{filteredInvitedParticipants.length}})</span>
-                            </div>
-                            @for (invited of filteredInvitedParticipants; track invited.email) {
-                            <div class="participant-item not-in-call">
-                                <div class="participant-avatar-wrapper">
-                                    <div class="participant-avatar"
-                                        [ngStyle]="{'background-color': getColorFromName(invited.name)}">
-                                        {{getUserInitiaLetter(invited.name)}}
-                                    </div>
-                                    <span class="status-dot offline"></span>
-                                </div>
-                                <div class="participant-info">
-                                    <span class="participant-name">{{invited.name}}</span>
-                                    <span class="participant-status-text">{{invited.email}}</span>
-                                </div>
-                                <div class="participant-actions">
-                                    <button class="request-join-btn" (click)="requestToJoin(invited)"
-                                        title="Request to join">
-                                        <svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960"
-                                            width="14px" fill="currentColor">
-                                            <path
-                                                d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Z" />
-                                        </svg>
-                                        <span>Request</span>
-                                    </button>
-                                </div>
-                            </div>
-                            }
-                            }
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-9">
-                    <div class="meet-container px-0 pt-0">
-                        <div class="grid-container pe-1 pt-0 rounded" [attr.data-count]="remoteUsersCount + 1">
-                            @if (localTrack()) {
-                            @if (meetingService.isCameraOn()) {
-                            <video-component [track]="localTrack()!"
-                                [participantIdentity]="roomForm.value.participantName!" [local]="true"
-                                [isMute]="!meetingService.isMicOn()"></video-component>
-                            } @else {
-                            <div
-                                class="d-flex align-items-center justify-content-center h-97 bg-dark rounded position-relative">
-                                <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
-                                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
-                                </div>
-                                @if (!meetingService.isMicOn()) {
-                                <div class="position-absolute user-mute-mic">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
-                                        width="24px" fill="#222">
-                                        <path
-                                            d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
-                                    </svg>
-                                </div>
-                                }
-                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
-                                    style="bottom: 5px; left: 5px;">
-                                    {{roomForm.value.participantName!}}
-                                </div>
-                            </div>
-                            }
-                            } @else {
-                            <div
-                                class="d-flex align-items-center justify-content-center h-97 avatar-container rounded position-relative">
-                                <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
-                                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
-                                </div>
-                                @if (!meetingService.isMicOn()) {
-                                <div class="position-absolute user-mute-mic">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" width="24px"
-                                        viewBox="0 -960 960 960" fill="currentColor" class="theme-icon">
-
-                                        <path
-                                            d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
-                                    </svg>
-
-                                </div>
-                                }
-                                <div class="position-absolute participant-name fw-semibold col-md-12 text-truncate"
-                                    style="bottom: 5px; left: 5px;">
-                                    {{roomForm.value.participantName!}}
-                                </div>
-                            </div>
-                            }
-                            @for (participant of remoteParticipants().values(); track participant.identity) {
-                            @if (isParticipantCameraEnabled(participant.identity) &&
-                            getVideoTrack(participant.identity)) {
-                            <video-component [track]="getVideoTrack(participant.identity)!"
-                                [participantIdentity]="participant.identity"
-                                [isMute]="!isParticipantAudioEnabled(participant.identity)"></video-component>
-                            } @else {
-                            <!-- Avatar placeholder for participants without camera or with camera off -->
-                            <div
-                                class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
-                                <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
-                                    [ngStyle]="{'background-color': getColorFromName(participant.identity)}">
-                                    {{getUserInitiaLetter(participant.identity)}}
-                                </div>
-                                @if (!isParticipantAudioEnabled(participant.identity)) {
-                                <div class="position-absolute user-mute-mic">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
-                                        width="24px" fill="#000">
-                                        <path
-                                            d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
-                                    </svg>
-                                </div>
-                                }
-                                <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
-                                    style="bottom: 5px; left: 5px;">
-                                    {{participant.identity}}
-                                </div>
-                            </div>
-                            }
-                            }
-                            <!-- Hidden audio components for all remote tracks -->
-                            @for (remoteTrack of remoteTracksMap().values(); track
-                            remoteTrack.trackPublication.trackSid) {
-                            @if (remoteTrack.trackPublication.kind === 'audio') {
-                            <audio-component [track]="remoteTrack.trackPublication.audioTrack!"
-                                hidden></audio-component>
-                            }
-                            }
-                        </div>
-                    </div>
-                    <div id="layout-container" class="video-preview-container">
-                    </div>
-                </div>
-            </div>
-            }
         </div>
         }
     </div>
@@ -514,7 +161,7 @@
             }
             <span class="text-white">|</span>
             <a href="javascript:void(0)" class="text-decoration-none position-relative" placement="top"
-                ngbTooltip="Participants" (click)="isViewParticipant = !isViewParticipant">
+                ngbTooltip="Participants" (click)="toggleParticipanatsList()">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#FFFFFF">
                     <path
