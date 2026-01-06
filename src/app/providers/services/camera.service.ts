@@ -10,6 +10,7 @@ import {
   Room,
   RoomEvent,
   Track,
+  LocalTrackPublication,
 } from 'livekit-client';
 
 type TrackInfo = {
@@ -31,15 +32,19 @@ export class CameraService {
   }
 
   async enableCamera(room: Room, deviceId?: string) {
-    // First check if we already have a video track published
-    const existingVideoPub = room.localParticipant.videoTrackPublications.values().next().value;
-    const existingVideoTrack = existingVideoPub?.track;
+    // Find camera track only (exclude screen share)
+    let existingCameraTrack: LocalVideoTrack | undefined;
+    room.localParticipant.videoTrackPublications.forEach((pub) => {
+      if (pub.source === Track.Source.Camera && pub.track) {
+        existingCameraTrack = pub.track as LocalVideoTrack;
+      }
+    });
 
-    if (existingVideoTrack) {
-      // If track exists but is muted, unmute it
-      await existingVideoTrack.unmute();
+    if (existingCameraTrack) {
+      // If camera track exists but is muted, unmute it
+      await existingCameraTrack.unmute();
     } else {
-      // If no video track exists, create and publish one
+      // If no camera track exists, create and publish one
       const tracks = await createLocalTracks({
         video: { deviceId: deviceId || undefined },
       });
@@ -51,9 +56,12 @@ export class CameraService {
   }
 
   async disableCamera(room: Room) {
-    room.localParticipant.videoTrackPublications.forEach((trackPub) => {
-      trackPub.track?.stop();
-      room.localParticipant.unpublishTrack(trackPub.track!);
+    // Only stop camera tracks, not screen share
+    room.localParticipant.videoTrackPublications.forEach((trackPub: LocalTrackPublication) => {
+      if (trackPub.source === Track.Source.Camera && trackPub.track) {
+        trackPub.track.stop();
+        room.localParticipant.unpublishTrack(trackPub.track);
+      }
     });
   }
 
@@ -65,35 +73,60 @@ export class CameraService {
   async enableMic(room: Room, deviceId?: string) {
     // First check if we already have an audio track published
     const existingAudioTrack = room.localParticipant.audioTrackPublications.values().next().value?.track;
+    console.log('[enableMic] Existing audio track:', !!existingAudioTrack);
 
     if (existingAudioTrack) {
       // If track exists but is muted, unmute it
+      console.log('[enableMic] Unmuting existing track');
       await existingAudioTrack.unmute();
     } else {
-      // If no audio track exists, create and publish one
-      const tracks = await createLocalTracks({
-        audio: { deviceId: deviceId || undefined },
-      });
-      const audioTrack = tracks.find((t) => t.kind === 'audio');
-      if (audioTrack) {
-        await room.localParticipant.publishTrack(audioTrack);
+      // If no audio track exists, use LiveKit's built-in method
+      // This handles WebRTC complexities better, especially during screen share
+      console.log('[enableMic] No audio track exists, using setMicrophoneEnabled...');
+
+      try {
+        // Use LiveKit's built-in method which handles track creation internally
+        await room.localParticipant.setMicrophoneEnabled(true, {
+          deviceId: deviceId || undefined
+        });
+        console.log('[enableMic] setMicrophoneEnabled completed');
+
+        // Verify publication
+        const pubCount = room.localParticipant.audioTrackPublications.size;
+        console.log('[enableMic] Audio track publications count:', pubCount);
+
+        // Log all audio publications
+        room.localParticipant.audioTrackPublications.forEach((pub, key) => {
+          console.log('[enableMic] Audio publication:', {
+            sid: pub.trackSid,
+            source: pub.source,
+            isMuted: pub.isMuted,
+            trackExists: !!pub.track
+          });
+        });
+      } catch (error) {
+        console.error('[enableMic] setMicrophoneEnabled failed:', error);
+
+        // Fallback to manual track creation
+        console.log('[enableMic] Falling back to createLocalTracks...');
+        const tracks = await createLocalTracks({
+          audio: { deviceId: deviceId || undefined },
+        });
+        const audioTrack = tracks.find((t) => t.kind === 'audio');
+        console.log('[enableMic] Audio track created:', !!audioTrack);
+
+        if (audioTrack) {
+          console.log('[enableMic] Publishing audio track to room...');
+          await room.localParticipant.publishTrack(audioTrack);
+          console.log('[enableMic] Audio track published successfully');
+        }
       }
     }
-
-    // const tracks = await createLocalTracks({
-    //   audio: { deviceId: deviceId || undefined },
-    // });
-    // const audioTrack = tracks.find((t) => t.kind === 'audio');
-    // if (audioTrack) {
-    //   await room.localParticipant.publishTrack(audioTrack);
-    // }
   }
 
   async disableMic(room: Room) {
     room.localParticipant.audioTrackPublications.forEach((trackPub) => {
       trackPub.track?.mute();
-      // trackPub.track?.stop();
-      // room.localParticipant.unpublishTrack(trackPub.track!);
     });
   }
 
@@ -131,7 +164,9 @@ export class CameraService {
 
   /** Stop (unpublish) local camera */
   stopCamera(room: Room) {
-    const pub = [...room.localParticipant.videoTrackPublications.values()][0];
+    // Find camera track only (not screen share)
+    const pub = [...room.localParticipant.videoTrackPublications.values()]
+      .find(p => p.source === Track.Source.Camera);
     const track = pub?.track as LocalVideoTrack | undefined;
     if (track) {
       room.localParticipant.unpublishTrack(track);

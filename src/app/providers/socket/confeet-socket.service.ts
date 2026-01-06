@@ -17,12 +17,15 @@ export class ConfeetSocketService {
     seen$: Observable<MessageSeen>;
     userTyping$: Observable<TypingIndicator>;
     error$: Observable<ErrorPayload>;
+    pong$: Observable<PongPayload>;
 
     //--------------------------------------------------------------
     currentConversation = signal<Conversation | null>(null);
     currentConversationId = signal<string | null>(null);
 
     private reconnectInterval = 3000;
+    private heartbeatInterval = 30000; // 30 seconds
+    private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     private senderId!: string;
     private url!: string;
 
@@ -34,6 +37,7 @@ export class ConfeetSocketService {
         this.seen$ = this.onEvent<MessageSeen>(WsEvents.SEEN);
         this.userTyping$ = this.onEvent<TypingIndicator>(WsEvents.USER_TYPING);
         this.error$ = this.onEvent<ErrorPayload>(WsEvents.ERROR);
+        this.pong$ = this.onEvent<PongPayload>(WsEvents.PONG);
     }
 
     connect(url: string, senderId: string) {
@@ -51,6 +55,8 @@ export class ConfeetSocketService {
 
         this.ws.onopen = () => {
             console.log('WS connected');
+            this.sendPing(this.senderId);
+            this.startHeartbeat(this.senderId);
         };
 
         this.ws.onmessage = (event) => {
@@ -63,6 +69,7 @@ export class ConfeetSocketService {
 
         this.ws.onclose = () => {
             console.warn('WS closed, reconnecting...');
+            this.stopHeartbeat();
             this.ws = null;
 
             setTimeout(() => this.initSocket(), this.reconnectInterval);
@@ -129,8 +136,32 @@ export class ConfeetSocketService {
     }
 
     disconnect(): void {
+        this.stopHeartbeat();
         this.ws?.close();
         this.ws = null;
+    }
+
+    // Heartbeat methods
+    private startHeartbeat(userId: string): void {
+        this.stopHeartbeat(); // Clear any existing timer
+        console.log('Starting heartbeat with interval:', this.heartbeatInterval, 'ms');
+
+        this.heartbeatTimer = setInterval(() => {
+            this.sendPing(userId);
+        }, this.heartbeatInterval);
+    }
+
+    private stopHeartbeat(): void {
+        if (this.heartbeatTimer) {
+            console.log('Stopping heartbeat');
+            clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = null;
+        }
+    }
+
+    private sendPing(userId: string): void {
+        console.log('Sending heartbeat ping');
+        this.send(WsEvents.HEARTBEAT, { userId });
     }
 }
 
@@ -188,6 +219,10 @@ export interface ErrorPayload {
     message: string;
 }
 
+export interface PongPayload {
+    timestamp: string;
+}
+
 // Event type constants (matching Go backend)
 export const WsEvents = {
     // Client -> Server
@@ -196,6 +231,7 @@ export const WsEvents = {
     MARK_SEEN: 'mark_seen',
     TYPING: 'typing',
     AUDIO_CALL_REQUEST: 'audio_call_request',
+    HEARTBEAT: 'heartbeat', // Client sends ping for heartbeat
 
     // Server -> Client
     NEW_MESSAGE: 'new_message',
@@ -203,5 +239,6 @@ export const WsEvents = {
     DELIVERED: 'delivered',
     SEEN: 'seen',
     USER_TYPING: 'user_typing',
-    ERROR: 'error'
+    ERROR: 'error',
+    PONG: 'pong' // Server responds with pong
 } as const;

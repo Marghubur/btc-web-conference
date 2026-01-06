@@ -233,17 +233,32 @@ export class MeetingService {
     if (!room) return;
 
     const newState = !this.isMicOn();
+    console.log('=== TOGGLE MIC ===');
+    console.log('Current mic state:', this.isMicOn(), '-> New state:', newState);
 
     try {
       if (newState) {
+        console.log('Enabling mic via cameraService...');
         await this.cameraService.enableMic(room);
+        console.log('cameraService.enableMic completed');
+
+        // Log the audio track after enabling
+        const audioTrackPub = room.localParticipant.audioTrackPublications.values().next().value;
+        console.log('Audio track after enableMic:', {
+          exists: !!audioTrackPub?.track,
+          isMuted: audioTrackPub?.track?.isMuted,
+          mediaStreamTrackEnabled: audioTrackPub?.track?.mediaStreamTrack?.enabled,
+          mediaStreamTrackReadyState: audioTrackPub?.track?.mediaStreamTrack?.readyState
+        });
       } else {
+        console.log('Disabling mic via cameraService...');
         await this.cameraService.disableMic(room);
+        console.log('cameraService.disableMic completed');
       }
 
       this.isMicOn.set(newState);
-      room.localParticipant.setMicrophoneEnabled(newState);
       this.local.setMicStatus(newState);
+      console.log('=== TOGGLE MIC END ===');
     } catch (error) {
       console.error('Error toggling mic:', error);
     }
@@ -392,7 +407,7 @@ export class MeetingService {
    */
   private async enableMicInternal(room: Room): Promise<void> {
     await this.cameraService.enableMic(room);
-    room.localParticipant.setMicrophoneEnabled(true);
+    // Note: Don't call setMicrophoneEnabled - cameraService.enableMic handles the track directly
   }
 
   /**

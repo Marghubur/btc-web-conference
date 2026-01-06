@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { createLocalScreenTracks, LocalTrackPublication, LocalVideoTrack, RemoteVideoTrack, Room } from 'livekit-client';
+import { createLocalScreenTracks, LocalTrackPublication, LocalVideoTrack, RemoteVideoTrack, Room, Track } from 'livekit-client';
 import { RoomService } from '../providers/services/room.service';
 import { AudioComponent } from '../audio/audio.component';
 import { VideoComponent } from '../video/video.component';
@@ -319,13 +319,50 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
         try {
             if (!this.room()) return;
 
-            const [screenTrack] = await createLocalScreenTracks({
-                audio: this.meetingService.isMicOn(), // set to true to share system audio
+            // Save current mic state before screen share
+            const wasMicOn = this.meetingService.isMicOn();
+            console.log('=== SCREEN SHARE START ===');
+            console.log('Mic state before screen share:', wasMicOn);
+
+            // IMPORTANT: If no audio track exists, create one BEFORE screen share
+            // This ensures WebRTC SDP renegotiation happens with audio already in place
+            const existingAudioPub = this.room()?.localParticipant.audioTrackPublications.values().next().value;
+            if (!existingAudioPub?.track) {
+                console.log('No audio track exists - creating one BEFORE screen share...');
+                await this.room()?.localParticipant.setMicrophoneEnabled(true);
+                console.log('Audio track created');
+
+                // If mic was supposed to be off, mute it
+                if (!wasMicOn) {
+                    console.log('Muting audio track since mic was off...');
+                    const newAudioPub = this.room()?.localParticipant.audioTrackPublications.values().next().value;
+                    if (newAudioPub?.track) {
+                        await newAudioPub.track.mute();
+                        console.log('Audio track muted');
+                    }
+                }
+            }
+
+            // Log current audio track state before screen share
+            const audioTrackBefore = this.room()?.localParticipant.audioTrackPublications.values().next().value?.track;
+            console.log('Audio track before screen share:', {
+                exists: !!audioTrackBefore,
+                isMuted: audioTrackBefore?.isMuted,
+                mediaStreamTrackEnabled: audioTrackBefore?.mediaStreamTrack?.enabled,
+                mediaStreamTrackReadyState: audioTrackBefore?.mediaStreamTrack?.readyState
+            });
+
+            // Note: audio here is for SYSTEM AUDIO (screen sounds), NOT microphone
+            const screenTracks = await createLocalScreenTracks({
+                audio: false,
                 resolution: { width: 1920, height: 1080 },
             });
 
-            if (screenTrack.mediaStreamTrack.readyState === 'ended') {
-                console.warn('User cancelled screen share');
+            // Get only the video track
+            const screenTrack = screenTracks.find(t => t.kind === 'video');
+
+            if (!screenTrack || screenTrack.mediaStreamTrack.readyState === 'ended') {
+                console.warn('User cancelled screen share or no video track');
                 return;
             }
 
@@ -334,10 +371,23 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
 
             // Detect when user presses "Stop sharing" in browser UI
             screenTrack.mediaStreamTrack.onended = () => {
-                this.stopScreenShare(); // 👈 implement cleanup here
+                this.stopScreenShare();
             };
 
+            console.log('Publishing screen track...');
             await this.room()?.localParticipant.publishTrack(screenTrack);
+            console.log('Screen track published');
+
+            // Log audio track state AFTER screen share is published
+            const audioTrackAfter = this.room()?.localParticipant.audioTrackPublications.values().next().value?.track;
+            console.log('Audio track AFTER screen share:', {
+                exists: !!audioTrackAfter,
+                isMuted: audioTrackAfter?.isMuted,
+                mediaStreamTrackEnabled: audioTrackAfter?.mediaStreamTrack?.enabled,
+                mediaStreamTrackReadyState: audioTrackAfter?.mediaStreamTrack?.readyState
+            });
+
+            console.log('=== SCREEN SHARE END ===');
         } catch (error) {
             console.warn('Screen share cancelled or failed:', error);
         }
@@ -350,10 +400,11 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
         this.localScreenTrack = null;
 
         const publications = this.room()?.localParticipant.videoTrackPublications;
-        publications?.forEach((pub: LocalTrackPublication) => {
-            if (pub.track?.source === 'screen_share') {
-                this.room()?.localParticipant.unpublishTrack(pub.track);
-                pub.track.stop();
+        publications?.forEach(async (pub: LocalTrackPublication) => {
+            if (pub.source === Track.Source.ScreenShare && pub.track) {
+                const track = pub.track;
+                await this.room()?.localParticipant.unpublishTrack(track);
+                track.stop();
             }
         });
 
