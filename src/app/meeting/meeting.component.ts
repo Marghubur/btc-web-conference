@@ -11,7 +11,7 @@ import { MediaPermissions, MediaPermissionsService } from '../providers/services
 import { BackgroundOption, BackgroundType, VideoBackgroundService } from '../providers/services/video-background.service';
 import { LocalService } from '../providers/services/local.service';
 import { ScreenRecorderService } from '../providers/services/screen-recorder.service';
-import { NgbTooltipConfig, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbTooltipConfig, NgbTooltipModule, NgbSlide } from '@ng-bootstrap/ng-bootstrap';
 import { NetworkService } from '../providers/services/network.service';
 import { CameraService } from '../providers/services/camera.service';
 import { iNavigation } from '../providers/services/iNavigation';
@@ -21,18 +21,19 @@ import { User } from '../models/model';
 import { hand_down, hand_raise } from '../models/constant';
 import { MeetingService } from './meeting.service';
 import { CallEventService } from '../providers/socket/call-event.service';
-import { CallParticipant } from '../models/conference_call/call_model';
-import { MeetingScreenshareViewComponent } from './screenshare/screenshare.component';
-import { MeetingViewComponent } from './meeting-view/meeting-view.component';
 
 import { ParticipantRosterComponent } from './participant-roster/participant-roster.component';
 
 @Component({
     selector: 'app-meeting',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule, MeetingScreenshareViewComponent, MeetingViewComponent, ParticipantRosterComponent],
+    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule, ParticipantRosterComponent, NgbSlide],
     templateUrl: './meeting.component.html',
-    styleUrl: './meeting.component.css',
+    styleUrls: [
+        './meeting.component.css',
+        './screenshare/screenshare.component.css',
+        './meeting-view/meeting-view.component.css'
+    ],
     providers: [NgbTooltipConfig],
     animations: [
         trigger('slideFade', [
@@ -354,7 +355,7 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
 
             // Note: audio here is for SYSTEM AUDIO (screen sounds), NOT microphone
             const screenTracks = await createLocalScreenTracks({
-                audio: false,
+                audio: true,
                 resolution: { width: 1920, height: 1080 },
             });
 
@@ -376,6 +377,7 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
 
             console.log('Publishing screen track...');
             await this.room()?.localParticipant.publishTrack(screenTrack);
+            screenTrack.attach(this.screenPreview.nativeElement);
             console.log('Screen track published');
 
             // Log audio track state AFTER screen share is published

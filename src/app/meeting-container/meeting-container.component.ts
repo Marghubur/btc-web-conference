@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { MeetingMiniComponent } from '../meeting-mini/meeting-mini.component';
-import { MeetingComponent } from "../meeting/meeting.component";
 import { CommonModule } from '@angular/common';
 import { LocalService } from '../providers/services/local.service';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { MeetingService } from '../meeting/meeting.service';
+import { MeetingComponent } from '../meeting/meeting.component';
 
 @Component({
   selector: 'app-meeting-container',
