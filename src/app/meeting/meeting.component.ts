@@ -23,11 +23,12 @@ import { MeetingService } from './meeting.service';
 import { CallEventService } from '../providers/socket/call-event.service';
 
 import { ParticipantRosterComponent } from './participant-roster/participant-roster.component';
+import { ScreenshareComponent } from './screenshare/screenshare.component';
 
 @Component({
     selector: 'app-meeting',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule, ParticipantRosterComponent, NgbSlide],
+    imports: [FormsModule, ReactiveFormsModule, AudioComponent, VideoComponent, CommonModule, NgbTooltipModule, ParticipantRosterComponent, NgbSlide, ScreenshareComponent],
     templateUrl: './meeting.component.html',
     styleUrls: [
         './meeting.component.css',
@@ -46,6 +47,7 @@ import { ParticipantRosterComponent } from './participant-roster/participant-ros
 export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     // Reference to the dedicated <video> element for screen sharing
     @ViewChild('screenPreview') screenPreview!: ElementRef<HTMLVideoElement>;
+    @ViewChild(ScreenshareComponent) screenshareComponent!: ScreenshareComponent;
     @ViewChild('seetingOffCanvas') offcanvasRef!: ElementRef;
     private offcanvasInstance!: Offcanvas;
     @ViewChild('virtualBackgroundOffcanvas') virtualBackgroundOffcanvasRef!: ElementRef;
@@ -217,10 +219,6 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
         // Load default backgrounds
         this.backgroundOptions = this.videoBackgroundService.getBackgrounds();
         await this.getDeviceDetail();
-        // Using snapshot (loads once)
-        if (this.meetingId) {
-            await this.meetingService.joinRoom();
-        }
 
         // Subscribe to current background
         this.subscriptions.add(
@@ -236,9 +234,11 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
             })
         );
 
-        // Subscribe to screen share updates
+        // IMPORTANT: Subscribe to screen share updates BEFORE joining room
+        // This ensures we receive events that fire during room connection
         this.subs.push(
             this.roomService.latestScreenShare.subscribe(share => {
+                console.log('latestScreenShare subscription triggered:', share);
                 if (share) {
                     this.attachScreen(share.track);
                 } else {
@@ -246,6 +246,11 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
             })
         );
+
+        // Using snapshot (loads once) - join room AFTER subscriptions are set up
+        if (this.meetingId) {
+            await this.meetingService.joinRoom();
+        }
 
         if (this.meetingService.inMeeting()) {
             history.pushState(null, '', window.location.href);
@@ -377,17 +382,13 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
 
             console.log('Publishing screen track...');
             await this.room()?.localParticipant.publishTrack(screenTrack);
-            screenTrack.attach(this.screenPreview.nativeElement);
-            console.log('Screen track published');
 
-            // Log audio track state AFTER screen share is published
-            const audioTrackAfter = this.room()?.localParticipant.audioTrackPublications.values().next().value?.track;
-            console.log('Audio track AFTER screen share:', {
-                exists: !!audioTrackAfter,
-                isMuted: audioTrackAfter?.isMuted,
-                mediaStreamTrackEnabled: audioTrackAfter?.mediaStreamTrack?.enabled,
-                mediaStreamTrackReadyState: audioTrackAfter?.mediaStreamTrack?.readyState
-            });
+            // Attach to the screenshare component's preview element
+            const previewElement = this.screenshareComponent?.getScreenPreviewElement();
+            if (previewElement) {
+                screenTrack.attach(previewElement);
+            }
+            console.log('Screen track published');
 
             console.log('=== SCREEN SHARE END ===');
         } catch (error) {
@@ -579,18 +580,28 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     private attachScreen(track: RemoteVideoTrack) {
         this.detachScreen(); // clean up previous
         this.currentScreenTrack = track;
-        if (this.screenPreview?.nativeElement) {
-            track.attach(this.screenPreview.nativeElement);
+        const previewElement = this.screenshareComponent?.getScreenPreviewElement();
+        if (previewElement) {
+            track.attach(previewElement);
         }
     }
 
     private detachScreen() {
-        if (this.currentScreenTrack && this.screenPreview?.nativeElement) {
-            this.currentScreenTrack.detach(this.screenPreview.nativeElement);
-            this.screenPreview.nativeElement.srcObject = null;
+        // Even if the component is hidden and previewElement is null,
+        // we still need to detach the track and reset state
+        if (this.currentScreenTrack) {
+            const previewElement = this.screenshareComponent?.getScreenPreviewElement();
+            if (previewElement) {
+                this.currentScreenTrack.detach(previewElement);
+                previewElement.srcObject = null;
+            } else {
+                // If element is not available, detach from all elements
+                this.currentScreenTrack.detach();
+            }
             this.currentScreenTrack = null;
-            this.isMyshareScreen = false;
         }
+        // Always reset the local screen share flag
+        this.isMyshareScreen = false;
     }
 
     // Screen Recording Methods

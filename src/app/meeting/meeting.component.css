@@ -216,52 +216,59 @@
 }
 
 /* =====================================================
-   Footer Control Bar - Teams Style
+   Footer Control Bar - Modern Teams/Meet Style
    ===================================================== */
 .footer-section {
-    height: 72px;
+    height: 64px;
     background: var(--teams-bg-secondary);
     backdrop-filter: blur(20px);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 24px;
+    padding: 0 16px;
     border-top: 1px solid var(--teams-border);
-    gap: 16px;
     transition: background-color 0.3s ease;
 }
 
+/* Footer Left - Leave Button & Recording Info */
 .footer-left {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 2px;
     flex: 1;
+    min-width: 0;
 }
 
+/* Footer Center - Time Display */
 .footer-center {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 8px;
-    color: var(--teams-text-primary);
+    color: var(--teams-text-secondary);
     font-size: 13px;
     font-weight: 500;
+    min-width: 80px;
+}
+
+.footer-center .time {
+    opacity: 0.8;
 }
 
 /* =====================================================
-   Control Buttons - Teams Style
+   Control Buttons - Modern Rounded Style
    ===================================================== */
-.footer-left a,
-.footer-left .btn-group>a {
+.footer-left a {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     background: transparent;
     border: none;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     color: var(--teams-text-primary);
 }
 
@@ -274,22 +281,48 @@
     transform: scale(0.95);
 }
 
+/* Control Button Group - Visual Grouping */
+.control-group {
+    display: flex;
+    align-items: center;
+    background: var(--teams-bg-tertiary);
+    border-radius: 24px;
+    padding: 4px;
+    gap: 2px;
+    margin: 0 4px;
+}
+
+.control-group a,
+.control-group .btn-group>a {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+
+.control-group a:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 /* Leave Button - Red Pill */
 .footer-left .btn-danger {
     background: var(--teams-danger) !important;
     border: none !important;
-    border-radius: 20px !important;
-    padding: 8px 20px !important;
+    border-radius: 24px !important;
+    padding: 0 16px !important;
+    height: 40px !important;
     font-weight: 600 !important;
     font-size: 13px !important;
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
-    transition: all 0.15s ease !important;
+    gap: 6px !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .footer-left .btn-danger:hover {
     background: var(--teams-danger-hover) !important;
+    transform: scale(1.02);
 }
 
 .footer-left .btn-danger svg {
@@ -297,26 +330,34 @@
     height: 18px;
 }
 
-/* Separator */
+/* Remove ms-3 margin override for tighter spacing */
+.footer-left a.ms-3,
+.footer-left .btn-group.ms-3 {
+    margin-left: 0.5rem !important;
+}
+
+/* Separator - Subtle Vertical Line */
 .footer-left span.mx-3 {
     color: var(--teams-border);
-    font-size: 20px;
+    font-size: 18px;
+    opacity: 0.5;
+    margin: 0 8px !important;
 }
 
 /* Participant Count Badge */
 .user-count {
     position: absolute;
-    top: -6px;
-    right: -8px;
-    width: 18px;
-    height: 18px;
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: var(--teams-accent);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
-    font-weight: 600;
+    font-size: 9px;
+    font-weight: 700;
     color: #fff;
 }
 
@@ -612,6 +653,19 @@
 .h-97 {
     height: 97%;
     border-radius: 12px;
+}
+
+/* Avatar placeholder container - theme aware */
+.avatar-container {
+    background: var(--teams-bg-secondary) !important;
+}
+
+.avatar-container .participant-name-label {
+    color: var(--teams-text-primary) !important;
+}
+
+.avatar-container .user-mute-mic svg {
+    fill: var(--teams-text-primary) !important;
 }
 
 .user-mute-mic {

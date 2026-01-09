@@ -8,7 +8,7 @@
             [isMute]="!meetingService.isMicOn()"></video-component>
         } @else {
         <!-- Avatar placeholder when camera is off or no local track -->
-        <div class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
+        <div class="d-flex align-items-center justify-content-center h-97 avatar-container rounded position-relative">
             <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
                 [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
                 {{getUserInitiaLetter(roomForm.value.participantName!)}}
@@ -21,7 +21,7 @@
                 </svg>
             </div>
             }
-            <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
+            <div class="participant-name-label position-absolute fw-semibold col-md-12 text-truncate"
                 style="bottom: 5px; left: 5px;">
                 {{roomForm.value.participantName!}}
             </div>
@@ -34,7 +34,7 @@
             [isMute]="!isParticipantAudioEnabled(participant.identity)"></video-component>
         } @else {
         <!-- Avatar placeholder for participants without camera or with camera off -->
-        <div class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
+        <div class="d-flex align-items-center justify-content-center h-97 avatar-container rounded position-relative">
             <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
                 [ngStyle]="{'background-color': getColorFromName(participant.identity)}">
                 {{getUserInitiaLetter(participant.identity)}}
@@ -47,7 +47,7 @@
                 </svg>
             </div>
             }
-            <div class="text-dark position-absolute fw-semibold col-md-12 text-truncate"
+            <div class="participant-name-label position-absolute fw-semibold col-md-12 text-truncate"
                 style="bottom: 5px; left: 5px;">
                 {{participant.identity}}
             </div>
