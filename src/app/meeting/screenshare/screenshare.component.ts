@@ -1,50 +1,55 @@
-// import { AfterViewInit, Component, ElementRef, inject, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
-// import { CommonModule } from '@angular/common';
-// import { LocalVideoTrack } from 'livekit-client';
-// import { VideoComponent } from '../../video/video.component';
-// import { RoomService } from '../../providers/services/room.service';
+import { AfterViewInit, Component, ElementRef, Input, OnChanges, SimpleChanges, ViewChild, Signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { LocalVideoTrack, RemoteTrackPublication } from 'livekit-client';
+import { VideoComponent } from '../../video/video.component';
 
-// /**
-//  * Screen Share View Component
-//  * Displays the screen share content (local or remote)
-//  * No longer handles participant roster - that's now in meeting.component
-//  */
-// @Component({
-//     selector: 'app-screenshare',
-//     standalone: true,
-//     imports: [CommonModule, VideoComponent],
-//     templateUrl: './screenshare.component.html',
-//     styleUrl: './screenshare.component.css',
-// })
-// export class MeetingScreenshareViewComponent implements AfterViewInit, OnChanges {
-//     private roomService = inject(RoomService);
+/**
+ * Screen Share View Component
+ * Displays the screen share content (local or remote)
+ * No longer handles participant roster - that's now in meeting.component
+ */
+@Component({
+    selector: 'app-screenshare',
+    standalone: true,
+    imports: [CommonModule, VideoComponent],
+    templateUrl: './screenshare.component.html',
+    styleUrl: './screenshare.component.css',
+})
+export class ScreenshareComponent implements AfterViewInit, OnChanges {
+    @ViewChild('screenPreview') screenPreview!: ElementRef<HTMLVideoElement>;
 
-//     // Remote screen share track from service
-//     remoteSharescreenTrack = this.roomService.remoteSharescreenTrack;
+    // Inputs from parent component
+    @Input() isMyshareScreen: boolean = false;
+    @Input() localScreenTrack: LocalVideoTrack | null = null;
+    @Input() remoteSharescreenTrack!: Signal<{ participantIdentity: string; trackPublication: RemoteTrackPublication } | null>;
 
-//     @ViewChild('screenPreview') screenPreview!: ElementRef<HTMLVideoElement>;
+    private isViewReady = false;
 
-//     // Only screen-share specific inputs
-//     @Input() isMyshareScreen: boolean = false;
-//     @Input() localScreenTrack: LocalVideoTrack | null = null;
+    ngAfterViewInit(): void {
+        this.isViewReady = true;
+        this.attachLocalScreenTrack();
+    }
 
-//     private isViewReady = false;
+    ngOnChanges(changes: SimpleChanges): void {
+        if ((changes['localScreenTrack'] || changes['isMyshareScreen']) && this.isViewReady) {
+            this.attachLocalScreenTrack();
+        }
+    }
 
-//     ngAfterViewInit(): void {
-//         this.isViewReady = true;
-//         this.attachLocalScreenTrack();
-//     }
+    /**
+     * Attach the local screen track to the video preview element
+     */
+    private attachLocalScreenTrack(): void {
+        if (this.localScreenTrack && this.screenPreview?.nativeElement && this.isMyshareScreen) {
+            this.localScreenTrack.attach(this.screenPreview.nativeElement);
+            console.log('ScreenshareComponent: Local screen track attached to preview');
+        }
+    }
 
-//     ngOnChanges(changes: SimpleChanges): void {
-//         if (changes['localScreenTrack'] && this.isViewReady) {
-//             this.attachLocalScreenTrack();
-//         }
-//     }
-
-//     private attachLocalScreenTrack(): void {
-//         if (this.localScreenTrack && this.screenPreview?.nativeElement && this.isMyshareScreen) {
-//             this.localScreenTrack.attach(this.screenPreview.nativeElement);
-//             console.log('Local screen track attached to preview');
-//         }
-//     }
-// }
+    /**
+     * Get the native video element reference for external usage
+     */
+    getScreenPreviewElement(): HTMLVideoElement | null {
+        return this.screenPreview?.nativeElement || null;
+    }
+}
