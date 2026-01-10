@@ -24,7 +24,10 @@ export const CallEvents = {
     CALL_TIMEOUT: 'call:timeout',
 
     // EventCallEnd - Either party ends an ongoing call
-    CALL_END: 'call:end'
+    CALL_END: 'call:end',
+
+    // EventJoiningRequest - Either party ends an ongoing call
+    JOINING_REQUEST: 'call:raise-joining-request'
 } as const;
 
 // ============================================
@@ -36,6 +39,9 @@ export const CallServerEvents = {
 
     // EventCallJoiningRequest - Notify callee of joining request
     CALL_JOINING_REQUEST: 'call:joining_request',
+
+    // EventCallJoiningRequest - Notify callee of joining request
+    CALL_RAISED_REQUEST: 'call:raise-joining-request',
 
     // EventCallAccepted - Notify caller that callee accepted
     CALL_ACCEPTED: 'call:accepted',
@@ -97,7 +103,8 @@ export const CallStatus = {
     FAILED: 9,
     MISSED: 10,
     JOINING_REQUEST: 11,
-    DISMISSED: 12
+    DISMISSED: 12,
+    RAISED_JOINING_REQUEST: 13
 } as const;
 
 // ============================================

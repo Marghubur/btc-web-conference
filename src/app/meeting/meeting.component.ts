@@ -20,7 +20,7 @@ import { Offcanvas } from 'bootstrap';
 import { User } from '../models/model';
 import { hand_down, hand_raise } from '../models/constant';
 import { MeetingService } from './meeting.service';
-import { CallEventService } from '../providers/socket/call-event.service';
+import { ServerEventService } from '../providers/socket/server-event.service';
 
 import { ParticipantRosterComponent } from './participant-roster/participant-roster.component';
 import { ScreenshareComponent } from './screenshare/screenshare.component';
@@ -86,9 +86,6 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     private shareLinkModalInstance: any;
     currentBrowser: string = "";
     textMessage: string = "";
-    get remoteUsersCount(): number {
-        return this.remoteParticipants().size;
-    }
 
     /** Get video track for a participant */
     getVideoTrack(participantIdentity: string) {
@@ -120,36 +117,8 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     isViewParticipant: boolean = false;
     participantFilter: string = '';
 
-    // Mock invited participants (not yet in call) - can be connected to real API
-    invitedParticipants: InvitedParticipant[] = [
-        { name: 'John Smith', email: 'john.smith@company.com', invited: true },
-        { name: 'Sarah Johnson', email: 'sarah.j@company.com', invited: true },
-        { name: 'Mike Wilson', email: 'mike.w@company.com', invited: true }
-    ];
-
     // Use signal for participant filter to make it reactive
     private participantFilterSignal = signal('');
-
-    // // Computed signal - only recalculates when incomingCall or filter changes
-    // filteredInvitedParticipants = computed(() => {
-    //     let participants: CallParticipant[] = [];
-    //     const p = this.eventService.incomingCall();
-
-    //     // Check if incomingCall exists and has participants
-    //     if (p && p.participants && Object.keys(p.participants).length > 0) {
-    //         participants = Object.keys(p.participants).map(x => p.participants[x]);
-    //     }
-
-    //     const filterValue = this.participantFilterSignal().toLowerCase().trim();
-    //     if (!filterValue) {
-    //         return participants;
-    //     }
-
-    //     return participants.filter(p =>
-    //         p.name.toLowerCase().includes(filterValue) ||
-    //         p.email.toLowerCase().includes(filterValue)
-    //     );
-    // });
 
     toggleParticipanatsList() {
         this.isViewParticipant = !this.isViewParticipant;
@@ -167,7 +136,7 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     constructor(
         private cameraService: CameraService,
         private route: ActivatedRoute,
-        private eventService: CallEventService,
+        private eventService: ServerEventService,
         public roomService: RoomService,
         private nav: iNavigation,
         private router: Router,
@@ -426,34 +395,6 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-    getColorFromName(name: string): string {
-        // Predefined color palette (Google Meet style soft colors)
-        const colors = [
-            "#f28b829f", "#FDD663", "#81C995", "#AECBFA", "#D7AEFB", "#FFB300",
-            "#34A853", "#4285F4", "#FBBC05", "#EA4335", "#9AA0A6", "#F6C7B6"
-        ];
-
-        // Create hash from name
-        let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        }
-
-        // Pick color based on hash
-        const index = Math.abs(hash) % colors.length;
-        return colors[index];
-    }
-
-    isParticipantCameraEnabled(participantIdentity: string): boolean {
-        const status = this.roomService.getParticipantMediaStatus(participantIdentity);
-        return status ? (status.hasCameraTrack && status.isCameraEnabled) : false;
-    }
-
-    isParticipantAudioEnabled(participantIdentity: string): boolean {
-        const status = this.roomService.getParticipantMediaStatus(participantIdentity);
-        return status ? (status.hasAudioTrack && status.isAudioEnabled) : false;
-    }
-
 
     // ==================== Lifecycle Cleanup ====================
 
@@ -666,21 +607,6 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-    getUserInitiaLetter(name: string): string {
-        if (!name)
-            return "";
-
-        const words = name.split(' ').slice(0, 2);
-        const initials = words.map(x => {
-            if (x.length > 0) {
-                return x.charAt(0).toUpperCase();
-            }
-            return '';
-        }).join('');
-
-        return initials;
-    }
-
     private startTimer(): void {
         this.timeInSeconds = 0;
         this.watchSubscription = this.timer$.subscribe(() => {
@@ -791,6 +717,7 @@ export interface Reaction {
 
 export interface InvitedParticipant {
     name: string;
+    id: string;
     email: string;
     invited: boolean;
 }

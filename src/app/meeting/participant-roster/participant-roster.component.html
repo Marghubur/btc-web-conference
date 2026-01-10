@@ -3,7 +3,7 @@
     <!-- Roster Header -->
     <div class="roster-header">
         <span class="roster-title">People</span>
-        <span class="roster-count">{{remoteUsersCount + 1}}</span>
+        <span class="roster-count">{{meetingService.remoteUsersCount + 1}}</span>
     </div>
     <!-- Filter Search Box -->
     <div class="roster-filter">
@@ -13,7 +13,7 @@
                 <path
                     d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z" />
             </svg>
-            <input type="text" class="filter-input" placeholder="Search participants..." [value]="participantFilter"
+            <input type="text" class="filter-input" placeholder="Search participants..."
                 (input)="meetingService.filterParticipants($event)">
         </div>
     </div>
@@ -21,14 +21,14 @@
     <div class="roster-list">
         <!-- Section: In this call -->
         <div class="roster-section-header">
-            <span>In this call ({{remoteUsersCount + 1}})</span>
+            <span>In this call ({{meetingService.remoteUsersCount + 1}})</span>
         </div>
         <!-- Local Participant (You) -->
         <div class="participant-item">
             <div class="participant-avatar-wrapper">
                 <div class="participant-avatar"
-                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
+                    [ngStyle]="{'background-color': meetingService.getColorFromName(roomForm.value.participantName!)}">
+                    {{meetingService.getUserInitiaLetter(roomForm.value.participantName!)}}
                 </div>
                 <span class="status-dot online"></span>
             </div>
@@ -58,11 +58,12 @@
             </div>
         </div>
         <!-- Remote Participants -->
-        @for (participant of meetingService.filteredInvitedParticipants(true); track participant.email) {
+        @for (participant of meetingService.filteredInvitedParticipants(true); track participant.userId) {
         <div class="participant-item">
             <div class="participant-avatar-wrapper">
-                <div class="participant-avatar" [ngStyle]="{'background-color': getColorFromName(participant.name)}">
-                    {{getUserInitiaLetter(participant.name)}}
+                <div class="participant-avatar"
+                    [ngStyle]="{'background-color': meetingService.getColorFromName(participant.name)}">
+                    {{meetingService.getUserInitiaLetter(participant.name)}}
                 </div>
                 <span class="status-dot online"></span>
             </div>
@@ -71,7 +72,7 @@
                 <span class="participant-status-text">In this meeting</span>
             </div>
             <div class="participant-actions">
-                @if (!isParticipantAudioEnabled(participant.email)) {
+                @if (!meetingService.isParticipantAudioEnabled(participant.email)) {
                 <span class="action-icon muted" title="Microphone off">
                     <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"
                         fill="currentColor">
@@ -80,7 +81,7 @@
                     </svg>
                 </span>
                 }
-                @if (!isParticipantCameraEnabled(participant.email)) {
+                @if (!meetingService.isParticipantCameraEnabled(participant.email)) {
                 <span class="action-icon camera-off" title="Camera off">
                     <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"
                         fill="currentColor">
@@ -93,17 +94,18 @@
         </div>
         }
         <!-- Section Divider -->
-        @if (invitedParticipants.length > 0) {
+        @if (meetingService.invitedParticipants > 0) {
         <div class="roster-divider"></div>
         <!-- Section: Not in this call -->
         <div class="roster-section-header">
-            <span>Not in this call ({{invitedParticipants.length}})</span>
+            <span>Not in this call ({{meetingService.invitedParticipants}})</span>
         </div>
-        @for (invited of meetingService.filteredInvitedParticipants(false); track invited.email) {
+        @for (invited of meetingService.filteredInvitedParticipants(false); track invited.userId) {
         <div class="participant-item not-in-call">
             <div class="participant-avatar-wrapper">
-                <div class="participant-avatar" [ngStyle]="{'background-color': getColorFromName(invited.name)}">
-                    {{getUserInitiaLetter(invited.name)}}
+                <div class="participant-avatar"
+                    [ngStyle]="{'background-color': meetingService.getColorFromName(invited.name)}">
+                    {{meetingService.getUserInitiaLetter(invited.name)}}
                 </div>
                 <span class="status-dot offline"></span>
             </div>
@@ -112,6 +114,16 @@
                 <span class="participant-status-text">{{invited.email}}</span>
             </div>
             <div class="participant-actions">
+                @if (isCallingParticipant(invited.userId)) {
+                <button class="request-join-btn calling" disabled title="Calling...">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px"
+                        fill="currentColor" class="calling-icon">
+                        <path
+                            d="M798-120q-125 0-247-54.5T329-329Q229-429 174.5-551T120-798q0-18 12-30t30-12h162q14 0 25 9.5t13 22.5l26 140q2 16-1 27t-11 19l-97 98q20 37 47.5 71.5T387-386q31 31 65 57.5t72 48.5l94-94q9-9 23.5-13.5T670-390l138 28q14 4 23 14.5t9 23.5v162q0 18-12 30t-30 12Z" />
+                    </svg>
+                    <span>Calling</span>
+                </button>
+                } @else {
                 <button class="request-join-btn" (click)="requestToJoin(invited)" title="Request to join">
                     <svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px"
                         fill="currentColor">
@@ -120,6 +132,7 @@
                     </svg>
                     <span>Request</span>
                 </button>
+                }
             </div>
         </div>
         }

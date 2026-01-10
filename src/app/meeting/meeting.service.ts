@@ -6,7 +6,8 @@ import { LocalVideoTrack, Room } from 'livekit-client';
 import { CameraService } from './../providers/services/camera.service';
 import { VideoBackgroundService } from './../providers/services/video-background.service';
 import { DeviceService } from '../layout/device.service';
-import { CallEventService } from '../providers/socket/call-event.service';
+import { ServerEventService } from '../providers/socket/server-event.service';
+import { ClientEventService } from '../providers/socket/client-event.service';
 import { User } from '../models/model';
 import { Dashboard, Login } from '../models/constant';
 import { CallParticipant, ParticipantStatus } from '../models/conference_call/call_model';
@@ -35,6 +36,13 @@ export class MeetingService {
 
   private participantFilterSignal = signal('');
 
+  remoteParticipants = this.roomService.remoteParticipants;
+
+  get remoteUsersCount(): number {
+    return this.remoteParticipants().size;
+  }
+
+
   /** Preview stream for camera preview before joining */
   private _previewStream = signal<MediaStream | undefined>(undefined);
   previewStream = this._previewStream.asReadonly();
@@ -55,9 +63,53 @@ export class MeetingService {
     private nav: iNavigation,
     private cameraService: CameraService,
     private deviceService: DeviceService,
-    private callEventService: CallEventService,
+    private serverEventService: ServerEventService,
+    private clientEventService: ClientEventService,
     private videoBackgroundService: VideoBackgroundService
   ) { }
+
+  getUserInitiaLetter(name: string): string {
+    if (!name)
+      return "";
+
+    const words = name.split(' ').slice(0, 2);
+    const initials = words.map(x => {
+      if (x.length > 0) {
+        return x.charAt(0).toUpperCase();
+      }
+      return '';
+    }).join('');
+
+    return initials;
+  }
+
+  getColorFromName(name: string): string {
+    // Predefined color palette (Google Meet style soft colors)
+    const colors = [
+      "#f28b829f", "#FDD663", "#81C995", "#AECBFA", "#D7AEFB", "#FFB300",
+      "#34A853", "#4285F4", "#FBBC05", "#EA4335", "#9AA0A6", "#F6C7B6"
+    ];
+
+    // Create hash from name
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // Pick color based on hash
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  }
+
+  isParticipantCameraEnabled(participantIdentity: string): boolean {
+    const status = this.roomService.getParticipantMediaStatus(participantIdentity);
+    return status ? (status.hasCameraTrack && status.isCameraEnabled) : false;
+  }
+
+  isParticipantAudioEnabled(participantIdentity: string): boolean {
+    const status = this.roomService.getParticipantMediaStatus(participantIdentity);
+    return status ? (status.hasAudioTrack && status.isAudioEnabled) : false;
+  }
 
   // ==================== UI State Methods ====================
 
@@ -74,16 +126,23 @@ export class MeetingService {
     this._inMeeting.set(true);
   }
 
-  requestToJoin(participant: InvitedParticipant): void {
-    const request = this.callEventService.incomingCall();
-    // TODO: Implement actual request to join via API/signaling
-    console.log(`Request to join sent to: ${participant.name}`);
-    alert(`Request to join sent to ${participant.name}`);
+  requestToJoin(participant: CallParticipant): void {
+    const request = this.serverEventService.incomingCall();
+    this.clientEventService.initiateAudioJoiningRequest(participant.userId, request.conversationId);
+  }
+
+  get invitedParticipants(): number {
+    var p = this.serverEventService.participantsInRoom();
+    if (p && p.length > 0) {
+      return p.filter(p => p.status != ParticipantStatus.ACCEPTED).length;
+    } else {
+      return 0;
+    }
   }
 
   // Computed signal - only recalculates when incomingCall or filter changes
   filteredInvitedParticipants(isInRoom: boolean = true): CallParticipant[] {
-    let participants: CallParticipant[] = this.callEventService.participantsInRoom();
+    let participants: CallParticipant[] = this.serverEventService.participantsInRoom();
 
     if (!participants) {
       return [];
@@ -203,7 +262,7 @@ export class MeetingService {
     }
 
     // Notify call service
-    this.callEventService.endCall();
+    this.clientEventService.endCall();
   }
 
   // ==================== Media Controls ====================

@@ -1,9 +1,10 @@
-import { Component, EventEmitter, inject, Input, Output, Signal } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output, signal, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup } from '@angular/forms';
 import { RemoteParticipant } from 'livekit-client';
 import { MeetingService } from '../meeting.service';
 import { InvitedParticipant } from '../meeting.component';
+import { CallParticipant } from '../../models/conference_call/call_model';
 
 /**
  * Shared Participant Roster Component
@@ -23,30 +24,34 @@ export class ParticipantRosterComponent {
 
     // Required inputs
     @Input() roomForm!: FormGroup;
-    @Input() participantFilter: string = '';
-    @Input() remoteUsersCount: number = 0;
-
-    // Remote participants - uses a Signal that can come from either source
-    @Input() remoteParticipants!: Signal<Map<string, RemoteParticipant>>;
 
     // Invited participants not in the call (can be array or use invitedParticipantsArray)
     @Input() invitedParticipants: InvitedParticipant[] = [];
 
-    // Helper functions passed from parent
-    @Input() getColorFromName!: (name: string) => string;
-    @Input() getUserInitiaLetter!: (name: string) => string;
-    @Input() isParticipantAudioEnabled!: (identity: string) => boolean;
-    @Input() isParticipantCameraEnabled!: (identity: string) => boolean;
+    // Track which participants are currently being called
+    callingParticipants = signal<Set<string>>(new Set());
 
-    // Events
-    //    @Output() onFilterParticipants = new EventEmitter<Event>();
-    @Output() onRequestToJoin = new EventEmitter<InvitedParticipant>();
+    // Timeout duration in milliseconds (10 seconds)
+    private readonly CALLING_TIMEOUT = 10000;
 
-    // filterParticipants(event: Event): void {
-    //     this.onFilterParticipants.emit(event);
-    // }
+    isCallingParticipant(userId: string): boolean {
+        return this.callingParticipants().has(userId);
+    }
 
-    requestToJoin(invited: InvitedParticipant): void {
+    requestToJoin(invited: CallParticipant): void {
+        // Add to calling set
+        const currentSet = new Set(this.callingParticipants());
+        currentSet.add(invited.userId);
+        this.callingParticipants.set(currentSet);
+
+        // Call the service method
         this.meetingService.requestToJoin(invited);
+
+        // Reset after timeout
+        setTimeout(() => {
+            const updatedSet = new Set(this.callingParticipants());
+            updatedSet.delete(invited.userId);
+            this.callingParticipants.set(updatedSet);
+        }, this.CALLING_TIMEOUT);
     }
 }

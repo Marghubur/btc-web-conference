@@ -4,22 +4,10 @@ import { ConfeetSocketService, WsEvent } from './confeet-socket.service';
 import { LocalService } from '../services/local.service';
 import {
     // Constants
-    CallEvents,
     CallServerEvents,
-    CallType,
-    CallConfig,
     CallStatus,
-    CallEndReason,
     // Types
-    CallTypeValue,
     CallStatusValue,
-    // Client to Server Payloads
-    CallInitiatePayload,
-    CallAcceptPayload,
-    CallRejectPayload,
-    CallCancelPayload,
-    CallTimeoutPayload,
-    CallEndPayload,
     // Server to Client Events
     CallIncomingEvent,
     CallAcceptedEvent,
@@ -29,7 +17,6 @@ import {
     CallEndedEvent,
     CallBusyEvent,
     CallErrorEvent,
-    CallDismissPayload,
     CallDismissedEvent,
     CallParticipant,
 } from '../../models/conference_call/call_model';
@@ -37,7 +24,7 @@ import {
 @Injectable({
     providedIn: 'root'
 })
-export class CallEventService {
+export class ServerEventService {
     // =========================================================
     // Server to Client Event Observables
     // =========================================================
@@ -72,6 +59,9 @@ export class CallEventService {
     /** Emits when a call error occurs */
     callError$: Observable<CallErrorEvent>;
 
+    /** Emits when a call joining request is raised */
+    callRaisedJoiningRequest$: Observable<CallIncomingEvent>;
+
     // =========================================================
     // Call State Management
     // =========================================================
@@ -79,7 +69,7 @@ export class CallEventService {
     /** Call status for UI display */
     public callStatus = signal<CallStatusValue | null>(null);
 
-    /** Call status for UI display */
+    /** Participants currently in the room */
     public participantsInRoom = signal<CallParticipant[] | null>(null);
 
     /** Is receiving an incoming call */
@@ -108,6 +98,7 @@ export class CallEventService {
         this.callEnded$ = this.onCallEvent<CallEndedEvent>(CallServerEvents.CALL_ENDED);
         this.callBusy$ = this.onCallEvent<CallBusyEvent>(CallServerEvents.CALL_BUSY);
         this.callError$ = this.onCallEvent<CallErrorEvent>(CallServerEvents.CALL_ERROR);
+        this.callRaisedJoiningRequest$ = this.onCallEvent<CallIncomingEvent>(CallServerEvents.CALL_RAISED_REQUEST);
     }
 
     /**
@@ -116,153 +107,7 @@ export class CallEventService {
      */
     initialize(): void {
         this.registerCallEventHandlers();
-        console.log('CallEventService initialized');
-    }
-
-    // =========================================================
-    // Client to Server Methods (Send Events)
-    // =========================================================
-
-    /**
-     * Join a audio call to a user
-     */
-    joinCall(calleeId: string, conversationId: string): void {
-        this.send(CallEvents.CALL_STARTED, <CallInitiatePayload>{
-            conversationId: conversationId,
-            calleeIds: [calleeId],
-            callType: CallType.AUDIO,
-            timeout: CallConfig.DEFAULT_TIMEOUT
-        });
-        this.callStatus.set(CallStatus.INITIATED);
-    }
-
-    /**
-     * Initiate a audio call to a user
-     */
-    initiateAudioCall(calleeId: string, conversationId: string): void {
-        this.send(CallEvents.CALL_INITIATE, <CallInitiatePayload>{
-            conversationId: conversationId,
-            calleeIds: [calleeId],
-            callType: CallType.AUDIO,
-            timeout: CallConfig.DEFAULT_TIMEOUT
-        });
-        this.callStatus.set(CallStatus.INITIATED);
-    }
-
-    /**
-     * Initiate a video call to a user
-     */
-    initiateVideoCall(calleeId: string, conversationId: string): void {
-        this.send(CallEvents.CALL_INITIATE, <CallInitiatePayload>{
-            callId: crypto.randomUUID(),
-            conversationId: conversationId,
-            calleeIds: [calleeId],
-            callType: CallType.VIDEO,
-            timeout: CallConfig.DEFAULT_TIMEOUT
-        });
-        this.callStatus.set(CallStatus.INITIATED);
-    }
-
-    /**
-     * Initiate a group call to multiple users
-     */
-    initiateGroupCall(calleeIds: string[], conversationId: string, callType: CallTypeValue): void {
-        this.send(CallEvents.CALL_INITIATE, <CallInitiatePayload>{
-            callId: crypto.randomUUID(),
-            conversationId: conversationId,
-            calleeIds: calleeIds,
-            callType: callType,
-            timeout: CallConfig.DEFAULT_TIMEOUT
-        });
-        this.callStatus.set(CallStatus.INITIATED);
-    }
-
-    /**
-     * Accept an incoming call
-     */
-    acceptCall(conversationId: string, callerId: string): void {
-        this.send(CallEvents.CALL_ACCEPT, <CallAcceptPayload>{
-            conversationId: conversationId,
-            callerId: callerId
-        });
-        this.hasIncomingCall.set(false);
-        this.incomingCall.set(null);
-        this.callStatus.set(CallStatus.ACCEPTED);
-    }
-
-    /**
-     * Reject an incoming call
-     */
-    rejectCall(conversationId: string, callerId: string, reason?: string): void {
-        this.send(CallEvents.CALL_REJECT, <CallRejectPayload>{
-            conversationId: conversationId,
-            callerId: callerId,
-            reason: reason
-        });
-        this.hasIncomingCall.set(false);
-        this.incomingCall.set(null);
-        this.callStatus.set(CallStatus.REJECTED);
-    }
-
-    /**
-     * Cancel an outgoing call before it's answered
-     */
-    cancelCall(conversationId: string, calleeIds: string[]): void {
-        this.send(CallEvents.CALL_CANCEL, <CallCancelPayload>{
-            conversationId: conversationId,
-            calleeIds: calleeIds
-        });
-        this.callStatus.set(CallStatus.CANCELLED);
-        this.resetCallState();
-    }
-
-    /**
-     * Report call timeout (no answer)
-     */
-    timeoutCall(conversationId: string, callerId: string): void {
-        this.send(CallEvents.CALL_TIMEOUT, <CallTimeoutPayload>{
-            conversationId: conversationId,
-            callerId: callerId
-        });
-        this.callStatus.set(CallStatus.TIMEOUT);
-        this.resetCallState();
-    }
-
-    /**
-     * End an ongoing call
-     */
-    endCall(reason?: string): void {
-        this.send(CallEvents.CALL_END, <CallEndPayload>{
-            conversationId: this.ws.currentConversationId(),
-            reason: reason || CallEndReason.NORMAL
-        });
-        this.callStatus.set(CallStatus.ENDED);
-        this.resetCallState();
-    }
-
-    /**
-     * Accept a joining request (join an ongoing call)
-     */
-    acceptJoiningRequest(conversationId: string, callerId: string): void {
-        this.send(CallEvents.CALL_ACCEPT, <CallAcceptPayload>{
-            conversationId: conversationId,
-            callerId: callerId
-        });
-        this.hasJoiningRequest.set(false);
-        this.callStatus.set(CallStatus.ACCEPTED);
-    }
-
-    /**
-     * Dismiss/ignore a joining request
-     */
-    dismissJoiningRequest(conversationId: string, callerId: string, reason?: string): void {
-        this.send(CallEvents.CALL_DISMISS, <CallDismissPayload>{
-            conversationId: conversationId,
-            callerId: callerId,
-            reason: reason || CallEndReason.NORMAL
-        });
-        this.hasJoiningRequest.set(false);
-        this.incomingCall.set(null);
+        console.log('ServerEventService initialized');
     }
 
     // =========================================================
@@ -279,15 +124,7 @@ export class CallEventService {
         );
     }
 
-    /**
-     * Generic send method using socket service
-     */
-    private send<T>(event: string, payload: T): void {
-        this.ws.sendEvent(event, payload);
-    }
-
     private updateParticipantsInRoom(event: Record<string, CallParticipant>): void {
-        // Check if incomingCall exists and has participants
         if (event && Object.keys(event).length > 0) {
             this.participantsInRoom.set(Object.keys(event).map(x => event[x]));
         } else {
@@ -338,12 +175,30 @@ export class CallEventService {
             })
         );
 
+        // Handle raised joining request
+        this.subscriptions.add(
+            this.callRaisedJoiningRequest$.subscribe(event => {
+                const currentUser = this.local.getUser();
+
+                this.incomingCall.set(event);
+                // Skip if I am the caller (I should not get notified of my own call)
+                if (currentUser && event.callerId === currentUser.userId) {
+                    console.log('Ignoring joining request event - I am the caller');
+                    return;
+                }
+
+                // Only set data for callees
+                this.hasJoiningRequest.set(true);
+                this.callStatus.set(CallStatus.RAISED_JOINING_REQUEST);
+                console.log('Joining request from:', event.callerId);
+            })
+        );
+
         // Handle call accepted
         this.subscriptions.add(
             this.callAccepted$.subscribe(event => {
                 this.callStatus.set(CallStatus.ACCEPTED);
                 console.log('Call accepted by:', event.acceptedBy);
-                // TODO: Connect to LiveKit room with event.roomName and event.token
             })
         );
 

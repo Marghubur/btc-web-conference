@@ -26,8 +26,8 @@
                             <div
                                 class="d-flex align-items-center justify-content-center vh-19 bg-light rounded w-100 py-2 position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
-                                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
+                                    [ngStyle]="{'background-color': meetingService.getColorFromName(roomForm.value.participantName!)}">
+                                    {{meetingService.getUserInitiaLetter(roomForm.value.participantName!)}}
                                 </div>
                                 @if (!meetingService.isMicOn()) {
                                 <div class="position-absolute user-mute-mic">
@@ -58,8 +58,8 @@
                             <div
                                 class="mt-2 d-flex align-items-center justify-content-center vh-19 bg-light rounded w-100 py-2 position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
-                                    [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity)}">
-                                    {{getUserInitiaLetter(remoteTrack.participantIdentity!)}}
+                                    [ngStyle]="{'background-color': meetingService.getColorFromName(remoteTrack.participantIdentity)}">
+                                    {{meetingService.getUserInitiaLetter(remoteTrack.participantIdentity!)}}
                                 </div>
                                 @if (!isParticipantAudioEnabled(remoteTrack.participantIdentity!)) {
                                 <div class="position-absolute user-mute-mic">
@@ -104,8 +104,8 @@
                             <div
                                 class="d-flex align-items-center justify-content-center vh-19 bg-light rounded w-100 py-2 position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
-                                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
+                                    [ngStyle]="{'background-color': meetingService.getColorFromName(roomForm.value.participantName!)}">
+                                    {{meetingService.getUserInitiaLetter(roomForm.value.participantName!)}}
                                 </div>
                                 @if (!meetingService.isMicOn()) {
                                 <div class="position-absolute user-mute-mic">
@@ -136,8 +136,8 @@
                             <div
                                 class="mt-2 d-flex align-items-center justify-content-center vh-19 bg-light rounded w-100 py-2 position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon"
-                                    [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity)}">
-                                    {{getUserInitiaLetter(remoteTrack.participantIdentity!)}}
+                                    [ngStyle]="{'background-color': meetingService.getColorFromName(remoteTrack.participantIdentity)}">
+                                    {{meetingService.getUserInitiaLetter(remoteTrack.participantIdentity!)}}
                                 </div>
                                 @if (!isParticipantAudioEnabled(remoteTrack.participantIdentity!)) {
                                 <div class="position-absolute user-mute-mic">
@@ -163,13 +163,7 @@
                     </div> -->
                 @if (isViewParticipant) {
                 <div class="col-md-3" [@slideFade]="isViewParticipant ? 'visible' : 'hidden'">
-                    <app-participant-roster [roomForm]="roomForm" [participantFilter]="participantFilter"
-                        [remoteUsersCount]="remoteUsersCount" [remoteParticipants]="remoteParticipants"
-                        [invitedParticipants]="invitedParticipants" [getColorFromName]="getColorFromName.bind(this)"
-                        [getUserInitiaLetter]="getUserInitiaLetter.bind(this)"
-                        [isParticipantAudioEnabled]="isParticipantAudioEnabled.bind(this)"
-                        [isParticipantCameraEnabled]="isParticipantCameraEnabled.bind(this)"
-                        (onRequestToJoin)="requestToJoin($event)">
+                    <app-participant-roster [roomForm]="roomForm" [invitedParticipants]="invitedParticipants">
                     </app-participant-roster>
                 </div>
                 }
@@ -185,8 +179,8 @@
                             <div
                                 class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
-                                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
+                                    [ngStyle]="{'background-color': meetingService.getColorFromName(roomForm.value.participantName!)}">
+                                    {{meetingService.getUserInitiaLetter(roomForm.value.participantName!)}}
                                 </div>
                                 @if (!meetingService.isMicOn()) {
                                 <div class="position-absolute user-mute-mic">
@@ -207,8 +201,8 @@
                             <div
                                 class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
-                                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
+                                    [ngStyle]="{'background-color': meetingService.getColorFromName(roomForm.value.participantName!)}">
+                                    {{meetingService.getUserInitiaLetter(roomForm.value.participantName!)}}
                                 </div>
                                 @if (!meetingService.isMicOn()) {
                                 <div class="position-absolute user-mute-mic">
@@ -236,8 +230,8 @@
                             <div
                                 class="d-flex align-items-center justify-content-center h-97 bg-light rounded position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
-                                    [ngStyle]="{'background-color': getColorFromName(remoteTrack.participantIdentity!)}">
-                                    {{getUserInitiaLetter(remoteTrack.participantIdentity!)}}
+                                    [ngStyle]="{'background-color': meetingService.getColorFromName(remoteTrack.participantIdentity!)}">
+                                    {{meetingService.getUserInitiaLetter(remoteTrack.participantIdentity!)}}
                                 </div>
                                 @if (!isParticipantAudioEnabled(remoteTrack.participantIdentity!)) {
                                 <div class="position-absolute user-mute-mic">
@@ -267,7 +261,7 @@
                     <!-- Displays video grid with local and remote participants -->
                     <!-- Participant roster is now handled by meeting.component -->
                     <div class="meet-container">
-                        <div class="grid-container rounded" [attr.data-count]="remoteUsersCount + 1">
+                        <div class="grid-container rounded" [attr.data-count]="meetingService.remoteUsersCount + 1">
                             @if (localTrack() && meetingService.isCameraOn()) {
                             <video-component [track]="localTrack()!"
                                 [participantIdentity]="roomForm.value.participantName!" [local]="true"
@@ -277,8 +271,8 @@
                             <div
                                 class="d-flex align-items-center justify-content-center h-97 avatar-container rounded position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
-                                    [ngStyle]="{'background-color': getColorFromName(roomForm.value.participantName!)}">
-                                    {{getUserInitiaLetter(roomForm.value.participantName!)}}
+                                    [ngStyle]="{'background-color': meetingService.getColorFromName(roomForm.value.participantName!)}">
+                                    {{meetingService.getUserInitiaLetter(roomForm.value.participantName!)}}
                                 </div>
                                 @if (!meetingService.isMicOn()) {
                                 <div class="position-absolute user-mute-mic">
@@ -295,7 +289,8 @@
                                 </div>
                             </div>
                             }
-                            @for (participant of remoteParticipants().values(); track participant.identity) {
+                            @for (participant of meetingService.remoteParticipants().values(); track
+                            participant.identity) {
                             @if (isParticipantCameraEnabled(participant.identity) &&
                             getVideoTrack(participant.identity)) {
                             <video-component [track]="getVideoTrack(participant.identity)!"
@@ -306,8 +301,8 @@
                             <div
                                 class="d-flex align-items-center justify-content-center h-97 avatar-container rounded position-relative">
                                 <div class="col-auto fw-semibold fs-4 rounded-circle d-flex align-items-center justify-content-center shadow user-name-icon-lg"
-                                    [ngStyle]="{'background-color': getColorFromName(participant.identity)}">
-                                    {{getUserInitiaLetter(participant.identity)}}
+                                    [ngStyle]="{'background-color': meetingService.getColorFromName(participant.identity)}">
+                                    {{meetingService.getUserInitiaLetter(participant.identity)}}
                                 </div>
                                 @if (!isParticipantAudioEnabled(participant.identity)) {
                                 <div class="position-absolute user-mute-mic">
@@ -473,7 +468,7 @@
                         d="M0-240v-63q0-43 44-70t116-27q13 0 25 .5t23 2.5q-14 21-21 44t-7 48v65H0Zm240 0v-65q0-32 17.5-58.5T307-410q32-20 76.5-30t96.5-10q53 0 97.5 10t76.5 30q32 20 49 46.5t17 58.5v65H240Zm540 0v-65q0-26-6.5-49T754-397q11-2 22.5-2.5t23.5-.5q72 0 116 26.5t44 70.5v63H780Zm-455-80h311q-10-20-55.5-35T480-370q-55 0-100.5 15T325-320ZM160-440q-33 0-56.5-23.5T80-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T160-440Zm640 0q-33 0-56.5-23.5T720-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T800-440Zm-320-40q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-600q0 50-34.5 85T480-480Zm0-80q17 0 28.5-11.5T520-600q0-17-11.5-28.5T480-640q-17 0-28.5 11.5T440-600q0 17 11.5 28.5T480-560Zm1 240Zm-1-280Z" />
                 </svg>
                 <span class="position-absolute badge rounded-circle bg-danger user-count">
-                    {{remoteUsersCount + 1}}
+                    {{meetingService.remoteUsersCount + 1}}
                 </span>
             </a>
             <a href="javascript:void(0)" class="text-decoration-none ms-3" data-bs-toggle="offcanvas" placement="top"
@@ -987,8 +982,8 @@
             @if (!item.isSender) {
             <div class="row mt-2">
                 <div class="col-auto me-1 fw-semibold rounded-circle d-flex align-items-center justify-content-center shadow user-caht-name-icon"
-                    [ngStyle]="{'background-color': getColorFromName(item.name)}">
-                    {{getUserInitiaLetter(item.name)}}
+                    [ngStyle]="{'background-color': meetingService.getColorFromName(item.name)}">
+                    {{meetingService.getUserInitiaLetter(item.name)}}
                 </div>
                 <div class="col-md-10 col-md-10 bg-info-subtle rounded pb-1">
                     <small class="col-md-12 text-muted">

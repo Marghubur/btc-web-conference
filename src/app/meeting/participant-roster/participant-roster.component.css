@@ -264,6 +264,39 @@
     flex-shrink: 0;
 }
 
+/* Calling State Styles */
+.request-join-btn.calling {
+    background: #e67e22;
+    cursor: not-allowed;
+    opacity: 0.9;
+}
+
+.request-join-btn.calling:hover {
+    background: #e67e22;
+    transform: none;
+}
+
+.calling-icon {
+    animation: pulse-ring 1.2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.15);
+        opacity: 0.7;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
 /* =====================================================
    Scrollbar Styling
    ===================================================== */
