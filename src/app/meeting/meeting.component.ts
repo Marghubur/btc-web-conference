@@ -39,7 +39,7 @@ import { ScreenshareComponent } from './screenshare/screenshare.component';
     animations: [
         trigger('slideFade', [
             state('hidden', style({ opacity: 0, height: '0px', overflow: 'hidden', width: '0px' })),
-            state('visible', style({ opacity: 1, height: '*', overflow: 'hidden', width: '25%' })),
+            state('visible', style({ opacity: 1, height: '*', overflow: 'hidden' })),
             transition('hidden <=> visible', animate('300ms ease'))
         ])
     ]
@@ -158,12 +158,6 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     filterParticipants(event: Event): void {
         const target = event.target as HTMLInputElement;
         this.participantFilterSignal.set(target.value);
-    }
-
-    requestToJoin(participant: InvitedParticipant): void {
-        // TODO: Implement actual request to join via API/signaling
-        console.log(`Request to join sent to: ${participant.name}`);
-        alert(`Request to join sent to ${participant.name}`);
     }
 
     // Getter methods to expose meetingService signals reactively

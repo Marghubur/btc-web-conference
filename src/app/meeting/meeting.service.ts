@@ -10,6 +10,7 @@ import { CallEventService } from '../providers/socket/call-event.service';
 import { User } from '../models/model';
 import { Dashboard, Login } from '../models/constant';
 import { CallParticipant, ParticipantStatus } from '../models/conference_call/call_model';
+import { InvitedParticipant } from './meeting.component';
 
 @Injectable({
   providedIn: 'root'
@@ -71,6 +72,13 @@ export class MeetingService {
   /** Called externally (e.g., from preview) to indicate user is joining a meeting */
   userJoinRoom() {
     this._inMeeting.set(true);
+  }
+
+  requestToJoin(participant: InvitedParticipant): void {
+    const request = this.callEventService.incomingCall();
+    // TODO: Implement actual request to join via API/signaling
+    console.log(`Request to join sent to: ${participant.name}`);
+    alert(`Request to join sent to ${participant.name}`);
   }
 
   // Computed signal - only recalculates when incomingCall or filter changes

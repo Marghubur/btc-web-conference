@@ -47,6 +47,6 @@ export class ParticipantRosterComponent {
     // }
 
     requestToJoin(invited: InvitedParticipant): void {
-        this.onRequestToJoin.emit(invited);
+        this.meetingService.requestToJoin(invited);
     }
 }

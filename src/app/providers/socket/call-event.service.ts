@@ -249,7 +249,6 @@ export class CallEventService {
             callerId: callerId
         });
         this.hasJoiningRequest.set(false);
-        this.incomingCall.set(null);
         this.callStatus.set(CallStatus.ACCEPTED);
     }
 
@@ -325,6 +324,7 @@ export class CallEventService {
                 const currentUser = this.local.getUser();
 
                 this.updateParticipantsInRoom(event.participants);
+                this.incomingCall.set(event);
                 // Skip if I am the caller (I should not get notified of my own call)
                 if (currentUser && event.callerId === currentUser.userId) {
                     console.log('Ignoring joining request event - I am the caller');
@@ -332,7 +332,6 @@ export class CallEventService {
                 }
 
                 // Only set data for callees
-                this.incomingCall.set(event);
                 this.hasJoiningRequest.set(true);
                 this.callStatus.set(CallStatus.JOINING_REQUEST);
                 console.log('Joining request from:', event.callerId);
