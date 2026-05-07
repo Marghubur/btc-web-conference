@@ -32,8 +32,8 @@ export class ChatService {
     async getMeetingRooms(): Promise<void> {
         this.isLoading.set(true);
         const res = await this.http.get(`conversations/rooms?pageNumber=1&pageSize=20`);
-        if (res.IsSuccess && res.ResponseBody) {
-            this.meetingRooms.set(res.ResponseBody.data || []);
+        if (res.isSuccess && res.responseBody) {
+            this.meetingRooms.set(res.responseBody.data || []);
         }
         this.isLoading.set(false);
     }
@@ -45,8 +45,8 @@ export class ChatService {
         }
         this.isLoading.set(true);
         const res = await this.http.get(`search/typeahead?q=${term}&fs=y`);
-        if (res.IsSuccess) {
-            this.filterSearchResults(res.ResponseBody['results']);
+        if (res.isSuccess) {
+            this.filterSearchResults(res.responseBody['results']);
         }
         this.isLoading.set(false);
     }
@@ -97,7 +97,7 @@ export class ChatService {
     async getMessages(conversationId: string, page: number, limit: number, append: boolean = false): Promise<void> {
         // isLoading not set here to avoid flickering entire chat on pagination
         const res = await this.http.get(`messages/get?id=${conversationId ?? ''}&page=${page}&limit=${limit}`);
-        if (res.IsSuccess && res.ResponseBody && res.ResponseBody.messages) {
+        if (res.isSuccess && res.responseBody && res.responseBody.messages) {
             if (append) {
                 // If appending (e.g. infinite scroll), combine with existing
                 // Note: Logic depends on scroll direction. Typically infinite scroll loads OLDER messages (prepend)
@@ -107,12 +107,12 @@ export class ChatService {
                 // COMPLEXITY: State in Service for pagination is tricky. 
                 // Let's append if page > 1, else set.
                 if (page > 1) {
-                    this.messages.update(current => [...res.ResponseBody.messages.reverse(), ...current]);
+                    this.messages.update(current => [...res.responseBody.messages.reverse(), ...current]);
                 } else {
-                    this.messages.set(res.ResponseBody.messages.reverse());
+                    this.messages.set(res.responseBody.messages.reverse());
                 }
             } else {
-                this.messages.set(res.ResponseBody.messages.reverse());
+                this.messages.set(res.responseBody.messages.reverse());
             }
         }
     }
@@ -120,7 +120,7 @@ export class ChatService {
     async createConversation(userId: string, conversation: Conversation): Promise<ResponseModel> {
         const res = await this.http.post(`conversations/create/${userId}`, conversation);
         // If successful, we might want to refresh meeting rooms or add this one
-        if (res.IsSuccess) {
+        if (res.isSuccess) {
             // Optionally refresh list
             // this.getMeetingRooms(); 
         }
@@ -130,7 +130,7 @@ export class ChatService {
     async createGroupConversation(userId: string, groupName: string, conversationId: string, participants: Participant[]): Promise<ResponseModel> {
         const res = await this.http.post(`conversations/create-group/${userId}/${groupName}/${conversationId}`, participants);
         // If successful, we might want to refresh meeting rooms or add this one
-        if (res.IsSuccess) {
+        if (res.isSuccess) {
             // Optionally refresh list
             // this.getMeetingRooms(); 
         }

@@ -27,7 +27,7 @@ export class AjaxService {
                         try {
                             if (res.body) {
                                 let loginData: ResponseModel = res.body;
-                                if (this.jwtService.setLoginDetail(loginData.ResponseBody)) {
+                                if (this.jwtService.setLoginDetail(loginData.responseBody)) {
                                     resolve(res.body);
                                 }
                             } else {

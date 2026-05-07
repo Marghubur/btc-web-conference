@@ -7,7 +7,7 @@ import { CallParticipant } from "./conference_call/call_model";
 // MonitorResponse is the main response for the monitor API
 export interface MonitorResponse {
     status: 'healthy' | 'degraded' | 'unhealthy';
-    IsSuccess: boolean;
+    isSuccess: boolean;
     connections: ConnectionStats;
     roomParticipantsStats: RoomParticipantsStats[];
     rooms: RoomStats;

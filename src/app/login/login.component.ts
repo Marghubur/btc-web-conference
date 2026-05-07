@@ -48,8 +48,8 @@ export class LoginComponent implements OnInit {
       password: this.password
     }
     this.httpService.login("auth/authenticateUser", user).then((res: any) => {
-      if (res.ResponseBody) {
-        this.isLoading = false;
+      this.isLoading = false;
+      if (res.httpStatusCode == 200) {
         if (this.rememberMe) {
           localStorage.setItem('creds', JSON.stringify({ email: this.email, password: this.password }));
         } else {

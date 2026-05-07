@@ -38,8 +38,8 @@ export class HttpService {
      */
     async login<T = any>(url: string, body: any, options?: RequestOptions): Promise<ResponseModel> {
         const response = await this.post<T>(url, body, options);
-        if (response.IsSuccess && response.ResponseBody) {
-            this.jwtService.setLoginDetail(response.ResponseBody);
+        if (response.isSuccess && response.responseBody) {
+            this.jwtService.setLoginDetail(response.responseBody);
         }
         return response;
     }
@@ -101,7 +101,7 @@ export class HttpService {
             params: options.params,
             observe: 'body',
             responseType: 'json',
-            withCredentials: options.withCredentials
+            withCredentials: options.withCredentials ?? true
         };
 
         try {
@@ -120,7 +120,7 @@ export class HttpService {
             );
 
             const response = await firstValueFrom(request$) as unknown as ResponseModel;
-            response.IsSuccess = response.HttpStatusCode == 200 || response.HttpStatusCode == 201;
+            response.isSuccess = response.httpStatusCode == 200 || response.httpStatusCode == 201;
             return response;
 
         } catch (error) {
@@ -216,14 +216,14 @@ export class HttpService {
         message: string
     ): ResponseModel {
         return {
-            AccessToken: '',
-            HttpStatusCode: httpStatusCode,
-            HttpStatusMessage: httpStatusMessage,
-            ResponseBody: responseBody,
-            ErrorCode: '',
-            ErrorMessage: '',
-            IsSuccess: isSuccess,
-            Message: message
+            accessToken: '',
+            httpStatusCode: httpStatusCode,
+            httpStatusMessage: httpStatusMessage,
+            responseBody: responseBody,
+            errorCode: '',
+            errorMessage: '',
+            isSuccess: isSuccess,
+            message: message
         };
     }
 }

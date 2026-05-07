@@ -74,7 +74,7 @@ export class RoomService {
         { roomName, participantName }
       )
     );
-    return response.AccessToken;
+    return response.accessToken;
   }
 
   async joinRoom(roomName: string, participantName: string): Promise<Room> {

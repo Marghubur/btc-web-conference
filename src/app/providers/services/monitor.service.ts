@@ -46,11 +46,11 @@ export class MonitorService {
         try {
             const response: ResponseModel = await this.http.get('monitor/stats', { baseUrl: this.baseUrl });
 
-            if (response.IsSuccess && response.ResponseBody) {
-                this._monitorData.set(response.ResponseBody as MonitorResponse);
+            if (response.isSuccess && response.responseBody) {
+                this._monitorData.set(response.responseBody as MonitorResponse);
                 this._lastUpdated.set(new Date());
             } else {
-                this._error.set(response.Message || 'Failed to fetch monitor data');
+                this._error.set(response.message || 'Failed to fetch monitor data');
             }
         } catch (err: any) {
             this._error.set(err?.message || 'Network error occurred');

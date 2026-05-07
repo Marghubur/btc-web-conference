@@ -193,7 +193,7 @@ export class GlobalSearchService {
      */
     async checkHealth(): Promise<HealthResponse> {
         const response = await this.http.get('search/health');
-        return response?.ResponseBody as HealthResponse;
+        return response?.responseBody as HealthResponse;
     }
 
     /**
@@ -201,7 +201,7 @@ export class GlobalSearchService {
      */
     async getMetrics(): Promise<MetricsResponse> {
         const response = await this.http.get('search/metrics');
-        return response?.ResponseBody as MetricsResponse;
+        return response?.responseBody as MetricsResponse;
     }
 
     /**
@@ -217,7 +217,7 @@ export class GlobalSearchService {
     private transformResponse(response: any): GlobalSearchResponse {
         // AjaxService returns ResponseModel with ResponseBody
         // Also handle if the actual data is nested inside 'data' or 'result' property
-        const body = response?.ResponseBody || response;
+        const body = response?.responseBody || response;
         const data = body?.data || body?.result || body;
         return data as GlobalSearchResponse;
     }

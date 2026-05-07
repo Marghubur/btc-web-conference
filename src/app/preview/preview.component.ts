@@ -100,10 +100,10 @@ export class PreviewComponent implements OnDestroy {
         try {
             const res: ResponseModel = await this.http.get('meeting/validateMeeting?access_token=' + this.accessToken);
 
-            if (res.ResponseBody && res.ResponseBody.id) {
+            if (res.responseBody && res.responseBody.id) {
                 this.isValidMeetingId = true;
-                this.meetingId = res.ResponseBody.id;
-                this.meetingTitle = res.ResponseBody.conversationName || "Unverified Meeting";
+                this.meetingId = res.responseBody.id;
+                this.meetingTitle = res.responseBody.conversationName || "Unverified Meeting";
                 await this.initializeMediaStream();
                 this.subscribeToPermissions();
             }

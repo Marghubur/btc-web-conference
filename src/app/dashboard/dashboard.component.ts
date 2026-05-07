@@ -166,8 +166,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     let value = this.meetingForm.getRawValue();
     console.log(value);
     this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
-      if (res.ResponseBody) {
-        this.bindMeetings(res.ResponseBody);
+      if (res.responseBody) {
+        this.bindMeetings(res.responseBody);
         HideModal("createMeeting");
         this.isLoading = false;
         this.isSubmitted = false;
@@ -180,8 +180,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private loadData() {
     this.isPageReady = false;
     this.http.get("meeting/get-recent-meetings").then((res: ResponseModel) => {
-      if (res.ResponseBody) {
-        this.bindMeetings(res.ResponseBody as UserFilter);
+      if (res.responseBody) {
+        this.bindMeetings(res.responseBody as UserFilter);
         this.isPageReady = true;
       }
     }).catch(e => {
@@ -245,8 +245,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       title: this.quickMeetingTitle
     };
     this.http.post("meeting/generateQuickMeeting", meetingDetal).then((res: ResponseModel) => {
-      if (res.ResponseBody) {
-        this.bindMeetings(res.ResponseBody);
+      if (res.responseBody) {
+        this.bindMeetings(res.responseBody);
         this.isLoading = false;
         HideModal("quickMeetingModal");
       }
@@ -336,9 +336,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.isLoading = true;
     this.http.post("validateMeetingIdPassCode", '').then((res: ResponseModel) => {
-      if (res.ResponseBody) {
+      if (res.responseBody) {
         HideModal("joinMeetingModal");
-        let meeting = res.ResponseBody;
+        let meeting = res.responseBody;
         this.joinMeeting(meeting);
         this.isLoading = false;
       }

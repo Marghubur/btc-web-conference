@@ -230,12 +230,12 @@ export class ChatContainerComponent implements AfterViewChecked {
     // Call API to create group
     this.chatService.createGroupConversation(this.currentUserId, groupName, this.ws.currentConversationId(), allMembers).then((res: ResponseModel) => {
       // Reset state
-      if (res.IsSuccess && res.ResponseBody) {
-        this.notifyGroupCreatedService.execute(res.ResponseBody.id, this.currentUserId);
+      if (res.isSuccess && res.responseBody) {
+        this.notifyGroupCreatedService.execute(res.responseBody.id, this.currentUserId);
         this.cancelCreateGroup();
         this.showMembersDropdown = false;
       } else {
-        alert("Failed to create group error: " + res.ResponseBody.ResponseBody);
+        alert("Failed to create group error: " + res.responseBody.responseBody);
       }
     });
   }

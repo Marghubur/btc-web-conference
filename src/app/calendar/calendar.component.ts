@@ -198,8 +198,8 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     loadData(): void {
         this.isPageReady = false;
         this.http.get("meeting/getAllMeetingByOrganizer").then((res: ResponseModel) => {
-            if (res.ResponseBody) {
-                this.bindMeetings(res.ResponseBody);
+            if (res.responseBody) {
+                this.bindMeetings(res.responseBody);
                 this.updateCalendar();
                 this.isPageReady = true;
             }
@@ -570,8 +570,8 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
         const value = this.meetingForm.getRawValue();
 
         this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
-            if (res.ResponseBody) {
-                this.bindMeetings(res.ResponseBody);
+            if (res.responseBody) {
+                this.bindMeetings(res.responseBody);
                 this.updateCalendar();
                 HideModal("scheduleMeetingModal");
                 this.isLoading = false;
