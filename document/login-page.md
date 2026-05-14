@@ -110,7 +110,7 @@
 | Press Enter in password field | Triggers `login()` method |
 
 **Success Flow:**
-1. `HttpService.login()` called with `auth/authenticateUser` endpoint
+1. `HttpService.login()` called with `auth/v1/authenticateUser` endpoint
 2. If `ResponseBody` exists in response → navigate to Dashboard
 3. If `rememberMe` is checked → save credentials to `localStorage`
 4. If `rememberMe` is unchecked → remove credentials from `localStorage`
@@ -140,7 +140,7 @@
 
 | Endpoint | HTTP Method | Purpose |
 |----------|-------------|---------|
-| `auth/authenticateUser` | POST (via `HttpService.login()`) | User authentication |
+| `auth/v1/authenticateUser` | POST (via `HttpService.login()`) | User authentication |
 
 ### Request Payload
 

@@ -7,6 +7,7 @@ import { Observable, of, OperatorFunction } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, tap, map } from 'rxjs/operators';
 import { LocalService } from '../../providers/services/local.service';
 import { AjaxService } from '../../providers/services/ajax.service';
+import { HttpService } from '../../providers/services/http.service';
 import { iNavigation } from '../../providers/services/iNavigation';
 import { UserFilter } from '../../models/user.filter';
 import { GlobalSearchComponent } from "../../components/global-search/global-search.component";
@@ -27,6 +28,7 @@ export class HeaderComponent {
     user: User;
 
     private http = inject(AjaxService);
+    private httpService = inject(HttpService);
     private chatService = inject(ChatService);
     private router = inject(Router);
     private localService = inject(LocalService);
@@ -34,6 +36,14 @@ export class HeaderComponent {
 
     constructor() {
         this.user = this.localService.getUser();
+    }
+
+    regenerateToken() {
+        this.httpService.post('auth/v1/regenerateToken', {}).then(res => {
+            console.log('Regenerate Token Response:', res);
+        }).catch(err => {
+            console.error('Regenerate Token Error:', err);
+        });
     }
 
     search: OperatorFunction<string, readonly any[]> = (text$: Observable<string>) =>

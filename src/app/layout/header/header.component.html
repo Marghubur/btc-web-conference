@@ -28,7 +28,8 @@
         </div>
     </ng-template>
 
-    <div class="header-right">
+    <div class="header-right d-flex align-items-center">
+        <button class="btn btn-sm btn-outline-primary me-3" (click)="regenerateToken()">Regenerate Token</button>
         <div class="user-profile">
             <div class="avatar"
                 [ngStyle]="{ 'background-color': getColorFromName(user?.firstName || '', user?.lastName || '') }">

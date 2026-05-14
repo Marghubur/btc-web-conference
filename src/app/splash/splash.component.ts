@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { LocalService } from '../providers/services/local.service';
 
 @Component({
   selector: 'app-splash',
@@ -12,7 +13,10 @@ import { CommonModule } from '@angular/common';
 export class SplashComponent implements OnInit {
   fadeOut = false;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private localService: LocalService
+  ) { }
 
   ngOnInit(): void {
     const minDelay = new Promise(resolve => setTimeout(resolve, 2800));
@@ -24,7 +28,12 @@ export class SplashComponent implements OnInit {
     Promise.all([minDelay, preload]).then(() => {
       this.fadeOut = true;
       setTimeout(() => {
-        this.router.navigate(['/home']);
+        // If the APP_INITIALIZER successfully restored the session, this will be true
+        if (this.localService.isLoggedIn()) {
+          this.router.navigate(['/btc/chat']);
+        } else {
+          this.router.navigate(['/home']);
+        }
       }, 600); // match fade-out duration
     });
   }

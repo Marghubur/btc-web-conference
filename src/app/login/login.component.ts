@@ -47,7 +47,7 @@ export class LoginComponent implements OnInit {
       email: this.email,
       password: this.password
     }
-    this.httpService.login("auth/authenticateUser", user).then((res: any) => {
+    this.httpService.login("auth/v1/authenticateUser", user).then((res: any) => {
       this.isLoading = false;
       if (res.httpStatusCode == 200) {
         if (this.rememberMe) {
