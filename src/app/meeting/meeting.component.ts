@@ -20,7 +20,7 @@ import { Offcanvas } from 'bootstrap';
 import { User } from '../models/model';
 import { hand_down, hand_raise } from '../models/constant';
 import { MeetingService } from './meeting.service';
-import { ServerEventService } from '../providers/socket/server-event.service';
+import { ServerEventService } from '../providers/socket/server-events/server-event.service';
 
 import { ParticipantRosterComponent } from './participant-roster/participant-roster.component';
 import { ScreenshareComponent } from './screenshare/screenshare.component';

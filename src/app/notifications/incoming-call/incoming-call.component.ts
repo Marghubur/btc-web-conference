@@ -1,10 +1,10 @@
 import { Component, effect, inject, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ServerEventService } from '../../providers/socket/server-event.service';
-import { AcceptCallService } from '../../providers/socket/call/accept-call.service';
-import { AcceptJoiningRequestService } from '../../providers/socket/call/accept-joining-request.service';
-import { RejectCallService } from '../../providers/socket/call/reject-call.service';
-import { DismissJoiningRequestService } from '../../providers/socket/call/dismiss-joining-request.service';
+import { ServerEventService } from '../../providers/socket/server-events/server-event.service';
+import { AcceptCallService } from '../../providers/socket/client-events/call/accept-call.service';
+import { AcceptJoiningRequestService } from '../../providers/socket/client-events/call/accept-joining-request.service';
+import { RejectCallService } from '../../providers/socket/client-events/call/reject-call.service';
+import { DismissJoiningRequestService } from '../../providers/socket/client-events/call/dismiss-joining-request.service';
 import { CallType } from '../../models/conference_call/call_model';
 import { Router } from '@angular/router';
 import { ConfeetSocketService } from '../../providers/socket/confeet-socket.service';

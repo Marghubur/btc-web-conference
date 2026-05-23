@@ -56,6 +56,7 @@
     border-bottom: 1px solid var(--teams-border);
     background-color: var(--teams-bg-sidebar);
     flex-shrink: 0;
+    position: relative;
 }
 
 .sidebar-title {
@@ -780,4 +781,316 @@
     .popup-body {
         padding: 20px;
     }
+}
+
+/* ===== Status Popover Styles ===== */
+
+/* Sidebar avatar wrapper */
+.sidebar-avatar-wrapper {
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.sidebar-avatar-wrapper:hover {
+    transform: scale(1.07);
+}
+
+.sidebar-user-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.sidebar-avatar-wrapper:hover .sidebar-user-avatar {
+    border-color: var(--teams-primary);
+}
+
+.sidebar-status-badge {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--teams-bg-sidebar);
+    display: block;
+}
+
+/* Edit status button */
+.sidebar-edit-status-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--teams-text-muted);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+    opacity: 0;
+}
+
+.user-profile-header:hover .sidebar-edit-status-btn {
+    opacity: 1;
+}
+
+.sidebar-edit-status-btn:hover {
+    background: var(--teams-hover);
+    color: var(--teams-primary);
+}
+
+/* ===== The Popover Card ===== */
+.status-popover {
+    width: 280px;
+    background: var(--theme-bg-primary, #fff);
+    border: 1px solid var(--teams-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    z-index: 9999;
+    overflow: hidden;
+    animation: popoverFadeIn 0.18s ease;
+}
+
+/* Fixed variant — escapes any overflow:hidden ancestors */
+.status-popover-fixed {
+    position: fixed;
+}
+
+@keyframes popoverFadeIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* Popover Header */
+.status-popover-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 16px 12px;
+    background: linear-gradient(135deg, rgba(91,95,199,0.08) 0%, rgba(91,95,199,0.02) 100%);
+    border-bottom: 1px solid var(--teams-border);
+}
+
+.status-popover-avatar {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.status-popover-avatar-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--theme-bg-primary, #fff);
+    display: block;
+}
+
+.status-popover-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--teams-text-primary);
+    line-height: 1.3;
+}
+
+.status-popover-current-status {
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+/* Sections */
+.status-popover-section {
+    padding: 12px 14px;
+}
+
+.status-popover-section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--teams-text-muted);
+    margin-bottom: 8px;
+}
+
+.status-popover-divider {
+    height: 1px;
+    background: var(--teams-border);
+    margin: 0 14px;
+}
+
+/* Status Message Display row */
+.status-message-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px dashed var(--teams-border);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    min-height: 36px;
+}
+
+.status-message-display:hover {
+    background: var(--teams-hover);
+    border-color: var(--teams-primary);
+}
+
+.status-message-text {
+    font-size: 13px;
+    color: var(--teams-text-primary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.status-message-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--teams-text-muted);
+    flex: 1;
+}
+
+.status-message-edit-icon {
+    color: var(--teams-text-muted);
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.status-message-display:hover .status-message-edit-icon {
+    opacity: 1;
+}
+
+/* Status Message Editor */
+.status-message-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-message-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid var(--teams-primary);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--teams-text-primary);
+    background: var(--theme-bg-primary, #fff);
+    outline: none;
+    box-sizing: border-box;
+    transition: box-shadow 0.15s ease;
+}
+
+.status-message-input:focus {
+    box-shadow: 0 0 0 3px rgba(91, 95, 199, 0.18);
+}
+
+.status-message-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.status-msg-btn {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.status-msg-btn:active { transform: scale(0.96); }
+
+.status-msg-btn.cancel {
+    background: var(--teams-hover);
+    color: var(--teams-text-secondary);
+}
+
+.status-msg-btn.cancel:hover { background: var(--teams-border); }
+
+.status-msg-btn.save {
+    background: var(--teams-primary);
+    color: white;
+}
+
+.status-msg-btn.save:hover { background: var(--teams-primary-hover); }
+
+/* Status Options List */
+.status-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.status-option-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s ease;
+}
+
+.status-option-item:hover {
+    background: var(--teams-hover);
+}
+
+.status-option-item.active {
+    background: rgba(91, 95, 199, 0.1);
+}
+
+.status-option-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+    border: 1.5px solid rgba(0,0,0,0.1);
+}
+
+.status-option-label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--teams-text-primary);
+    font-weight: 500;
+}
+
+.status-option-check {
+    color: var(--teams-primary);
+    flex-shrink: 0;
 }

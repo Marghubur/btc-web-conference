@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { ConfeetSocketService } from '../confeet-socket.service';
-import { ServerEventService } from '../server-event.service';
-import { CallEvents, CallStatus, CallCancelPayload } from '../../../models/conference_call/call_model';
+import { ConfeetSocketService } from '../../confeet-socket.service';
+import { ServerEventService } from '../../server-events/server-event.service';
+import { CallEvents, CallStatus, CallCancelPayload } from '../../../../models/conference_call/call_model';
 
 @Injectable({
     providedIn: 'root'

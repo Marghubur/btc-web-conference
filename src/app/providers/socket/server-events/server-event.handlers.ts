@@ -1,5 +1,5 @@
-import { CallStatus } from '../../models/conference_call/call_model';
-import { LocalService } from '../services/local.service';
+import { CallStatus } from '../../../models/conference_call/call_model';
+import { LocalService } from '../../services/local.service';
 import { ServerEventService } from './server-event.service';
 
 /**

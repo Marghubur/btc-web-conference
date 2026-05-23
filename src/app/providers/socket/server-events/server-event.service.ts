@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable, filter, map, Subscription } from 'rxjs';
 import { registerCallEventHandlers } from './server-event.handlers';
-import { ConfeetSocketService, WsEvent } from './confeet-socket.service';
-import { LocalService } from '../services/local.service';
+import { ConfeetSocketService, WsEvent } from '../confeet-socket.service';
+import { LocalService } from '../../services/local.service';
 import {
     // Constants
     CallServerEvents,
@@ -20,8 +20,8 @@ import {
     CallDismissedEvent,
     CallParticipant,
     GroupNotificationEvent,
-} from '../../models/conference_call/call_model';
-import { CallStore } from '../../store/call/call.store';
+} from '../../../models/conference_call/call_model';
+import { CallStore } from '../../../store/call/call.store';
 
 @Injectable({
     providedIn: 'root'

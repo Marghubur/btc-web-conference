@@ -11,9 +11,9 @@ import { ResponseModel, User } from '../models/model';
 
 import { NotificationService } from '../notifications/services/notification.service';
 import { CallType } from '../models/conference_call/call_model';
-import { ServerEventService } from '../providers/socket/server-event.service';
+import { ServerEventService } from '../providers/socket/server-events/server-event.service';
 import { ChatContainerComponent } from './chat-container/chat-container.component';
-import { TestSignalService } from '../providers/socket/call/test-sinal.service';
+import { TestSignalService } from '../providers/socket/client-events/call/test-sinal.service';
 
 @Component({
     selector: 'app-chat',
@@ -47,6 +47,23 @@ export class ChatComponent implements OnInit, OnDestroy {
     memberSearchQuery: string = '';
     memberSearchResults: SearchResult[] = [];
     memberSearchSelectedIndex: number = -1;
+
+    // Status Popover state (sidebar avatar)
+    showStatusPopover: boolean = false;
+    popoverTop: number = 0;
+    popoverLeft: number = 0;
+    userStatus: 'available' | 'busy' | 'dnd' | 'away' | 'offline' = 'available';
+    statusMessage: string = '';
+    editingStatusMessage: boolean = false;
+    tempStatusMessage: string = '';
+
+    readonly statusOptions = [
+        { value: 'available', label: 'Available', color: '#92c353', icon: '✓' },
+        { value: 'busy', label: 'Busy', color: '#c4314b', icon: '⊘' },
+        { value: 'dnd', label: 'Do not disturb', color: '#c4314b', icon: '⊝' },
+        { value: 'away', label: 'Be right back', color: '#f8d22a', icon: '○' },
+        { value: 'offline', label: 'Appear offline', color: '#8a8886', icon: '○' },
+    ] as const;
 
     private subscriptions = new Subscription();
     currentUserId: string = "";
@@ -255,8 +272,68 @@ export class ChatComponent implements OnInit, OnDestroy {
         this.newGroupName = '';
     }
 
+    // Status Popover Methods
+    toggleStatusPopover(event: Event): void {
+        event.stopPropagation();
+        this.showStatusPopover = !this.showStatusPopover;
+        if (this.showStatusPopover) {
+            this.tempStatusMessage = this.statusMessage;
+            this.editingStatusMessage = false;
+            // Compute fixed position: appear to the right of the avatar row
+            const trigger = (event.currentTarget as HTMLElement) ?? (event.target as HTMLElement);
+            const rect = trigger.closest('.user-profile-header')?.getBoundingClientRect()
+                      ?? trigger.getBoundingClientRect();
+            this.popoverTop = rect.bottom + 6;
+            this.popoverLeft = rect.left;
+            // Close on outside click
+            setTimeout(() => {
+                document.addEventListener('click', this.closeStatusPopoverHandler);
+            }, 0);
+        } else {
+            document.removeEventListener('click', this.closeStatusPopoverHandler);
+        }
+    }
+
+    private closeStatusPopoverHandler = () => {
+        this.showStatusPopover = false;
+        this.editingStatusMessage = false;
+        document.removeEventListener('click', this.closeStatusPopoverHandler);
+    };
+
+    setUserStatus(status: 'available' | 'busy' | 'dnd' | 'away' | 'offline'): void {
+        this.userStatus = status;
+    }
+
+    getStatusColor(): string {
+        return this.statusOptions.find(s => s.value === this.userStatus)?.color ?? '#92c353';
+    }
+
+    getStatusLabel(): string {
+        return this.statusOptions.find(s => s.value === this.userStatus)?.label ?? 'Available';
+    }
+
+    startEditingStatusMessage(): void {
+        this.editingStatusMessage = true;
+        this.tempStatusMessage = this.statusMessage;
+    }
+
+    saveStatusMessage(): void {
+        this.statusMessage = this.tempStatusMessage;
+        this.editingStatusMessage = false;
+    }
+
+    cancelStatusMessage(): void {
+        this.tempStatusMessage = this.statusMessage;
+        this.editingStatusMessage = false;
+    }
+
+    stopPopoverPropagation(event: Event): void {
+        event.stopPropagation();
+    }
+
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe();
+        document.removeEventListener('click', this.closeStatusPopoverHandler);
         // Clear active conversation when leaving chat page
         this.notificationService.setActiveConversation(null);
         this.chatService.setIsChatStatus(false);

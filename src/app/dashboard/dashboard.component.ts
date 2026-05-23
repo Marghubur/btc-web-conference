@@ -11,7 +11,7 @@ import { ConfeetSocketService } from '../providers/socket/confeet-socket.service
 import { MeetingDetail, ResponseModel, User } from '../models/model';
 import { Preview } from '../models/constant';
 import { Router } from '@angular/router';
-import { JoinCallService } from '../providers/socket/call/join-call.service';
+import { JoinCallService } from '../providers/socket/client-events/call/join-call.service';
 import { UserFilter } from '../models/user.filter';
 import { Conversation } from '../components/global-search/search.models';
 import { CallType } from '../models/conference_call/call_model';

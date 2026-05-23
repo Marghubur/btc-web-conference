@@ -5,8 +5,8 @@ import { Router } from '@angular/router';
 import { ConfeetSocketService } from '../../providers/socket/confeet-socket.service';
 import { ChatService } from '../chat.service';
 import { LocalService } from '../../providers/services/local.service';
-import { InitiateAudioCallService } from '../../providers/socket/call/initiate-audio-call.service';
-import { NotifyGroupCreatedService } from '../../providers/socket/group/notify-group-created.service';
+import { InitiateAudioCallService } from '../../providers/socket/client-events/call/initiate-audio-call.service';
+import { NotifyGroupCreatedService } from '../../providers/socket/client-events/group/notify-group-created.service';
 import { Conversation, Participant, SearchResult } from '../../components/global-search/search.models';
 import { ResponseModel, User } from '../../models/model';
 import { CallType } from '../../models/conference_call/call_model';
@@ -52,6 +52,23 @@ export class ChatContainerComponent implements AfterViewChecked {
   memberSearchQuery: string = '';
   memberSearchResults: SearchResult[] = [];
   memberSearchSelectedIndex: number = -1;
+
+  // Header status popover (top-right avatar in chat header)
+  showHeaderStatusPopover: boolean = false;
+  headerPopoverTop: number = 0;
+  headerPopoverLeft: number = 0;
+  headerUserStatus: 'available' | 'busy' | 'dnd' | 'away' | 'offline' = 'available';
+  headerStatusMessage: string = '';
+  headerEditingStatusMessage: boolean = false;
+  headerTempStatusMessage: string = '';
+
+  readonly statusOptions = [
+    { value: 'available', label: 'Available', color: '#92c353' },
+    { value: 'busy', label: 'Busy', color: '#c4314b' },
+    { value: 'dnd', label: 'Do not disturb', color: '#c4314b' },
+    { value: 'away', label: 'Be right back', color: '#f8d22a' },
+    { value: 'offline', label: 'Appear offline', color: '#8a8886' },
+  ] as const;
 
   constructor() {
     this.user = this.local.getUser();
@@ -128,6 +145,63 @@ export class ChatContainerComponent implements AfterViewChecked {
     this.newGroupMembers = [];
     this.memberSearchQuery = '';
     this.memberSearchResults = [];
+  }
+
+  // Header Status Popover Methods
+  private headerPopoverCloseHandler = () => {
+    this.showHeaderStatusPopover = false;
+    this.headerEditingStatusMessage = false;
+    document.removeEventListener('click', this.headerPopoverCloseHandler);
+  };
+
+  toggleHeaderStatusPopover(event: Event): void {
+    event.stopPropagation();
+    this.showHeaderStatusPopover = !this.showHeaderStatusPopover;
+    if (this.showHeaderStatusPopover) {
+      this.headerTempStatusMessage = this.headerStatusMessage;
+      this.headerEditingStatusMessage = false;
+      // Compute fixed position below and to the right of the avatar
+      const trigger = event.currentTarget as HTMLElement;
+      const rect = trigger.getBoundingClientRect();
+      this.headerPopoverTop = rect.bottom + 6;
+      this.headerPopoverLeft = rect.right - 280; // 280 = popover width, align right edge
+      setTimeout(() => {
+        document.addEventListener('click', this.headerPopoverCloseHandler);
+      }, 0);
+    } else {
+      document.removeEventListener('click', this.headerPopoverCloseHandler);
+    }
+  }
+
+  stopHeaderPopoverPropagation(event: Event): void {
+    event.stopPropagation();
+  }
+
+  setHeaderUserStatus(status: 'available' | 'busy' | 'dnd' | 'away' | 'offline'): void {
+    this.headerUserStatus = status;
+  }
+
+  getHeaderStatusColor(): string {
+    return this.statusOptions.find(s => s.value === this.headerUserStatus)?.color ?? '#92c353';
+  }
+
+  getHeaderStatusLabel(): string {
+    return this.statusOptions.find(s => s.value === this.headerUserStatus)?.label ?? 'Available';
+  }
+
+  startHeaderEditingStatusMessage(): void {
+    this.headerEditingStatusMessage = true;
+    this.headerTempStatusMessage = this.headerStatusMessage;
+  }
+
+  saveHeaderStatusMessage(): void {
+    this.headerStatusMessage = this.headerTempStatusMessage;
+    this.headerEditingStatusMessage = false;
+  }
+
+  cancelHeaderStatusMessage(): void {
+    this.headerTempStatusMessage = this.headerStatusMessage;
+    this.headerEditingStatusMessage = false;
   }
 
   getDefaultGroupName(): string {

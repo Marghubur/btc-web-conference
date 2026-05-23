@@ -9,7 +9,7 @@ import { environment } from '../../environments/environment';
 import { NotificationService } from '../notifications/services/notification.service';
 import { ToastNotificationComponent } from '../notifications/toast-notification/toast-notification.component';
 import { User } from '../models/model';
-import { ServerEventService } from '../providers/socket/server-event.service';
+import { ServerEventService } from '../providers/socket/server-events/server-event.service';
 import { IncomingCallComponent } from '../notifications/incoming-call/incoming-call.component';
 import { DeviceService } from './device.service';
 import { MeetingService } from '../meeting/meeting.service';

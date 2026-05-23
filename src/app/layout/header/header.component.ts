@@ -27,6 +27,23 @@ export class HeaderComponent {
     isSearching: boolean = false;
     user: User;
 
+    // Status Popover
+    showStatusPopover: boolean = false;
+    popoverTop: number = 0;
+    popoverLeft: number = 0;
+    userStatus: 'available' | 'busy' | 'dnd' | 'away' | 'offline' = 'available';
+    statusMessage: string = '';
+    editingStatusMessage: boolean = false;
+    tempStatusMessage: string = '';
+
+    readonly statusOptions = [
+        { value: 'available', label: 'Available', color: '#92c353' },
+        { value: 'busy',      label: 'Busy',      color: '#c4314b' },
+        { value: 'dnd',       label: 'Do not disturb', color: '#c4314b' },
+        { value: 'away',      label: 'Be right back',  color: '#f8d22a' },
+        { value: 'offline',   label: 'Appear offline',  color: '#8a8886' },
+    ] as const;
+
     private http = inject(AjaxService);
     private httpService = inject(HttpService);
     private chatService = inject(ChatService);
@@ -38,12 +55,59 @@ export class HeaderComponent {
         this.user = this.localService.getUser();
     }
 
-    regenerateToken() {
-        this.httpService.post('auth/v1/regenerateToken', {}).then(res => {
-            console.log('Regenerate Token Response:', res);
-        }).catch(err => {
-            console.error('Regenerate Token Error:', err);
-        });
+    // ===== Status Popover =====
+    private popoverCloseHandler = () => {
+        this.showStatusPopover = false;
+        this.editingStatusMessage = false;
+        document.removeEventListener('click', this.popoverCloseHandler);
+    };
+
+    toggleStatusPopover(event: Event): void {
+        event.stopPropagation();
+        this.showStatusPopover = !this.showStatusPopover;
+        if (this.showStatusPopover) {
+            this.tempStatusMessage = this.statusMessage;
+            this.editingStatusMessage = false;
+            const trigger = event.currentTarget as HTMLElement;
+            const rect = trigger.getBoundingClientRect();
+            this.popoverTop  = rect.bottom + 6;
+            this.popoverLeft = rect.right - 280;
+            setTimeout(() => {
+                document.addEventListener('click', this.popoverCloseHandler);
+            }, 0);
+        } else {
+            document.removeEventListener('click', this.popoverCloseHandler);
+        }
+    }
+
+    stopPopoverPropagation(event: Event): void { event.stopPropagation(); }
+
+    setUserStatus(status: 'available' | 'busy' | 'dnd' | 'away' | 'offline'): void {
+        this.userStatus = status;
+        alert(`Status set to: ${this.getStatusLabel()}`);
+    }
+
+    getStatusColor(): string {
+        return this.statusOptions.find(s => s.value === this.userStatus)?.color ?? '#92c353';
+    }
+
+    getStatusLabel(): string {
+        return this.statusOptions.find(s => s.value === this.userStatus)?.label ?? 'Available';
+    }
+
+    startEditingStatusMessage(): void {
+        this.editingStatusMessage = true;
+        this.tempStatusMessage = this.statusMessage;
+    }
+
+    saveStatusMessage(): void {
+        this.statusMessage = this.tempStatusMessage;
+        this.editingStatusMessage = false;
+    }
+
+    cancelStatusMessage(): void {
+        this.tempStatusMessage = this.statusMessage;
+        this.editingStatusMessage = false;
     }
 
     search: OperatorFunction<string, readonly any[]> = (text$: Observable<string>) =>
