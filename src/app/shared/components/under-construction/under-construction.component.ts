@@ -1,11 +1,13 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-under-construction',
   standalone: true,
-  imports: [],
+  imports: [CommonModule, RouterModule],
   templateUrl: './under-construction.component.html',
-  styleUrl: './under-construction.component.css'
+  styleUrls: ['./under-construction.component.scss']
 })
 export class UnderConstructionComponent {
 

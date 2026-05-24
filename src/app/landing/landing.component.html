@@ -563,25 +563,51 @@
       </div>
 
       <div class="footer-links-group">
+
         <div class="footer-col">
           <h4>Product</h4>
-          <a href="javascript:void(0)">Features</a>
-          <a href="javascript:void(0)">Pricing</a>
-          <a href="javascript:void(0)">Security</a>
-          <a href="javascript:void(0)">Integrations</a>
+        
+          <a (click)="scrollToSection('features')">
+            Features
+          </a>
+          <a routerLink="/pricing">
+            Pricing
+          </a>
+          <a routerLink="/security">
+            Security
+          </a>
+          <a routerLink="/integrations">
+            Integrations  
+          </a>
         </div>
+
         <div class="footer-col">
           <h4>Company</h4>
-          <a href="javascript:void(0)">About</a>
-          <a href="javascript:void(0)">Blog</a>
-          <a href="javascript:void(0)">Careers</a>
-          <a href="javascript:void(0)">Contact</a>
+          <a (click)="scrollToSection('about-us')">
+            About 
+          </a> 
+          <a  routerLink="/blog">
+            Blog
+          </a>
+          <a routerLink="/careers">
+            Careers
+          </a>
+          <a routerLink="/contact">
+            Contact
+          </a>
         </div>
+
         <div class="footer-col">
           <h4>Legal</h4>
-          <a href="javascript:void(0)">Privacy Policy</a>
-          <a href="javascript:void(0)">Terms of Service</a>
-          <a href="javascript:void(0)">Cookie Policy</a>
+          <a routerLink="/privacy-policy">
+            Privacy Policy
+          </a>
+          <a routerLink="/terms-of-service">
+            Terms of Service
+          </a>
+          <a routerLink="/cookie-policy">
+            Cookie Policy
+          </a>
         </div>
       </div>
     </div>

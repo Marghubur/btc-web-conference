@@ -1,13 +1,45 @@
-<div class="construction-container">
+<div class="construction-page">
+
+  <div class="bg-blur bg1"></div>
+  <div class="bg-blur bg2"></div>
+
   <div class="construction-card">
-    <div class="icon-wrapper">
-      <span class="emoji-icon">🚧</span>
+
+    <div class="icon-box">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 2L2 7L12 12L22 7L12 2Z"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M2 17L12 22L22 17"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M2 12L12 17L22 12"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
     </div>
+
     <h1>Page Under Construction</h1>
-    <p>We are currently working hard behind the scenes to bring this page live. Please check back soon!</p>
-    
-    <a routerLink="/" class="home-btn">
-      <span class="arrow">←</span> Go Back to Home
+
+    <p>
+      This section is currently being built and will be available soon.
+    </p>
+
+    <a [routerLink]="['/home']" class="home-btn">
+      Back to Home
     </a>
+
   </div>
+
 </div>

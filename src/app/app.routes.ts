@@ -87,14 +87,12 @@ export const routes: Routes = [
   // ==========================================================================
   // New Internal Link Routes Redirecting to Fallback
   // ==========================================================================
-  { path: 'features', component: UnderConstructionComponent },
   { path: 'pricing', component: UnderConstructionComponent },
   { path: 'security', component: UnderConstructionComponent },
   { path: 'integrations', component: UnderConstructionComponent },
-  { path: 'about', component: UnderConstructionComponent },
   { path: 'blog', component: UnderConstructionComponent },
   { path: 'careers', component: UnderConstructionComponent },
-  { path: 'contact', component: UnderConstructionComponent }, // You can change this to a real component when your Contact form layout is ready!
+ // You can change this to a real component when your Contact form layout is ready!
 
   // ==========================================================================
   //  New Legal Link Routes Redirecting to Fallback
@@ -102,6 +100,7 @@ export const routes: Routes = [
   { path: 'privacy-policy', component: UnderConstructionComponent },
   { path: 'terms-of-service', component: UnderConstructionComponent },
   { path: 'cookie-policy', component: UnderConstructionComponent },
+  { path: 'under-construction', component: UnderConstructionComponent },
 
   // ==========================================================================
   // Wildcard Route: Catches any unmapped broken paths and safely shows construction fallback
