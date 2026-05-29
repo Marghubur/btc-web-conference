@@ -4,6 +4,8 @@ import { MeetingComponent } from "./meeting/meeting.component";
 import { PreviewComponent } from "./preview/preview.component";
 import { authGuard } from "./providers/auth.guard";
 import { SplashComponent } from "./splash/splash.component";
+// Import our new fallback component
+import { UnderConstructionComponent } from "./shared/components/under-construction/under-construction.component";
 
 // Custom route matcher
 export function btcRouteMatcher(segments: UrlSegment[]) {
@@ -81,4 +83,27 @@ export const routes: Routes = [
       }
     ],
   },
+
+  // ==========================================================================
+  // New Internal Link Routes Redirecting to Fallback
+  // ==========================================================================
+  { path: 'pricing', component: UnderConstructionComponent },
+  { path: 'security', component: UnderConstructionComponent },
+  { path: 'integrations', component: UnderConstructionComponent },
+  { path: 'blog', component: UnderConstructionComponent },
+  { path: 'careers', component: UnderConstructionComponent },
+ // You can change this to a real component when your Contact form layout is ready!
+
+  // ==========================================================================
+  //  New Legal Link Routes Redirecting to Fallback
+  // ==========================================================================
+  { path: 'privacy-policy', component: UnderConstructionComponent },
+  { path: 'terms-of-service', component: UnderConstructionComponent },
+  { path: 'cookie-policy', component: UnderConstructionComponent },
+  { path: 'under-construction', component: UnderConstructionComponent },
+
+  // ==========================================================================
+  // Wildcard Route: Catches any unmapped broken paths and safely shows construction fallback
+  // ==========================================================================
+  { path: '**', component: UnderConstructionComponent }
 ];

@@ -434,51 +434,103 @@
     </div>
   </section>
 
-  <!-- ======== CONTACT US ======== -->
+     <!-- ======== CONTACT US ======== -->
   <section class="contact-section" id="contact-us">
-    <div class="section-container">
-      <div class="section-header reveal">
-        <span class="section-tag">Get in Touch</span>
-        <h2 class="section-title">We'd Love to<br/><span class="gradient-text">Hear From You</span></h2>
+   <div class="section-container">
+     <div class="section-header reveal">
+       <span class="section-tag">Get in Touch</span>
+       <h2 class="section-title">
+        We'd Love to<br/>
+        <span class="gradient-text">Hear From You</span>
+       </h2>
       </div>
+
       <div class="contact-grid">
-        <div class="contact-info reveal">
-          <div class="info-card">
-            <div class="info-icon"><i class="fas fa-envelope"></i></div>
-            <h4>Email Us</h4>
-            <p>hello&#64;confeet.com</p>
+
+      <div class="contact-info reveal">
+
+        <!-- EMAIL -->
+        <div class="info-card">
+          <div class="info-icon">
+            <i class="fas fa-envelope"></i>
           </div>
-          <div class="info-card">
-            <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
-            <h4>Visit Us</h4>
-            <p>123 Innovation Drive<br/>San Francisco, CA 94105</p>
-          </div>
-          <div class="info-card">
-            <div class="info-icon"><i class="fas fa-phone"></i></div>
-            <h4>Call Us</h4>
-            <p>+1 (555) 123-4567</p>
-          </div>
+
+          <h4>Email Us</h4>
+
+          <p>
+            <a href="mailto:info@bottomhalf.in">
+              info&#64;bottomhalf.in
+            </a>
+          </p>
         </div>
-        <div class="contact-form reveal">
-          <form (submit)="$event.preventDefault()">
-            <div class="form-group">
-              <label>Full Name</label>
-              <input type="text" placeholder="John Doe">
-            </div>
-            <div class="form-group">
-              <label>Email Address</label>
-              <input type="email" placeholder="john@company.com">
-            </div>
-            <div class="form-group">
-              <label>Message</label>
-              <textarea rows="4" placeholder="How can we help you?"></textarea>
-            </div>
-            <button class="btn-primary" style="width: 100%">Send Message</button>
-          </form>
+
+        <!-- ADDRESS -->
+        <div class="info-card">
+          <div class="info-icon">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+
+          <h4>Visit Us</h4>
+
+          <p>
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=Rail+Par+K.T+Road+Bairagi+Talab+Asansol+713302+West+Bengal+India"
+              target="_blank"
+            >
+              Rail Par K.T Road Bairagi Talab<br/>
+              Asansol 713302<br/>
+              West Bengal<br/>
+              India
+            </a>
+          </p>
         </div>
+
+        <!-- PHONE -->
+        <div class="info-card">
+          <div class="info-icon">
+            <i class="fas fa-phone"></i>
+          </div>
+
+          <h4>Call Us</h4>
+
+          <p>
+            <a href="tel:+918942916204">
+              +91-8942916204
+            </a>
+          </p>
+        </div>
+
       </div>
+
+      <!-- CONTACT FORM -->
+      <div class="contact-form reveal">
+        <form (submit)="$event.preventDefault()">
+
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" placeholder="John Doe">
+          </div>
+
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" placeholder="john@company.com">
+          </div>
+
+          <div class="form-group">
+            <label>Message</label>
+            <textarea rows="4" placeholder="How can we help you?"></textarea>
+          </div>
+
+          <button class="btn-primary" style="width: 100%">
+            Send Message
+          </button>
+
+        </form>
+      </div>
+
     </div>
-  </section>
+  </div>
+</section>
 
   <!-- ======== FOOTER ======== -->
   <footer class="landing-footer">
@@ -503,33 +555,91 @@
         </div>
         <p class="footer-desc">The all-in-one platform for modern team collaboration. Video, chat, files, and AI — together at last.</p>
         <div class="footer-social">
-          <a href="javascript:void(0)" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-          <a href="javascript:void(0)" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-          <a href="javascript:void(0)" aria-label="GitHub"><i class="fab fa-github"></i></a>
-          <a href="javascript:void(0)" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+            <a
+              href="https://x.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Twitter"
+            >
+              <i class="fab fa-x-twitter"></i>
+            </a>
+
+            <a
+              href="https://in.linkedin.com/company/bottomhalf"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+            >
+              <i class="fab fa-linkedin-in"></i>
+            </a>
+
+            <a
+              href="https://github.com/bottomhalf"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+            >
+              <i class="fab fa-github"></i>
+            </a>
+
+            <a
+              href="https://www.youtube.com/channel/UCwK6KvOYM3C3apIN8C2CHLA"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="YouTube"
+            >
+              <i class="fab fa-youtube"></i>
+            </a>
+
         </div>
       </div>
 
       <div class="footer-links-group">
+
         <div class="footer-col">
           <h4>Product</h4>
-          <a href="javascript:void(0)">Features</a>
-          <a href="javascript:void(0)">Pricing</a>
-          <a href="javascript:void(0)">Security</a>
-          <a href="javascript:void(0)">Integrations</a>
+        
+          <a (click)="scrollToSection('features')">
+            Features
+          </a>
+          <a routerLink="/pricing">
+            Pricing
+          </a>
+          <a routerLink="/security">
+            Security
+          </a>
+          <a routerLink="/integrations">
+            Integrations  
+          </a>
         </div>
+
         <div class="footer-col">
           <h4>Company</h4>
-          <a href="javascript:void(0)">About</a>
-          <a href="javascript:void(0)">Blog</a>
-          <a href="javascript:void(0)">Careers</a>
-          <a href="javascript:void(0)">Contact</a>
+          <a (click)="scrollToSection('about-us')">
+            About 
+          </a> 
+          <a  routerLink="/blog">
+            Blog
+          </a>
+          <a routerLink="/careers">
+            Careers
+          </a>
+          <a routerLink="/contact">
+            Contact
+          </a>
         </div>
+
         <div class="footer-col">
           <h4>Legal</h4>
-          <a href="javascript:void(0)">Privacy Policy</a>
-          <a href="javascript:void(0)">Terms of Service</a>
-          <a href="javascript:void(0)">Cookie Policy</a>
+          <a routerLink="/privacy-policy">
+            Privacy Policy
+          </a>
+          <a routerLink="/terms-of-service">
+            Terms of Service
+          </a>
+          <a routerLink="/cookie-policy">
+            Cookie Policy
+          </a>
         </div>
       </div>
     </div>
