@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { filter, map, Observable, Subject, takeUntil } from 'rxjs';
 import { User } from '../../models/model';
 import { Conversation } from '../../components/global-search/search.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
     providedIn: 'root',
@@ -24,7 +25,7 @@ export class ConfeetSocketService {
     currentConversationId = signal<string | null>(null);
 
     private reconnectInterval = 3000;
-    private heartbeatInterval = 30000; // 30 seconds
+    private heartbeatInterval = environment.heartbeatInterval; // 30 seconds
     private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     private senderId!: string;
     private url!: string;

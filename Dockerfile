@@ -1,18 +1,33 @@
-#   BUILD STAGE 1
+# ─────────────────────────────────────────────
+#  STAGE 1 – Build (Angular + TypeScript)
+# ─────────────────────────────────────────────
+# Angular requires Node ≥ 20.19 or ≥ 22.12
+FROM node:22-alpine AS builder
 
-FROM node:20.16.0 as node
 WORKDIR /app
 
+# Install deps first (layer-cache friendly)
+# NOTE: Do NOT use --ignore-scripts — Angular 18+ uses rolldown which needs a
+# postinstall script to download the correct platform-native binary.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy source and build
 COPY . .
+RUN npm run build -- --mode production
 
-RUN npm install
+# ─────────────────────────────────────────────
+#  STAGE 2 – Serve with Nginx
+# ─────────────────────────────────────────────
+FROM nginx:1.27-alpine
 
-# Add build config as argument
-ARG BUILD_CONFIG=production
-ENV BUILD_CONFIG=$BUILD_CONFIG
+# Custom nginx config for React Router (SPA fallback)
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-RUN npm run build -- --configuration $BUILD_CONFIG
+# Copy built assets from Stage 1
+COPY --from=builder /app/dist/btc-web-conference/browser /usr/share/nginx/html
 
-# STAGE 2
-FROM nginx:alpine
-COPY --from=node /app/dist/btc-web-conference/browser /usr/share/nginx/html
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

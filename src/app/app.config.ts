@@ -2,7 +2,6 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, provideZoneChangeDetection, APP_INITIALIZER } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
-import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { authInterceptor } from './providers/interceptors/auth.interceptor';
 import { errorInterceptor } from './providers/interceptors/error.interceptor';
@@ -17,7 +16,6 @@ export const appConfig: ApplicationConfig = {
         provideZoneChangeDetection({ eventCoalescing: true }),
         provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
         provideRouter(routes),
-        { provide: LocationStrategy, useClass: HashLocationStrategy },
         provideAnimationsAsync(),
         {
             provide: APP_INITIALIZER,

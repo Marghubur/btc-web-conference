@@ -14,14 +14,14 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.16.0]
+        node-version: [22]
         build-config: [production]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -49,9 +49,6 @@ jobs:
 
     - name: Apply new changes
       run: |
-          echo "Deleting existing Kubernetes resources"
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "microk8s kubectl delete -f /root/kube.ws/confeet/confeet-web/conf-web-deploy.yml"
-
           echo "Applying new Kubernetes configuration"
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "microk8s kubectl apply -f /root/kube.ws/confeet/confeet-web/conf-web-deploy.yml"
 
