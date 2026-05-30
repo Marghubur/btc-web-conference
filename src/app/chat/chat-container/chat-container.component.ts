@@ -43,6 +43,7 @@ export class ChatContainerComponent implements AfterViewChecked {
   private shouldScrollToBottom = false;
   private shouldPreserveScrollPosition = false;
   private previousScrollHeight = 0;
+  private lastMessageId?: string;
 
   // Members dropdown state
   showMembersDropdown: boolean = false;
@@ -80,10 +81,29 @@ export class ChatContainerComponent implements AfterViewChecked {
       if (conversation && conversation.id) {
         // Reset page index and load first page of messages
         this.pageIndex = 1;
+        this.lastMessageId = undefined; // Reset tracking
         this.loadMoreMessages(true); // true = scroll to bottom
         this.chatService.setIsChatStatus(true, 'Chat container');
       }
     }, { allowSignalWrites: true });
+
+    // React to new incoming messages to auto-scroll
+    effect(() => {
+      const msgs = this.chatService.messages();
+      if (msgs && msgs.length > 0) {
+        const latestMsg = msgs[msgs.length - 1];
+        const currentLastId = latestMsg.id || latestMsg.messageId;
+        
+        if (this.lastMessageId !== currentLastId) {
+          this.lastMessageId = currentLastId;
+          this.shouldScrollToBottom = true;
+          // Fallback to ensure scroll happens after DOM updates
+          setTimeout(() => this.scrollToBottom(), 50);
+        }
+      } else {
+        this.lastMessageId = undefined;
+      }
+    });
   }
 
   ngAfterViewChecked() {
