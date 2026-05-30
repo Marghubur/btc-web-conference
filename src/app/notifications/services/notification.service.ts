@@ -152,7 +152,16 @@ export class NotificationService {
         );
     }
 
-    private handleNewMessage(message: Message): void {
+    private handleNewMessage(message: Message | string): void {
+        if (typeof message === 'string') {
+            try {
+                const decoded = atob(message);
+                message = JSON.parse(decoded) as Message;
+            } catch (e) {
+                console.error('Failed to decode/parse base64 message:', e);
+                return;
+            }
+        }
         const isActiveConversation = this.activeConversationId() === message.conversationId;
 
         if (isActiveConversation && this.chatService.isChatActive()) {
@@ -183,7 +192,16 @@ export class NotificationService {
         this.updateConversationLastMessage(message);
     }
 
-    private handleMessageSent(message: Message): void {
+    private handleMessageSent(message: Message | string): void {
+        if (typeof message === 'string') {
+            try {
+                const decoded = atob(message);
+                message = JSON.parse(decoded) as Message;
+            } catch (e) {
+                console.error('Failed to decode/parse base64 message sent confirmation:', e);
+                return;
+            }
+        }
         const isActiveConversation = this.activeConversationId() === message.conversationId;
 
         if (isActiveConversation && this.chatService.isChatActive()) {
