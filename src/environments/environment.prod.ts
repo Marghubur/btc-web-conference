@@ -4,7 +4,7 @@ export const environment = {
   appServerBaseUrl: `https://www.confeet.com/api/`,
 
   socketBaseUrl: "wss://www.confeet.com/v1/cfgs/cf-sesion",
-  messageBaseUrl: "https://www.confeet.com/cf/api/",
+  messageBaseUrl: "https://www.confeet.com/v1/cf/api/",
   socketHandshakEndpoint: "ws",
   heartbeatInterval: 30000,
 };

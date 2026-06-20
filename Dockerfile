@@ -14,7 +14,7 @@ RUN npm ci
 
 # Copy source and build
 COPY . .
-RUN npm run build -- --mode production
+RUN npm run build -- --configuration production
 
 # ─────────────────────────────────────────────
 #  STAGE 2 – Serve with Nginx
