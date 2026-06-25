@@ -1,8 +1,8 @@
 import { Injectable, signal } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, filter, take } from 'rxjs';
 import { Conversation, Participant, SearchResult, UserDetail } from '../components/global-search/search.models';
 import { HttpService } from '../providers/services/http.service';
-import { Message } from '../providers/socket/confeet-socket.service';
+import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
 import { ResponseModel } from '../models/model';
 
 @Injectable({
@@ -21,7 +21,9 @@ export class ChatService {
     readonly isChatActive = this._isChatActive.asReadonly();
 
 
-    constructor(private http: HttpService) { }
+    constructor(private http: HttpService,
+        private ws: ConfeetSocketService
+    ) { }
 
     setIsChatStatus(isActive: boolean, requestFrom: string = 'Auto') {
         console.log('[IsChatStatus changed from: ' + requestFrom + '] ------------------------: ', isActive);
@@ -31,10 +33,17 @@ export class ChatService {
     // HTTP Methods
     async getMeetingRooms(): Promise<void> {
         this.isLoading.set(true);
-        const res = await this.http.get(`conversations/rooms?pageNumber=1&pageSize=20`);
-        if (res.isSuccess && res.responseBody) {
-            this.meetingRooms.set(res.responseBody.data || []);
-        }
+        this.ws.isConnected$.pipe(
+            filter(isConnected => isConnected),
+            take(1)
+        ).subscribe(() => {
+            var result = this.ws.getInitUser();
+            console.log('result', result)
+        });
+        // const res = await this.http.get(`conversations/rooms?pageNumber=1&pageSize=20`);
+        // if (res.isSuccess && res.responseBody) {
+        //     this.meetingRooms.set(res.responseBody.data || []);
+        // }
         this.isLoading.set(false);
     }
 
