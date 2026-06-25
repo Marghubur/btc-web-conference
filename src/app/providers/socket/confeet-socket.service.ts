@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { filter, map, Observable, Subject, takeUntil } from 'rxjs';
+import { filter, map, Observable, Subject, takeUntil, BehaviorSubject } from 'rxjs';
 import { User } from '../../models/model';
 import { Conversation } from '../../components/global-search/search.models';
 import { environment } from '../../../environments/environment';
@@ -10,6 +10,8 @@ import { environment } from '../../../environments/environment';
 export class ConfeetSocketService {
     private ws: WebSocket | null = null;
     private messageSubject = new Subject<WsEvent>();
+    private isConnectedSubject = new BehaviorSubject<boolean>(false);
+    public isConnected$ = this.isConnectedSubject.asObservable();
 
     // Exposed observables for each event type
     incomingMessage$: Observable<Message>;
@@ -19,7 +21,7 @@ export class ConfeetSocketService {
     userTyping$: Observable<TypingIndicator>;
     error$: Observable<ErrorPayload>;
     pong$: Observable<PongPayload>;
-
+    initUserList$: Observable<User[]>;
     //--------------------------------------------------------------
     currentConversation = signal<Conversation | null>(null);
     currentConversationId = signal<string | null>(null);
@@ -39,6 +41,8 @@ export class ConfeetSocketService {
         this.userTyping$ = this.onEvent<TypingIndicator>(WsEvents.USER_TYPING);
         this.error$ = this.onEvent<ErrorPayload>(WsEvents.ERROR);
         this.pong$ = this.onEvent<PongPayload>(WsEvents.PONG);
+        this.initUserList$ = this.onEvent<User[]>(WsEvents.INIT_USERLIST);
+        console.log(this.initUserList$)
     }
 
     connect(url: string, senderId: string) {
@@ -58,6 +62,7 @@ export class ConfeetSocketService {
             console.log('WS connected');
             this.sendPing(this.senderId);
             this.startHeartbeat(this.senderId);
+            this.isConnectedSubject.next(true);
         };
 
         this.ws.onmessage = (event) => {
@@ -70,6 +75,7 @@ export class ConfeetSocketService {
 
         this.ws.onclose = () => {
             console.warn('WS closed, reconnecting...');
+            this.isConnectedSubject.next(false);
             this.stopHeartbeat();
             this.ws = null;
 
@@ -88,6 +94,11 @@ export class ConfeetSocketService {
     // Send message
     sendMessage(message: Partial<Message>): void {
         this.send(WsEvents.SEND_MESSAGE, message);
+    }
+
+    // Send message
+    getInitUser(): void {
+        return this.send(WsEvents.INIT_USERLIST, {});
     }
 
     // Mark as delivered
@@ -138,6 +149,7 @@ export class ConfeetSocketService {
 
     disconnect(): void {
         this.stopHeartbeat();
+        this.isConnectedSubject.next(false);
         this.ws?.close();
         this.ws = null;
     }
@@ -233,6 +245,7 @@ export const WsEvents = {
     TYPING: 'typing',
     AUDIO_CALL_REQUEST: 'audio_call_request',
     HEARTBEAT: 'heartbeat', // Client sends ping for heartbeat
+    INIT_USERLIST: 'init_userlist',
 
     // Server -> Client
     NEW_MESSAGE: 'new_message',
