@@ -258,6 +258,10 @@ export class ChatComponent implements OnInit, OnDestroy {
         this.notificationService.setActiveConversation(conversation.id);
     }
 
+    isConversationSelected(item: Conversation): boolean {
+        return Boolean(item && (item.id === this.ws.currentConversationId() || item.conversationId === this.ws.currentConversationId()));
+    }
+
     // New Chat Popup Methods
     toggleNewChatPopup(): void {
         this.showNewChatPopup = !this.showNewChatPopup;

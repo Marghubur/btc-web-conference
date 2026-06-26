@@ -6,7 +6,7 @@ import {
 }
     from '../../providers/socket/confeet-socket.service';
 
-import { LastMessage } from '../../components/global-search/search.models';
+import { Conversation, Participant, LastMessage } from '../../components/global-search/search.models';
 import { ChatService } from '../../chat/chat.service';
 import { User } from '../../models/model';
 import { LocalService } from '../../providers/services/local.service';
@@ -161,14 +161,57 @@ export class NotificationService {
     }
 
     private handleInitUserList(message: any) {
+        let rawConversations: any[] = [];
+        if (message && message.conversations && Array.isArray(message.conversations)) {
+            rawConversations = message.conversations;
+        } else if (Array.isArray(message)) {
+            rawConversations = message;
+        }
+
+        if (rawConversations.length > 0 || (message && message.conversations)) {
+            const mappedRooms: Conversation[] = (rawConversations || []).map((conv: any) => {
+                const members = conv.members || [];
+                const participants: Participant[] = members.map((m: any) => ({
+                    userId: m.user_id || m.userId || '',
+                    username: m.email || m.username || '',
+                    firstName: m.first_name || m.firstName || '',
+                    lastName: m.last_name || m.lastName || '',
+                    email: m.email || '',
+                    avatar: m.avatar || '',
+                    joinedAt: null,
+                    role: m.role || 'member'
+                }));
+                const participantIds = participants.map(p => p.userId);
+
+                return {
+                    id: conv.conversation_id || conv.conversationId || '',
+                    conversationId: conv.conversation_id || conv.conversationId || '',
+                    conversationType: (conv.type || '').toLowerCase() === 'group' ? 'group' : 'direct',
+                    participantIds: participantIds,
+                    participants: participants,
+                    conversationName: conv.title || conv.conversationName || '',
+                    conversationAvatar: conv.avatar || '',
+                    createdBy: '',
+                    createdAt: null,
+                    updatedAt: null,
+                    lastMessage: conv.last_message || null,
+                    lastMessageAt: conv.last_message_at ? new Date(conv.last_message_at) : null,
+                    isActive: true,
+                    settings: null
+                };
+            });
+
+            this.chatService.meetingRooms.set(mappedRooms);
+        }
+
         let chatUsers: User[] = [];
         let users: User[] = [];
         let groups: User[] = [];
-        if (message["conversation_users"]) {
+        if (message && message["conversation_users"]) {
             users = message["conversation_users"] as User[];
         }
 
-        if (message["conversation_groups"]) {
+        if (message && message["conversation_groups"]) {
             groups = message["conversation_groups"] as User[];
         }
     }
