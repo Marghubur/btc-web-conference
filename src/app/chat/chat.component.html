@@ -159,7 +159,7 @@
         <!-- Conversation List -->
         <div class="conversation-list">
             @for (item of chatService.meetingRooms(); track $index) {
-            <a href="javascript:void(0)" class="conversation-item" [class.selected]="item.userId == user.userId"
+            <a href="javascript:void(0)" class="conversation-item" [class.selected]="isConversationSelected(item)"
                 (click)="selectChannelForConversation(item)">
 
                 <div class="avatar-container">
