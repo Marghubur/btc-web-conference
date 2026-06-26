@@ -43,6 +43,9 @@ export const CallServerEvents = {
     // EventCallIncoming - Notify callee of incoming call
     CALL_INCOMING: 'call:incoming',
 
+    // EventCallIncoming - Notify callee of incoming call
+    INIT_USERLIST: "init_userlist",
+
     // EventCallJoiningRequest - Notify callee of joining request
     CALL_JOINING_REQUEST: 'call:joining_request',
 

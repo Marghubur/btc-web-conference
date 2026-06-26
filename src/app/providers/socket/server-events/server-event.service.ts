@@ -22,6 +22,7 @@ import {
     GroupNotificationEvent,
 } from '../../../models/conference_call/call_model';
 import { CallStore } from '../../../store/call/call.store';
+import { User } from '../../../models/model';
 
 @Injectable({
     providedIn: 'root'
@@ -35,6 +36,9 @@ export class ServerEventService {
 
     /** Emits when receiving an incoming call */
     callIncoming$: Observable<CallIncomingEvent>;
+
+    /** Emits when receiving an incoming call */
+    initUserList$: Observable<User[]>;
 
     /** Emits when receiving a joining request */
     callJoiningRequest$: Observable<CallIncomingEvent>;
@@ -112,6 +116,7 @@ export class ServerEventService {
 
         // Wire up the filtered WebSocket observables
         this.callIncoming$ = this.onCallEvent<CallIncomingEvent>(CallServerEvents.CALL_INCOMING);
+        this.initUserList$ = this.onCallEvent<User[]>(CallServerEvents.INIT_USERLIST);
         this.callJoiningRequest$ = this.onCallEvent<CallIncomingEvent>(CallServerEvents.CALL_JOINING_REQUEST);
         this.callAccepted$ = this.onCallEvent<CallAcceptedEvent>(CallServerEvents.CALL_ACCEPTED);
         this.callRejected$ = this.onCallEvent<CallRejectedEvent>(CallServerEvents.CALL_REJECTED);

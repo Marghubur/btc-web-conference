@@ -116,6 +116,14 @@ export class NotificationService {
             })
         );
 
+        // New message received
+        this.subscriptions.add(
+            this.ws.initUserList$.subscribe(message => {
+                console.log("initUserList", message);
+                this.handleInitUserList(message);
+            })
+        );
+
         // Message sent confirmation
         this.subscriptions.add(
             this.ws.outgoingMessage$.subscribe(message => {
@@ -150,6 +158,19 @@ export class NotificationService {
                 this.handleError(error);
             })
         );
+    }
+
+    private handleInitUserList(message: any) {
+        let chatUsers: User[] = [];
+        let users: User[] = [];
+        let groups: User[] = [];
+        if (message["conversation_users"]) {
+            users = message["conversation_users"] as User[];
+        }
+
+        if (message["conversation_groups"]) {
+            groups = message["conversation_groups"] as User[];
+        }
     }
 
     private handleNewMessage(message: Message | string): void {
