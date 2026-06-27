@@ -61,6 +61,14 @@ export class ChatComponent implements OnInit, OnDestroy {
     editingStatusMessage: boolean = false;
     tempStatusMessage: string = '';
 
+    failedAvatars = new Set<string>();
+
+    onAvatarError(url: string | null | undefined): void {
+        if (url) {
+            this.failedAvatars.add(url);
+        }
+    }
+
     readonly statusOptions = [
         { value: 'available', label: 'Available', color: '#92c353', icon: '✓' },
         { value: 'busy', label: 'Busy', color: '#c4314b', icon: '⊘' },
