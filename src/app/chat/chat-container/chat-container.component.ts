@@ -194,6 +194,59 @@ export class ChatContainerComponent implements AfterViewChecked {
     }
   }
 
+  failedAvatars = new Set<string>();
+
+  onAvatarError(url: string | null | undefined): void {
+    if (url) {
+      this.failedAvatars.add(url);
+    }
+  }
+
+  shouldShowDateSeparator(index: number): boolean {
+    const messages = this.chatService.messages();
+    if (!messages || !messages[index]) return false;
+
+    if (index === 0) {
+      return true;
+    }
+
+    const currentMsgDate = new Date(messages[index].createdAt || Date.now());
+    const prevMsgDate = new Date(messages[index - 1].createdAt || Date.now());
+
+    const isSameDayAsPrev = currentMsgDate.getDate() === prevMsgDate.getDate() &&
+                            currentMsgDate.getMonth() === prevMsgDate.getMonth() &&
+                            currentMsgDate.getFullYear() === prevMsgDate.getFullYear();
+
+    return !isSameDayAsPrev;
+  }
+
+  getDateSeparatorText(dateInput: any): string {
+    if (!dateInput) return '';
+    const date = new Date(dateInput);
+    const today = new Date();
+
+    const isToday = date.getDate() === today.getDate() &&
+                    date.getMonth() === today.getMonth() &&
+                    date.getFullYear() === today.getFullYear();
+
+    if (isToday) {
+      return 'Today';
+    }
+
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    const isYesterday = date.getDate() === yesterday.getDate() &&
+                        date.getMonth() === yesterday.getMonth() &&
+                        date.getFullYear() === yesterday.getFullYear();
+
+    if (isYesterday) {
+      return 'Yesterday';
+    }
+
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  }
+
   getSenderAvatar(senderId: string): string {
     if (!senderId || senderId === this.currentUserId) return '';
     const p = (this.ws.currentConversation()?.participants || []).find(part => part.userId === senderId);
@@ -206,6 +259,48 @@ export class ChatContainerComponent implements AfterViewChecked {
     const p = (this.ws.currentConversation()?.participants || []).find(part => part.userId === senderId);
     if (p) return `${p.firstName || ''} ${p.lastName || ''}`.trim() || p.email || 'Member';
     return 'Member';
+  }
+
+  quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+  hoveredMsgIndex: number | null = null;
+
+  reactToMessage(msg: any, emoji: string): void {
+    if (!msg.reactions) {
+      msg.reactions = [];
+    }
+    const existingIndex = msg.reactions.findIndex((r: any) => r.userId === this.currentUserId);
+    if (existingIndex > -1) {
+      if (msg.reactions[existingIndex].emoji === emoji) {
+        msg.reactions.splice(existingIndex, 1);
+      } else {
+        msg.reactions[existingIndex].emoji = emoji;
+      }
+    } else {
+      msg.reactions.push({
+        userId: this.currentUserId,
+        emoji: emoji
+      });
+    }
+    this.chatService.messages.update(msgs => [...msgs]);
+  }
+
+  getUniqueReactions(reactions: any[]): { emoji: string; count: number; hasUserReacted: boolean }[] {
+    if (!reactions || !Array.isArray(reactions)) return [];
+    const counts = new Map<string, { count: number; hasUserReacted: boolean }>();
+    for (const r of reactions) {
+      if (!r || !r.emoji) continue;
+      const current = counts.get(r.emoji) || { count: 0, hasUserReacted: false };
+      current.count += 1;
+      if (r.userId === this.currentUserId) {
+        current.hasUserReacted = true;
+      }
+      counts.set(r.emoji, current);
+    }
+    return Array.from(counts.entries()).map(([emoji, data]) => ({
+      emoji,
+      count: data.count,
+      hasUserReacted: data.hasUserReacted
+    }));
   }
 
   // Audio call

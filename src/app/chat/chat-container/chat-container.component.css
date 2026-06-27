@@ -598,6 +598,25 @@
     }
 }
 
+/* ===== Date Separator Pill ===== */
+.date-separator-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0 12px 0;
+    width: 100%;
+}
+
+.date-separator-pill {
+    background-color: #303134;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 14px;
+    border-radius: 14px;
+    letter-spacing: 0.2px;
+}
+
 .message-wrapper.sent {
     justify-content: flex-end;
 }
@@ -618,6 +637,105 @@
     flex-direction: column;
     align-items: flex-start;
     max-width: 65%;
+    position: relative;
+}
+
+.message-sent-content {
+    position: relative;
+}
+
+/* ===== WhatsApp Emoji Reaction Bar ===== */
+.emoji-reaction-bar {
+    position: absolute;
+    top: -42px;
+    background: #ffffff;
+    border: 1px solid #e0e2e5;
+    border-radius: 24px;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    animation: fadeInHover 0.15s ease-out forwards;
+}
+
+@keyframes fadeInHover {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.emoji-reaction-bar.sent-bar {
+    right: 0;
+}
+
+.emoji-reaction-bar.received-bar {
+    left: 0;
+}
+
+.reaction-emoji-btn {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    padding: 4px 6px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reaction-emoji-btn:hover {
+    transform: scale(1.3);
+    background-color: #f0f4f9;
+}
+
+/* ===== Displayed Reactions Badge ===== */
+.message-reactions-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: -6px;
+    z-index: 2;
+}
+
+.message-reactions-badge.sent-badge {
+    justify-content: flex-end;
+}
+
+.message-reactions-badge.received-badge {
+    justify-content: flex-start;
+}
+
+.reaction-pill {
+    background: #ffffff;
+    border: 1px solid #e0e2e5;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.reaction-pill:hover {
+    transform: scale(1.08);
+    background: #f8fafd;
+}
+
+.reaction-pill.user-reacted {
+    background: #e8f0fe;
+    border-color: #a8c7fa;
 }
 
 .message-sender-header.sent-header {
