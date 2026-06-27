@@ -41,6 +41,10 @@ export class ChatComponent implements OnInit, OnDestroy {
     showNewChatPopup: boolean = false;
     popupMode: 'new-chat' | 'create-group' = 'new-chat';
 
+    // Sidebar collapsible section state
+    isChatSectionCollapsed: boolean = false;
+    isSpacesSectionCollapsed: boolean = false;
+
     // New Group Members for popup creation
     newGroupName: string = '';
     newGroupMembers: SearchResult[] = [];
@@ -145,6 +149,70 @@ export class ChatComponent implements OnInit, OnDestroy {
         return this.chatService.getColorFromName(fname, lname);
     }
 
+    get directConversations(): Conversation[] {
+        return this.chatService.meetingRooms().filter(c => c && c.conversationType !== 'group');
+    }
+
+    get groupConversations(): Conversation[] {
+        return this.chatService.meetingRooms().filter(c => c && c.conversationType === 'group');
+    }
+
+    toggleChatSection(): void {
+        this.isChatSectionCollapsed = !this.isChatSectionCollapsed;
+    }
+
+    toggleSpacesSection(): void {
+        this.isSpacesSectionCollapsed = !this.isSpacesSectionCollapsed;
+    }
+
+    openNewChatPopupWithMode(mode: 'new-chat' | 'create-group', event?: Event): void {
+        if (event) {
+            event.stopPropagation();
+        }
+        this.popupMode = mode;
+        this.showNewChatPopup = true;
+        this.searchQuery = '';
+        this.memberSearchQuery = '';
+    }
+
+    getConversationAvatar(conversation: Conversation): string {
+        if (!conversation) return '';
+        if (conversation.conversationType === 'group') {
+            return conversation.conversationAvatar || '';
+        }
+        const participants = (conversation.participants || []).filter(p => p && p.userId !== this.currentUserId);
+        if (participants.length > 0 && participants[0].avatar) {
+            return participants[0].avatar;
+        }
+        return conversation.conversationAvatar || '';
+    }
+
+    getDirectUserStatus(conversation: Conversation): string {
+        if (!conversation || conversation.conversationType === 'group') return '';
+        const participants = (conversation.participants || []).filter(p => p && p.userId !== this.currentUserId);
+        if (participants.length > 0) {
+            return (participants[0].status || 'offline').toLowerCase();
+        }
+        return 'offline';
+    }
+
+    getDirectUserStatusColor(conversation: Conversation): string {
+        const status = this.getDirectUserStatus(conversation);
+        switch (status) {
+            case 'available':
+            case 'online':
+                return '#34A853'; // Google Green
+            case 'busy':
+            case 'dnd':
+                return '#EA4335'; // Google Red
+            case 'away':
+            case 'brb':
+                return '#FBBC05'; // Google Yellow
+            default:
+                return '#9AA0A6'; // Google Gray
+        }
+    }
+
     onSearch() {
         if (!this.searchQuery || this.searchQuery.length < 2) {
             this.chatService.searchResults.set([]);
@@ -218,7 +286,8 @@ export class ChatComponent implements OnInit, OnDestroy {
                         email: selectedUser.email,
                         avatar: selectedUser.avatar,
                         joinedAt: new Date(),
-                        role: 'user'
+                        role: 'user',
+                        status: (selectedUser.status || 'offline').toLowerCase()
                     },
                     <Participant>{
                         userId: this.user.userId,
@@ -228,7 +297,8 @@ export class ChatComponent implements OnInit, OnDestroy {
                         email: this.user.email,
                         avatar: "",
                         joinedAt: new Date(),
-                        role: 'user'
+                        role: 'user',
+                        status: this.userStatus
                     }
                 ],
                 createdBy: this.currentUserId,

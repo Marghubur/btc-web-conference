@@ -2,26 +2,26 @@
 
 /* ===== CSS Variables for Teams Theme - Using Global Theme ===== */
 :host {
-    --teams-primary: var(--theme-accent);
-    --teams-primary-hover: var(--theme-accent-hover);
-    --teams-primary-light: rgba(91, 95, 199, 0.15);
-    --teams-bg-sidebar: var(--theme-sidebar-bg);
-    --teams-bg-main: var(--theme-bg-secondary);
-    --teams-bg-message-sent: var(--theme-accent);
-    --teams-bg-message-received: var(--theme-bg-tertiary);
-    --teams-text-primary: var(--theme-text-primary);
-    --teams-text-secondary: var(--theme-text-secondary);
-    --teams-text-muted: var(--theme-text-muted);
-    --teams-border: var(--theme-border);
-    --teams-hover: var(--theme-bg-hover);
-    --teams-selected: rgba(91, 95, 199, 0.2);
-    --teams-online: #92c353;
-    --teams-offline: #c4314b;
-    --teams-away: #f8d22a;
-    --teams-shadow: 0 2px 8px var(--theme-shadow);
-    --teams-shadow-hover: 0 4px 12px var(--theme-shadow);
+    --teams-primary: #0b57d0; /* Google Blue */
+    --teams-primary-hover: #0842a0;
+    --teams-primary-light: #d3e3fd;
+    --teams-bg-sidebar: #f8fafd;
+    --teams-bg-main: #ffffff; /* Pure White Google Chat background */
+    --teams-bg-message-sent: #d3e3fd; /* Google Chat Sent Bubble */
+    --teams-bg-message-received: #f0f4f9; /* Google Chat Received Bubble */
+    --teams-text-primary: #1f1f1f;
+    --teams-text-secondary: #444746;
+    --teams-text-muted: #747775;
+    --teams-border: #e0e2e5;
+    --teams-hover: #f0f4f9;
+    --teams-selected: #e8f0fe;
+    --teams-online: #34A853; /* Google Green */
+    --teams-offline: #9AA0A6; /* Google Gray */
+    --teams-away: #FBBC05; /* Google Yellow */
+    --teams-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --teams-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
     --teams-radius: 8px;
-    --teams-radius-large: 12px;
+    --teams-radius-large: 18px; /* Google Chat pill bubbles */
     --teams-transition: all 0.2s ease;
 
     display: block;
@@ -85,6 +85,68 @@
     width: 44px;
     height: 44px;
     font-size: 16px;
+}
+
+.avatar-img {
+    object-fit: cover;
+}
+
+.space-avatar {
+    border-radius: 12px !important;
+}
+
+.presence-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--teams-bg-main);
+}
+
+.chat-space-subtitle {
+    font-size: 12px;
+    color: var(--teams-text-muted);
+}
+
+/* Message Sender & Avatar formatting */
+.msg-avatar-container {
+    margin-right: 12px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2px;
+}
+
+.msg-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 13px !important;
+}
+
+.message-received-content {
+    display: flex;
+    flex-direction: column;
+    max-width: 65%;
+}
+
+.message-sender-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+    padding-left: 4px;
+}
+
+.message-sender-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--teams-text-secondary);
+}
+
+.message-time-inline {
+    font-size: 11px;
+    color: var(--teams-text-muted);
 }
 
 .chat-user-info {
@@ -544,35 +606,58 @@
     justify-content: flex-start;
 }
 
-.message-bubble {
+.message-sent-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     max-width: 65%;
-    padding: 10px 16px;
-    border-radius: var(--teams-radius-large);
+}
+
+.message-received-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    max-width: 65%;
+}
+
+.message-sender-header.sent-header {
+    justify-content: flex-end;
+}
+
+.message-bubble {
+    max-width: 100%;
     position: relative;
 }
 
-.message-bubble.sent {
-    background-color: var(--teams-bg-message-sent);
-    border-bottom-right-radius: 4px;
+.message-bubble.no-bg {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 4px 0 !important;
 }
 
-.message-bubble.received {
-    background-color: var(--teams-bg-message-received);
-    border-bottom-left-radius: 4px;
+.message-bubble.sent.no-bg {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    justify-content: flex-end;
 }
 
-.message-content {
+.message-content.black-text {
+    color: #1f1f1f !important;
     font-size: 14px;
     line-height: 1.5;
+    font-weight: 400;
+    text-align: left;
     word-wrap: break-word;
 }
 
-.message-bubble.sent .message-content {
-    color: #ffffff;
-}
-
-.message-bubble.received .message-content {
-    color: var(--teams-text-primary);
+.message-meta-inline {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding-bottom: 2px;
 }
 
 .message-meta {
@@ -587,26 +672,18 @@
     font-size: 11px;
 }
 
-.message-bubble.sent .message-time {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.message-bubble.received .message-time {
-    color: var(--teams-text-muted);
-}
-
 .message-status {
     display: flex;
     align-items: center;
 }
 
-.message-bubble.sent .message-status svg path {
-    fill: rgba(255, 255, 255, 0.8) !important;
+.message-status svg path {
+    fill: #747775 !important;
 }
 
-.message-bubble.sent .message-status svg[ngswitchcase="2"] path,
-.message-bubble.sent .message-status svg[ng-reflect-ng-switch-case="2"] path {
-    fill: #ffffff !important;
+.message-status svg[ngswitchcase="2"] path,
+.message-status svg[ng-reflect-ng-switch-case="2"] path {
+    fill: #0b57d0 !important; /* Google Blue for seen ticks */
 }
 
 .message-status svg {

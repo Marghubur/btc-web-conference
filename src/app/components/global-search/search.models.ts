@@ -53,6 +53,8 @@ export interface Participant {
   avatar: string;
   joinedAt: Date;
   role: string;
+  status?: string;
+  lastSeen?: number;
 }
 
 export interface LastMessage {

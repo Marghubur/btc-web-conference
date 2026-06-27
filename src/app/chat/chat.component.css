@@ -2,26 +2,26 @@
 
 /* ===== CSS Variables for Teams Theme - Using Global Theme ===== */
 :host {
-    --teams-primary: var(--theme-accent);
-    --teams-primary-hover: var(--theme-accent-hover);
-    --teams-primary-light: rgba(91, 95, 199, 0.15);
-    --teams-bg-sidebar: var(--theme-sidebar-bg);
-    --teams-bg-main: var(--theme-bg-secondary);
-    --teams-bg-message-sent: var(--theme-accent);
-    --teams-bg-message-received: var(--theme-bg-tertiary);
-    --teams-text-primary: var(--theme-text-primary);
-    --teams-text-secondary: var(--theme-text-secondary);
-    --teams-text-muted: var(--theme-text-muted);
-    --teams-border: var(--theme-border);
-    --teams-hover: var(--theme-bg-hover);
-    --teams-selected: rgba(91, 95, 199, 0.2);
-    --teams-online: #92c353;
-    --teams-offline: #c4314b;
-    --teams-away: #f8d22a;
-    --teams-shadow: 0 2px 8px var(--theme-shadow);
-    --teams-shadow-hover: 0 4px 12px var(--theme-shadow);
+    --teams-primary: #0b57d0; /* Google Blue */
+    --teams-primary-hover: #0842a0;
+    --teams-primary-light: #d3e3fd;
+    --teams-bg-sidebar: #f8fafd; /* Google Chat soft sidebar surface */
+    --teams-bg-main: #ffffff;
+    --teams-bg-message-sent: #d3e3fd;
+    --teams-bg-message-received: #f0f4f9;
+    --teams-text-primary: #1f1f1f;
+    --teams-text-secondary: #444746;
+    --teams-text-muted: #747775;
+    --teams-border: #e0e2e5;
+    --teams-hover: #f0f4f9;
+    --teams-selected: #e8f0fe;
+    --teams-online: #34A853; /* Google Green */
+    --teams-offline: #9AA0A6; /* Google Gray */
+    --teams-away: #FBBC05; /* Google Yellow */
+    --teams-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --teams-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
     --teams-radius: 8px;
-    --teams-radius-large: 12px;
+    --teams-radius-large: 18px;
     --teams-transition: all 0.2s ease;
 
     display: block;
@@ -36,6 +36,62 @@
     background-color: var(--teams-bg-main);
     font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
     overflow: hidden;
+}
+
+.flex-grow-main {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+}
+
+/* ===== Google Workspace Right Side Panel ===== */
+.google-right-side-panel {
+    width: 56px;
+    min-width: 56px;
+    background-color: #f8fafd;
+    border-left: 1px solid #e0e2e5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 16px 0;
+    height: 100%;
+    z-index: 5;
+    flex-shrink: 0;
+}
+
+.panel-icons-top,
+.panel-icons-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.side-panel-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+    padding: 0;
+}
+
+.side-panel-btn:hover {
+    background-color: #e8f0fe;
+}
+
+.side-panel-divider {
+    width: 20px;
+    height: 1px;
+    background-color: #e0e2e5;
+    margin: 4px 0;
 }
 
 /* ===== Sidebar Styles ===== */
@@ -141,28 +197,116 @@
     color: var(--teams-text-muted);
 }
 
-/* Conversation List */
-.conversation-list {
+/* Sidebar Sections Container (Google Chat Style) */
+.sidebar-sections-container {
+    display: flex;
+    flex-direction: column;
     flex: 1;
-    overflow-y: auto;
-    padding: 8px 0;
+    overflow: hidden;
 }
 
-.conversation-list::-webkit-scrollbar {
+.sidebar-section {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    overflow: hidden;
+}
+
+.sidebar-section.collapsed {
+    flex: 0 0 auto !important;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--teams-text-secondary);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    transition: var(--teams-transition);
+}
+
+.section-header:hover {
+    color: var(--teams-text-primary);
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.section-caret {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+}
+
+.section-caret.collapsed {
+    transform: rotate(-90deg);
+}
+
+.space-count-badge {
+    font-size: 11px;
+    background-color: var(--teams-border);
+    color: var(--teams-text-secondary);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.section-add-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--teams-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--teams-transition);
+}
+
+.section-add-btn:hover {
+    background-color: var(--teams-hover);
+    color: var(--teams-primary);
+}
+
+.section-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 4px 0 12px 0;
+}
+
+.section-list::-webkit-scrollbar {
     width: 6px;
 }
 
-.conversation-list::-webkit-scrollbar-track {
+.section-list::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.conversation-list::-webkit-scrollbar-thumb {
+.section-list::-webkit-scrollbar-thumb {
     background: #c4c4c4;
     border-radius: 3px;
 }
 
-.conversation-list::-webkit-scrollbar-thumb:hover {
+.section-list::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
+}
+
+.empty-section-msg {
+    padding: 12px 24px;
+    font-size: 12px;
+    color: var(--teams-text-muted);
+    font-style: italic;
 }
 
 .conversation-item {
@@ -215,6 +359,14 @@
     font-size: 14px;
     color: white;
     text-transform: uppercase;
+}
+
+.avatar-img {
+    object-fit: cover;
+}
+
+.space-avatar {
+    border-radius: 12px !important;
 }
 
 .avatar-large {

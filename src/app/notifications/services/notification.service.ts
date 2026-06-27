@@ -179,7 +179,9 @@ export class NotificationService {
                     email: m.email || '',
                     avatar: m.avatar || '',
                     joinedAt: null,
-                    role: m.role || 'member'
+                    role: m.role || 'member',
+                    status: (m.status || m.presence_status || 'offline').toLowerCase(),
+                    lastSeen: m.last_seen || m.lastSeen || 0
                 }));
                 const participantIds = participants.map(p => p.userId);
 
