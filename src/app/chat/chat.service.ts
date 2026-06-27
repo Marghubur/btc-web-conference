@@ -76,7 +76,8 @@ export class ChatService {
                     email: user.email,
                     avatar: user.avatar,
                     joinedAt: null,
-                    role: 'member'
+                    role: 'member',
+                    status: (user.status || 'offline').toLowerCase()
                 }],
                 name: user.firstName + ' ' + user.lastName,
                 type: 'user',

@@ -139,6 +139,75 @@ export class ChatContainerComponent implements AfterViewChecked {
     return this.chatService.getColorFromName(fname, lname);
   }
 
+  getConversationAvatar(conversation: Conversation): string {
+    if (!conversation) return '';
+    if (conversation.conversationType === 'group') {
+      return conversation.conversationAvatar || '';
+    }
+    const participants = (conversation.participants || []).filter(p => p && p.userId !== this.currentUserId);
+    if (participants.length > 0 && participants[0].avatar) {
+      return participants[0].avatar;
+    }
+    return conversation.conversationAvatar || '';
+  }
+
+  getDirectUserStatus(conversation: Conversation): string {
+    if (!conversation || conversation.conversationType === 'group') return '';
+    const participants = (conversation.participants || []).filter(p => p && p.userId !== this.currentUserId);
+    if (participants.length > 0) {
+      return (participants[0].status || 'offline').toLowerCase();
+    }
+    return 'offline';
+  }
+
+  getDirectUserStatusColor(conversation: Conversation): string {
+    const status = this.getDirectUserStatus(conversation);
+    switch (status) {
+      case 'available':
+      case 'online':
+        return '#34A853'; // Google Green
+      case 'busy':
+      case 'dnd':
+        return '#EA4335'; // Google Red
+      case 'away':
+      case 'brb':
+        return '#FBBC05'; // Google Yellow
+      default:
+        return '#9AA0A6'; // Google Gray
+    }
+  }
+
+  getDirectUserStatusLabel(conversation: Conversation): string {
+    const status = this.getDirectUserStatus(conversation);
+    switch (status) {
+      case 'available':
+      case 'online':
+        return 'Available';
+      case 'busy':
+      case 'dnd':
+        return 'Do not disturb';
+      case 'away':
+      case 'brb':
+        return 'Away';
+      default:
+        return 'Offline';
+    }
+  }
+
+  getSenderAvatar(senderId: string): string {
+    if (!senderId || senderId === this.currentUserId) return '';
+    const p = (this.ws.currentConversation()?.participants || []).find(part => part.userId === senderId);
+    return p?.avatar || '';
+  }
+
+  getSenderName(senderId: string): string {
+    if (!senderId) return 'Unknown';
+    if (senderId === this.currentUserId) return 'You';
+    const p = (this.ws.currentConversation()?.participants || []).find(part => part.userId === senderId);
+    if (p) return `${p.firstName || ''} ${p.lastName || ''}`.trim() || p.email || 'Member';
+    return 'Member';
+  }
+
   // Audio call
   startAudioCall() {
     this.initiateAudioCallService.execute(this.currentUserId, this.ws.currentConversation().id);
