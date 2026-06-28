@@ -379,19 +379,31 @@
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    border: 2px solid var(--teams-bg-sidebar);
-    background-color: var(--teams-online);
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
-.presence-indicator.offline {
-    background-color: var(--teams-offline);
+.status-online {
+    background-color: #34A853 !important;
+    border: 2px solid #ffffff !important;
+    color: #ffffff;
 }
 
-.presence-indicator.away {
-    background-color: var(--teams-away);
+.status-busy {
+    background-color: #EA4335 !important;
+    border: 2px solid #ffffff !important;
+    color: #ffffff;
+}
+
+.status-offline {
+    background-color: #ffffff !important;
+    border: 2px solid #8a8886 !important;
+    color: #8a8886;
 }
 
 /* Conversation Details */
@@ -969,13 +981,15 @@
 
 .sidebar-status-badge {
     position: absolute;
-    bottom: 1px;
-    right: 1px;
-    width: 10px;
-    height: 10px;
+    bottom: 0px;
+    right: 0px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    border: 2px solid var(--teams-bg-sidebar);
-    display: block;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 /* Edit status button */
