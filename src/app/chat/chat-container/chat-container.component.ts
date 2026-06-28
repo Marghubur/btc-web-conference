@@ -177,6 +177,13 @@ export class ChatContainerComponent implements AfterViewChecked {
     }
   }
 
+  getNormalizedStatus(statusInput: string): string {
+    const s = (statusInput || '').toLowerCase();
+    if (s === 'available' || s === 'online') return 'online';
+    if (s === 'busy' || s === 'dnd') return 'busy';
+    return 'offline';
+  }
+
   getDirectUserStatusLabel(conversation: Conversation): string {
     const status = this.getDirectUserStatus(conversation);
     switch (status) {

@@ -221,6 +221,13 @@ export class ChatComponent implements OnInit, OnDestroy {
         }
     }
 
+    getNormalizedStatus(statusInput: string): string {
+        const s = (statusInput || '').toLowerCase();
+        if (s === 'available' || s === 'online') return 'online';
+        if (s === 'busy' || s === 'dnd') return 'busy';
+        return 'offline';
+    }
+
     onSearch() {
         if (!this.searchQuery || this.searchQuery.length < 2) {
             this.chatService.searchResults.set([]);

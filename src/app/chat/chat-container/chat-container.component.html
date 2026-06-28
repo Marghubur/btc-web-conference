@@ -17,9 +17,19 @@
                 </div>
                 }
                 @if (ws.currentConversation().conversationType !== 'group') {
-                <span class="presence-indicator"
-                    [ngStyle]="{ 'background-color': getDirectUserStatusColor(ws.currentConversation()) }"
-                    [title]="getDirectUserStatusLabel(ws.currentConversation())"></span>
+                <span class="presence-indicator" [ngClass]="'status-' + getNormalizedStatus(getDirectUserStatus(ws.currentConversation()))" [title]="getDirectUserStatusLabel(ws.currentConversation())">
+                    @switch (getNormalizedStatus(getDirectUserStatus(ws.currentConversation()))) {
+                        @case ('online') {
+                            <svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 2.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        }
+                        @case ('busy') {
+                            <svg width="8" height="8" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        }
+                        @case ('offline') {
+                            <svg width="6" height="6" viewBox="0 0 10 10"><path d="M2 2L8 8M8 2L2 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        }
+                    }
+                </span>
                 }
             </div>
             <div class="chat-user-info">
