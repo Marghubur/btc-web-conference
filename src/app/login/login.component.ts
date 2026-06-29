@@ -34,6 +34,11 @@ export class LoginComponent implements OnInit {
       this.rememberMe = true;
     }
   }
+
+  goBack() {
+    this.nav.navigate('home', null);
+  }
+
   login() {
     this.isSubmitted = true;
     if (!this.email || !this.isEmailValid)

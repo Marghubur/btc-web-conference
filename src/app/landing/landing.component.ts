@@ -29,14 +29,20 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   showAiResponse = false;
 
   // Stats counter
-  stats = [
-    { value: 0, target: 10, suffix: 'M+', label: 'Meetings Hosted' },
-    { value: 0, target: 99.9, suffix: '%', label: 'Uptime' },
-    { value: 0, target: 50, suffix: '+', label: 'Countries' },
-    { value: 0, target: 256, suffix: '-bit', label: 'Encryption' }
-  ];
+  stats: Array<{
+    value: number | string;
+    target?: number;
+    suffix?: string;
+    label: string;
+    isStatic?: boolean;
+  }> = [
+      { value: 'started', label: 'meetings hosted', isStatic: true },
+      { value: 0, target: 99.9, suffix: '%', label: 'Uptime' },
+      { value: 'india', label: 'countries', isStatic: true },
+      { value: 0, target: 256, suffix: '-bit', label: 'Encryption' }
+    ];
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
     this.startTypingAnimation();
@@ -50,10 +56,10 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isNavScrolled = scrollContainer.scrollTop > 60;
       }
     };
-    
+
     if (scrollContainer) {
       scrollContainer.addEventListener('scroll', this.scrollHandler, { passive: true });
-      
+
       // Restore scroll position
       if (LandingComponent.savedScrollPosition > 0) {
         setTimeout(() => {
@@ -144,14 +150,15 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private animateCounters(): void {
     this.stats.forEach(stat => {
+      if (stat.isStatic || stat.target === undefined) return;
       const duration = 2000;
       const steps = 60;
       const increment = stat.target / steps;
       let current = 0;
       const interval = setInterval(() => {
         current += increment;
-        if (current >= stat.target) {
-          stat.value = stat.target;
+        if (current >= stat.target!) {
+          stat.value = stat.target!;
           clearInterval(interval);
         } else {
           stat.value = Math.round(current * 10) / 10;
