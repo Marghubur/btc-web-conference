@@ -191,15 +191,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private bindMeetings(res: UserFilter) {
     this.recentMeetings = (res.data != null && res.data.length > 0) ? res.data as Conversation[] : [];
-    // this.allSchedularMeeting = (res.data != null && res.data.length > 0) ? res.data.filter(x => !x.hasQuickMeeting) : [];
-    // if (this.allSchedularMeeting.length > 0) {
-    //   this.allSchedularMeeting.forEach(x => {
-    //     let startDate = new Date(x.startDate);
-    //     x.startTime = this.formatTime(startDate);
-    //     x.endDate = new Date(startDate.getTime() + (x.durationInSecond * 1000));
-    //     x.endTime = this.formatTime(x.endDate);
-    //   })
-    // }
   }
 
   joinMeeting(item: Conversation) {
@@ -209,7 +200,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       state: {
         id: item.id,
         type: CallType.AUDIO,
-        title: item.conversationName ? item.conversationName : 'Unknown'
+        title: item.title ? item.title : 'Unknown'
       }
     });
   }

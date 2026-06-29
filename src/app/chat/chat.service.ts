@@ -88,10 +88,10 @@ export class ChatService {
 
         if (results['conversations']) {
             let conversations = (results['conversations'] as Conversation[]).map(conversation => (<SearchResult>{
-                avatar: conversation.conversationAvatar,
-                conversationId: conversation.conversationId,
+                avatar: conversation.avatar,
+                conversationId: conversation.id,
                 participants: conversation.participants,
-                name: conversation.conversationName,
+                name: conversation.title,
                 type: 'group',
                 userId: null,
                 designation: null
@@ -149,15 +149,15 @@ export class ChatService {
     // Helper Methods
     getConversationName(conversation: Conversation, currentUserId: string): string {
         if (!conversation) return 'Unknown';
-        if (conversation.conversationType == 'group') {
-            return conversation.conversationName || 'Group';
+        if (conversation.type?.toLowerCase() === 'group') {
+            return conversation.title || 'Group';
         } else {
             let participants = (conversation.participants || []).filter((x) => x && x.userId != currentUserId);
-            if (participants.length == 0) return conversation.conversationName || 'Unknown';
+            if (participants.length == 0) return conversation.title || 'Unknown';
 
             if (participants.length == 1) {
                 const name = ((participants[0].firstName || '') + ' ' + (participants[0].lastName || '')).trim();
-                return name || conversation.conversationName || 'Unknown';
+                return name || conversation.title || 'Unknown';
             } else if (participants.length > 2) {
                 return (participants[0].firstName || '') + ' and ' + (participants[1].firstName || '');
             } else {
@@ -168,17 +168,17 @@ export class ChatService {
 
     getCurrentInitiaLetter(conversation: Conversation, currentUserId: string): string {
         if (!conversation) return '';
-        if (conversation.conversationType == 'group') {
-            return this.getUserInitiaLetter(conversation.conversationName || 'GRP', '');
+        if (conversation.type?.toLowerCase() === 'group') {
+            return this.getUserInitiaLetter(conversation.title || 'GRP', '');
         }
 
         let participants = (conversation.participants || []).filter((x) => x && x.userId != currentUserId);
-        if (participants.length == 0) return this.getUserInitiaLetter(conversation.conversationName || '', '');
+        if (participants.length == 0) return this.getUserInitiaLetter(conversation.title || '', '');
 
         if (participants.length == 1) {
             return this.getUserInitiaLetter(participants[0].firstName || '', participants[0].lastName || '');
         } else {
-            return this.getUserInitiaLetter(conversation.conversationName || 'GRP', '');
+            return this.getUserInitiaLetter(conversation.title || 'GRP', '');
         }
     }
 

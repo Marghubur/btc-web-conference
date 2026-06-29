@@ -198,7 +198,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
         console.log('Selected:', result);
         this.closeDropdown();
 
-        if ('conversationName' in result) {
+        if ('title' in result) {
             // It's a Conversation
             let groupChat: Conversation = result;
 
