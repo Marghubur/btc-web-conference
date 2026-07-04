@@ -2,26 +2,34 @@
 
 /* ===== CSS Variables for Teams Theme - Using Global Theme ===== */
 :host {
-    --teams-primary: #0b57d0; /* Google Blue */
+    --teams-primary: #0b57d0;
+    /* Google Blue */
     --teams-primary-hover: #0842a0;
     --teams-primary-light: #d3e3fd;
     --teams-bg-sidebar: #f8fafd;
-    --teams-bg-main: #ffffff; /* Pure White Google Chat background */
-    --teams-bg-message-sent: #d3e3fd; /* Google Chat Sent Bubble */
-    --teams-bg-message-received: #f0f4f9; /* Google Chat Received Bubble */
+    --teams-bg-main: #ffffff;
+    /* Pure White Google Chat background */
+    --teams-bg-message-sent: #d3e3fd;
+    /* Google Chat Sent Bubble */
+    --teams-bg-message-received: #f0f4f9;
+    /* Google Chat Received Bubble */
     --teams-text-primary: #1f1f1f;
     --teams-text-secondary: #444746;
     --teams-text-muted: #747775;
     --teams-border: #e0e2e5;
     --teams-hover: #f0f4f9;
     --teams-selected: #e8f0fe;
-    --teams-online: #34A853; /* Google Green */
-    --teams-offline: #9AA0A6; /* Google Gray */
-    --teams-away: #FBBC05; /* Google Yellow */
+    --teams-online: #34A853;
+    /* Google Green */
+    --teams-offline: #9AA0A6;
+    /* Google Gray */
+    --teams-away: #FBBC05;
+    /* Google Yellow */
     --teams-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --teams-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
     --teams-radius: 8px;
-    --teams-radius-large: 18px; /* Google Chat pill bubbles */
+    --teams-radius-large: 18px;
+    /* Google Chat pill bubbles */
     --teams-transition: all 0.2s ease;
 
     display: block;
@@ -668,7 +676,7 @@
 /* ===== WhatsApp Emoji Reaction Bar ===== */
 .emoji-reaction-bar {
     position: absolute;
-    top: -42px;
+    top: -15px;
     background: #ffffff;
     border: 1px solid #e0e2e5;
     border-radius: 24px;
@@ -686,6 +694,7 @@
         opacity: 0;
         transform: translateY(6px) scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -822,7 +831,8 @@
 
 .message-status svg[ngswitchcase="2"] path,
 .message-status svg[ng-reflect-ng-switch-case="2"] path {
-    fill: #0b57d0 !important; /* Google Blue for seen ticks */
+    fill: #0b57d0 !important;
+    /* Google Blue for seen ticks */
 }
 
 .message-status svg {
@@ -1061,8 +1071,15 @@
 }
 
 @keyframes headerPopoverIn {
-    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-    to   { opacity: 1; transform: translateY(0)   scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Shared popover inner styles (reused class names) */
@@ -1071,7 +1088,7 @@
     align-items: center;
     gap: 12px;
     padding: 16px 16px 12px;
-    background: linear-gradient(135deg, rgba(91,95,199,0.08) 0%, rgba(91,95,199,0.02) 100%);
+    background: linear-gradient(135deg, rgba(91, 95, 199, 0.08) 0%, rgba(91, 95, 199, 0.02) 100%);
     border-bottom: 1px solid var(--teams-border);
 }
 
@@ -1218,21 +1235,27 @@
     transition: background 0.15s ease, transform 0.1s ease;
 }
 
-.header-status-popover .status-msg-btn:active { transform: scale(0.96); }
+.header-status-popover .status-msg-btn:active {
+    transform: scale(0.96);
+}
 
 .header-status-popover .status-msg-btn.cancel {
     background: var(--teams-hover);
     color: var(--teams-text-secondary);
 }
 
-.header-status-popover .status-msg-btn.cancel:hover { background: var(--teams-border); }
+.header-status-popover .status-msg-btn.cancel:hover {
+    background: var(--teams-border);
+}
 
 .header-status-popover .status-msg-btn.save {
     background: var(--teams-primary);
     color: white;
 }
 
-.header-status-popover .status-msg-btn.save:hover { background: var(--teams-primary-hover); }
+.header-status-popover .status-msg-btn.save:hover {
+    background: var(--teams-primary-hover);
+}
 
 .header-status-popover .status-options-list {
     display: flex;
@@ -1268,7 +1291,7 @@
     border-radius: 50%;
     flex-shrink: 0;
     display: inline-block;
-    border: 1.5px solid rgba(0,0,0,0.1);
+    border: 1.5px solid rgba(0, 0, 0, 0.1);
 }
 
 .header-status-popover .status-option-label {

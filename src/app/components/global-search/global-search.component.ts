@@ -20,6 +20,8 @@ import { GlobalSearchService } from './global-search.service';
 import { UserDetail, Conversation } from './search.models';
 import { LocalService } from '../../providers/services/local.service';
 import { ChatService } from '../../chat/chat.service';
+import { NotificationService } from '../../notifications/services/notification.service';
+import { ConfeetSocketService } from '../../providers/socket/confeet-socket.service';
 
 @Component({
     selector: 'global-search',
@@ -79,6 +81,10 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     hasError = computed(() => !!this.searchService.error());
 
     allResults = computed(() => [...this.users(), ...this.conversations()]);
+
+    constructor(
+        private ws: ConfeetSocketService,
+        public notificationService: NotificationService) { }
 
     ngOnInit(): void {
         // Check if in development mode
@@ -194,30 +200,43 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
         this.selectedIndex.set(-1);
     }
 
-    selectResult(result: UserDetail | Conversation): void {
+    selectResult(result: UserDetail | any): void {
         console.log('Selected:', result);
         this.closeDropdown();
 
-        if ('conversationName' in result) {
-            // It's a Conversation
-            let groupChat: Conversation = result;
+        if (result.conversation_id != null) {
+            var data = result as any;
+            data.conversationType = data.type.toLowerCase()
+            data.conversationName = data.title;
+            this.ws.currentConversation.set(data as Conversation);
+            this.ws.currentConversationId.set(data.id);
 
-            // Check if we are already on the chat page
-            if (this.router.url.includes('/btc/chat')) {
-                this.chatService.openChat$.next(groupChat);
-            } else {
-                this.router.navigate(['/btc/chat'], { state: { channel: groupChat } });
-            }
+            this.chatService.messages.set([]); // Clear existing messages
 
+            // Notify the NotificationService which conversation is now active
+            this.notificationService.setActiveConversation(data.id);
         } else {
-            // It's a UserDetail
-            let userDetail: UserDetail = result;
+            if ('conversationName' in result) {
+                // It's a Conversation
+                let groupChat: Conversation = result;
 
-            // Check if we are already on the chat page
-            if (this.router.url.includes('/btc/chat')) {
-                this.chatService.openChat$.next(userDetail);
+                // Check if we are already on the chat page
+                if (this.router.url.includes('/btc/chat')) {
+                    this.chatService.openChat$.next(groupChat);
+                } else {
+                    this.router.navigate(['/btc/chat'], { state: { channel: groupChat } });
+                }
+
             } else {
-                this.router.navigate(['/btc/chat'], { state: { selectedUser: userDetail } });
+                // It's a UserDetail
+                let userDetail: UserDetail = result;
+
+                // Check if we are already on the chat page
+                if (this.router.url.includes('/btc/chat')) {
+                    this.chatService.openChat$.next(userDetail);
+                } else {
+                    this.router.navigate(['/btc/chat'], { state: { selectedUser: userDetail } });
+                }
             }
         }
     }

@@ -6,8 +6,11 @@
     <header class="chat-header">
         <div class="chat-header-left">
             <div class="avatar-container">
-                @if (getConversationAvatar(ws.currentConversation()) && !failedAvatars.has(getConversationAvatar(ws.currentConversation()))) {
-                <img [src]="getConversationAvatar(ws.currentConversation())" (error)="onAvatarError(getConversationAvatar(ws.currentConversation()))" class="avatar avatar-large avatar-img"
+                @if (getConversationAvatar(ws.currentConversation()) &&
+                !failedAvatars.has(getConversationAvatar(ws.currentConversation()))) {
+                <img [src]="getConversationAvatar(ws.currentConversation())"
+                    (error)="onAvatarError(getConversationAvatar(ws.currentConversation()))"
+                    class="avatar avatar-large avatar-img"
                     [class.space-avatar]="ws.currentConversation().conversationType === 'group'" alt="avatar" />
                 } @else {
                 <div class="avatar avatar-large"
@@ -17,17 +20,27 @@
                 </div>
                 }
                 @if (ws.currentConversation().conversationType !== 'group') {
-                <span class="presence-indicator" [ngClass]="'status-' + getNormalizedStatus(getDirectUserStatus(ws.currentConversation()))" [title]="getDirectUserStatusLabel(ws.currentConversation())">
+                <span class="presence-indicator"
+                    [ngClass]="'status-' + getNormalizedStatus(getDirectUserStatus(ws.currentConversation()))"
+                    [title]="getDirectUserStatusLabel(ws.currentConversation())">
                     @switch (getNormalizedStatus(getDirectUserStatus(ws.currentConversation()))) {
-                        @case ('online') {
-                            <svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 2.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        }
-                        @case ('busy') {
-                            <svg width="8" height="8" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                        }
-                        @case ('offline') {
-                            <svg width="6" height="6" viewBox="0 0 10 10"><path d="M2 2L8 8M8 2L2 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                        }
+                    @case ('online') {
+                    <svg width="8" height="8" viewBox="0 0 10 10">
+                        <path d="M2 5L4.5 7.5L8 2.5" stroke="currentColor" stroke-width="2" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    }
+                    @case ('busy') {
+                    <svg width="8" height="8" viewBox="0 0 10 10">
+                        <line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                    }
+                    @case ('offline') {
+                    <svg width="6" height="6" viewBox="0 0 10 10">
+                        <path d="M2 2L8 8M8 2L2 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    }
                     }
                 </span>
                 }
@@ -299,13 +312,13 @@
         }
         @if (msg.senderId == currentUserId) {
         <!-- Sent Message -->
-        <div class="message-wrapper sent" (mouseenter)="hoveredMsgIndex = $index" (mouseleave)="hoveredMsgIndex = null">
+        <div class="message-wrapper sent" (mouseleave)="hoveredMsgIndex = null">
             <div class="message-sent-content">
                 <div class="message-sender-header sent-header">
                     <span class="message-time-inline">{{ msg.createdAt | date: 'h:mm a' }}</span>
                 </div>
                 <div class="message-bubble sent no-bg">
-                    <div class="message-content black-text">{{ msg.body }}</div>
+                    <div class="message-content black-text" (mouseenter)="hoveredMsgIndex = $index">{{ msg.body }}</div>
                     <div class="message-meta-inline">
                         <span class="message-status">
                             <ng-container [ngSwitch]="msg.status">
@@ -339,7 +352,8 @@
                 @if (hoveredMsgIndex === $index) {
                 <div class="emoji-reaction-bar sent-bar">
                     @for (emoji of quickEmojis; track emoji) {
-                    <button type="button" class="reaction-emoji-btn" (click)="reactToMessage(msg, emoji)">{{ emoji }}</button>
+                    <button type="button" class="reaction-emoji-btn" (click)="reactToMessage(msg, emoji)">{{ emoji
+                        }}</button>
                     }
                 </div>
                 }
@@ -348,7 +362,8 @@
                 @if (msg.reactions && msg.reactions.length > 0) {
                 <div class="message-reactions-badge sent-badge">
                     @for (r of getUniqueReactions(msg.reactions); track r.emoji) {
-                    <span class="reaction-pill" [class.user-reacted]="r.hasUserReacted" (click)="reactToMessage(msg, r.emoji)" [title]="'Reacted with ' + r.emoji">
+                    <span class="reaction-pill" [class.user-reacted]="r.hasUserReacted"
+                        (click)="reactToMessage(msg, r.emoji)" [title]="'Reacted with ' + r.emoji">
                         {{ r.emoji }} @if (r.count > 1) { <small>{{ r.count }}</small> }
                     </span>
                     }
@@ -358,10 +373,11 @@
         </div>
         } @else {
         <!-- Received Message -->
-        <div class="message-wrapper received" (mouseenter)="hoveredMsgIndex = $index" (mouseleave)="hoveredMsgIndex = null">
+        <div class="message-wrapper received" (mouseleave)="hoveredMsgIndex = null">
             <div class="msg-avatar-container">
                 @if (getSenderAvatar(msg.senderId) && !failedAvatars.has(getSenderAvatar(msg.senderId))) {
-                <img [src]="getSenderAvatar(msg.senderId)" (error)="onAvatarError(getSenderAvatar(msg.senderId))" class="avatar msg-avatar avatar-img" alt="sender" />
+                <img [src]="getSenderAvatar(msg.senderId)" (error)="onAvatarError(getSenderAvatar(msg.senderId))"
+                    class="avatar msg-avatar avatar-img" alt="sender" />
                 } @else {
                 <div class="avatar msg-avatar"
                     [ngStyle]="{ 'background-color': getColorFromName(getSenderName(msg.senderId), '') }">
@@ -374,7 +390,7 @@
                     <span class="message-sender-name">{{ getSenderName(msg.senderId) }}</span>
                     <span class="message-time-inline">{{ msg.createdAt | date: 'h:mm a' }}</span>
                 </div>
-                <div class="message-bubble received no-bg">
+                <div class="message-bubble received no-bg" (mouseenter)="hoveredMsgIndex = $index">
                     <div class="message-content black-text">{{ msg.body }}</div>
                 </div>
 
@@ -382,7 +398,8 @@
                 @if (hoveredMsgIndex === $index) {
                 <div class="emoji-reaction-bar received-bar">
                     @for (emoji of quickEmojis; track emoji) {
-                    <button type="button" class="reaction-emoji-btn" (click)="reactToMessage(msg, emoji)">{{ emoji }}</button>
+                    <button type="button" class="reaction-emoji-btn" (click)="reactToMessage(msg, emoji)">{{ emoji
+                        }}</button>
                     }
                 </div>
                 }
@@ -391,7 +408,8 @@
                 @if (msg.reactions && msg.reactions.length > 0) {
                 <div class="message-reactions-badge received-badge">
                     @for (r of getUniqueReactions(msg.reactions); track r.emoji) {
-                    <span class="reaction-pill" [class.user-reacted]="r.hasUserReacted" (click)="reactToMessage(msg, r.emoji)" [title]="'Reacted with ' + r.emoji">
+                    <span class="reaction-pill" [class.user-reacted]="r.hasUserReacted"
+                        (click)="reactToMessage(msg, r.emoji)" [title]="'Reacted with ' + r.emoji">
                         {{ r.emoji }} @if (r.count > 1) { <small>{{ r.count }}</small> }
                     </span>
                     }
