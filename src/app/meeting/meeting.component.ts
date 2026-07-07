@@ -266,19 +266,28 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     enableChat() {
         const conversation: Conversation = {
             id: this.meetingId,
-            conversationId: this.meetingId,
-            conversationType: 'group',
+            avatar: '',
+            createdAt: new Date(),
+            createdBy: this.user.userId,
+            description: '',
+            lastMessageAt: new Date(),
+            lastMessageId: null,
+            memberCount: 0,
+            settings: null,
+            title: this.meetingId,
+            type: 'GROUP',
+            searchableMemberInfo: [],
             participantIds: [],
             participants: [],
+            deleted: false,
+
+            // Legacy backward-compatibility helpers
+            conversationId: this.meetingId,
+            conversationType: 'group',
             conversationName: this.meetingId,
             conversationAvatar: '',
-            createdBy: this.user.userId,
-            createdAt: new Date(),
             updatedAt: new Date(),
-            lastMessage: null,
-            lastMessageAt: new Date(),
-            isActive: true,
-            settings: null
+            isActive: true
         };
         this.ws.currentConversation.set(conversation);
         this.ws.currentConversationId.set(this.meetingId);

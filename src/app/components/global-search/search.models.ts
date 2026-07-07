@@ -18,19 +18,29 @@ export interface UserDetail {
 
 export interface Conversation {
   id: string;
-  conversationId: string;
-  conversationType: 'direct' | 'group';
-  participantIds: string[];
-  participants: Participant[];
-  conversationName: string;
-  conversationAvatar: string;
+  avatar: string;
+  createdAt: Date | string | null;
   createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-  lastMessage: LastMessage;
-  lastMessageAt: Date;
-  isActive: boolean;
-  settings: ConversationSettings;
+  description: string;
+  lastMessageAt: Date | string | null;
+  lastMessageId: string | null;
+  memberCount: number;
+  settings: ConversationSettings | null;
+  title: string;
+  type: 'DIRECT' | 'GROUP' | string;
+  searchableMemberInfo: string[];
+  participantIds: string[] | null;
+  participants: Participant[] | null;
+  deleted: boolean;
+
+  // Backward compatibility fields for legacy components
+  conversationId?: string | null;
+  conversationName?: string | null;
+  conversationAvatar?: string | null;
+  conversationType?: 'direct' | 'group' | string | null;
+  lastMessage?: LastMessage | null;
+  updatedAt?: Date | string | null;
+  isActive?: boolean;
 }
 
 export interface SearchResult {

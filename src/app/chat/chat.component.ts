@@ -158,11 +158,11 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
 
     get directConversations(): Conversation[] {
-        return this.chatService.meetingRooms().filter(c => c && c.conversationType !== 'group');
+        return this.chatService.meetingRooms().filter(c => c && c.type?.toLowerCase() !== 'group');
     }
 
     get groupConversations(): Conversation[] {
-        return this.chatService.meetingRooms().filter(c => c && c.conversationType === 'group');
+        return this.chatService.meetingRooms().filter(c => c && c.type?.toLowerCase() === 'group');
     }
 
     toggleChatSection(): void {
@@ -185,18 +185,18 @@ export class ChatComponent implements OnInit, OnDestroy {
 
     getConversationAvatar(conversation: Conversation): string {
         if (!conversation) return '';
-        if (conversation.conversationType === 'group') {
-            return conversation.conversationAvatar || '';
+        if (conversation.type?.toLowerCase() === 'group') {
+            return conversation.avatar || '';
         }
         const participants = (conversation.participants || []).filter(p => p && p.userId !== this.currentUserId);
         if (participants.length > 0 && participants[0].avatar) {
             return participants[0].avatar;
         }
-        return conversation.conversationAvatar || '';
+        return conversation.avatar || '';
     }
 
     getDirectUserStatus(conversation: Conversation): string {
-        if (!conversation || conversation.conversationType === 'group') return '';
+        if (!conversation || conversation.type?.toLowerCase() === 'group') return '';
         const participants = (conversation.participants || []).filter(p => p && p.userId !== this.currentUserId);
         if (participants.length > 0) {
             return (participants[0].status || 'offline').toLowerCase();
@@ -242,11 +242,11 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
 
     isConversation(obj: UserDetail | Conversation): obj is Conversation {
-        return (obj as Conversation).conversationType !== undefined;
+        return (obj as Conversation).type !== undefined || (obj as Conversation).conversationType !== undefined;
     }
 
     isGroupConversation(obj: UserDetail | Conversation): obj is Conversation {
-        return (obj as Conversation).conversationType === 'group';
+        return (obj as Conversation).type?.toLowerCase() === 'group' || (obj as Conversation).conversationType === 'group';
     }
 
     startConversation(selectedConversation: UserDetail | Conversation) {
@@ -259,6 +259,7 @@ export class ChatComponent implements OnInit, OnDestroy {
 
     enableConversation(conversation: Conversation) {
         // Check if conversation exists
+        conversation.type = 'GROUP';
         conversation.conversationType = 'group';
         const existing = this.chatService.meetingRooms().findIndex(x => x.id === conversation.id);
         if (existing > -1) {
@@ -287,10 +288,21 @@ export class ChatComponent implements OnInit, OnDestroy {
             console.log("Starting new chat with", selectedUser);
             let newConversation: Conversation = {
                 id: null,
-                conversationId: null,
-                conversationType: 'direct',
-                conversationName: selectedUser.username,
-                conversationAvatar: selectedUser.avatar,
+                avatar: selectedUser.avatar || '',
+                createdAt: new Date(),
+                createdBy: this.currentUserId,
+                description: '',
+                lastMessageAt: null,
+                lastMessageId: null,
+                memberCount: 2,
+                settings: {
+                    allowReactions: true,
+                    allowPinning: true,
+                    adminOnlyPost: false
+                },
+                title: selectedUser.username,
+                type: 'DIRECT',
+                searchableMemberInfo: [],
                 participantIds: [selectedUser.userId, this.currentUserId],
                 participants: [
                     <Participant>{
@@ -316,12 +328,13 @@ export class ChatComponent implements OnInit, OnDestroy {
                         status: this.userStatus
                     }
                 ],
-                createdBy: this.currentUserId,
-                createdAt: new Date(),
-                updatedAt: null,
-                lastMessageAt: null,
-                lastMessage: null,
-                settings: null,
+                deleted: false,
+
+                // Legacy fallback support for older modules
+                conversationId: null,
+                conversationType: 'direct',
+                conversationName: selectedUser.username,
+                conversationAvatar: selectedUser.avatar,
                 isActive: true
             }
 
@@ -371,7 +384,7 @@ export class ChatComponent implements OnInit, OnDestroy {
             // Compute fixed position: appear to the right of the avatar row
             const trigger = (event.currentTarget as HTMLElement) ?? (event.target as HTMLElement);
             const rect = trigger.closest('.user-profile-header')?.getBoundingClientRect()
-                      ?? trigger.getBoundingClientRect();
+                ?? trigger.getBoundingClientRect();
             this.popoverTop = rect.bottom + 6;
             this.popoverLeft = rect.left;
             // Close on outside click

@@ -579,7 +579,6 @@
     cursor: not-allowed;
 }
 
-/* Messages Container */
 .messages-container {
     flex: 1;
     overflow-y: auto;
@@ -590,10 +589,13 @@
     flex-direction: column;
     min-height: 0;
     transition: background-color 0.3s ease;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
 }
 
 .messages-container::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 .messages-container::-webkit-scrollbar-track {
@@ -601,12 +603,13 @@
 }
 
 .messages-container::-webkit-scrollbar-thumb {
-    background: var(--teams-border);
-    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    transition: background 0.2s ease;
 }
 
 .messages-container::-webkit-scrollbar-thumb:hover {
-    background: var(--teams-text-muted);
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .message-wrapper {
@@ -637,8 +640,8 @@
 }
 
 .date-separator-pill {
-    background-color: #303134;
-    color: #ffffff;
+    background-color: #f1f1f1;
+    color: #9e8b8b;
     font-size: 12px;
     font-weight: 500;
     padding: 4px 14px;
@@ -1304,4 +1307,27 @@
 .header-status-popover .status-option-check {
     color: var(--teams-primary);
     flex-shrink: 0;
+}
+
+/* CENTERING CHAT MESSAGES & INPUT FOR LARGE SCREENS */
+@media (min-width: 1024px) {
+    .message-wrapper {
+        width: 100%;
+        max-width: 1000px;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    
+    .date-separator-wrapper {
+        width: 100%;
+        max-width: 1000px;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    
+    .message-input-wrapper {
+        max-width: 1000px;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
 }

@@ -1155,6 +1155,7 @@
   line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden
 }
@@ -1163,8 +1164,8 @@
   position: absolute;
   bottom: 10%;
   right: 5%;
-  width: 200px;
-  height: 250px;
+  width: 160px;
+  height: 200px;
   border-radius: 50%;
   filter: blur(50px);
   opacity: 0.8;
@@ -1180,8 +1181,8 @@
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 250px;
-  height: 320px;
+  width: 200px;
+  height: 260px;
   z-index: 2;
   object-fit: contain;
   object-position: bottom right;

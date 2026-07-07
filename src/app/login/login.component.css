@@ -372,3 +372,41 @@
 .login-footer a:hover {
   color: #c084fc;
 }
+
+/* BACK BUTTON */
+.btn-back-floating {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(129, 140, 248, 0.15);
+  color: #c7d2fe;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  font-family: inherit;
+}
+
+.btn-back-floating:hover {
+  background: rgba(129, 140, 248, 0.12);
+  border-color: #818cf8;
+  color: #fff;
+  transform: translateX(-3px);
+}
+
+@media (max-width: 640px) {
+  .btn-back-floating {
+    top: 1rem;
+    left: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+}

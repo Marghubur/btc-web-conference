@@ -114,7 +114,7 @@
   <section class="stats-section" id="stats-section">
     <div class="stats-container">
       <div class="stat-item reveal" *ngFor="let stat of stats">
-        <span class="stat-value">{{ stat.value }}{{ stat.suffix }}</span>
+        <span class="stat-value">{{ stat.value }}{{ stat.suffix || '' }}</span>
         <span class="stat-label">{{ stat.label }}</span>
       </div>
     </div>

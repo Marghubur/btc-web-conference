@@ -187,19 +187,28 @@ export class NotificationService {
 
                 return {
                     id: conv.conversation_id || conv.conversationId || '',
-                    conversationId: conv.conversation_id || conv.conversationId || '',
-                    conversationType: (conv.type || '').toLowerCase() === 'group' ? 'group' : 'direct',
+                    avatar: conv.avatar || '',
+                    createdAt: null,
+                    createdBy: '',
+                    description: '',
+                    lastMessageAt: conv.last_message_at ? new Date(conv.last_message_at) : null,
+                    lastMessageId: conv.last_message ? (conv.last_message.messageId || '') : '',
+                    memberCount: participants.length,
+                    settings: null,
+                    title: conv.title || conv.conversationName || '',
+                    type: (conv.type || '').toUpperCase() === 'GROUP' ? 'GROUP' : 'DIRECT',
+                    searchableMemberInfo: [],
                     participantIds: participantIds,
                     participants: participants,
+                    deleted: false,
+
+                    // Legacy fallback fields for backward compatibility
+                    conversationId: conv.conversation_id || conv.conversationId || '',
+                    conversationType: (conv.type || '').toLowerCase() === 'group' ? 'group' : 'direct',
                     conversationName: conv.title || conv.conversationName || '',
                     conversationAvatar: conv.avatar || '',
-                    createdBy: '',
-                    createdAt: null,
-                    updatedAt: null,
                     lastMessage: conv.last_message || null,
-                    lastMessageAt: conv.last_message_at ? new Date(conv.last_message_at) : null,
-                    isActive: true,
-                    settings: null
+                    isActive: true
                 };
             });
 
