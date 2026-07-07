@@ -91,7 +91,8 @@ export class IncomingCallComponent implements OnDestroy {
                 state: {
                     id: call.conversationId,
                     type: call.callType || CallType.AUDIO,
-                    title: call.callerName || 'NEW'
+                    title: call.callerName || 'NEW',
+                    autoJoin: true
                 }
             });
         }
@@ -108,7 +109,8 @@ export class IncomingCallComponent implements OnDestroy {
                 state: {
                     id: request.conversationId,
                     type: request.callType || CallType.AUDIO,
-                    title: request.callerName || 'Call'
+                    title: request.callerName || 'Call',
+                    autoJoin: true
                 }
             });
         }

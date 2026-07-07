@@ -15,7 +15,7 @@ export interface AppNotification {
     id: string;
     type: 'message' | 'delivered' | 'seen' | 'typing' | 'error';
     title: string;
-    body: string;
+    content: string;
     conversationId: string;
     timestamp: Date;
     read: boolean;
@@ -186,7 +186,7 @@ export class NotificationService {
                 const participantIds = participants.map(p => p.userId);
 
                 return {
-                    id: conv.conversation_id || conv.conversationId || '',
+                    id: conv.id || conv.conversation_id || conv.conversationId || '',
                     avatar: conv.avatar || '',
                     createdAt: null,
                     createdBy: '',
@@ -203,7 +203,7 @@ export class NotificationService {
                     deleted: false,
 
                     // Legacy fallback fields for backward compatibility
-                    conversationId: conv.conversation_id || conv.conversationId || '',
+                    conversationId: conv.id || conv.conversation_id || conv.conversationId || '',
                     conversationType: (conv.type || '').toLowerCase() === 'group' ? 'group' : 'direct',
                     conversationName: conv.title || conv.conversationName || '',
                     conversationAvatar: conv.avatar || '',
@@ -250,13 +250,13 @@ export class NotificationService {
                 newCounts.set(message.conversationId, current + 1);
                 return newCounts;
             });
-
+            const senderName = (message as any).senderName;
             // Show notification
             this.showNotification({
                 id: message.messageId,
                 type: 'message',
-                title: 'New Message',
-                body: message.body,
+                title: senderName,
+                content: message.content,
                 conversationId: message.conversationId,
                 timestamp: new Date(),
                 read: false
@@ -327,7 +327,7 @@ export class NotificationService {
             id: crypto.randomUUID(),
             type: 'error',
             title: 'Connection Error',
-            body: error.message,
+            content: error.message,
             conversationId: '',
             timestamp: new Date(),
             read: false
@@ -342,7 +342,7 @@ export class NotificationService {
                     ...x,
                     lastMessage: <LastMessage>{
                         messageId: message.messageId,
-                        content: message.body,
+                        content: message.content,
                         senderId: message.senderId,
                         sentAt: message.createdAt
                     }
@@ -358,7 +358,7 @@ export class NotificationService {
         // Show browser notification if permission granted
         if (Notification.permission === 'granted') {
             new Notification(notification.title, {
-                body: notification.body,
+                body: notification.content,
                 icon: '/assets/icons/notification-icon.png',
                 tag: notification.id
             });

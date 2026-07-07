@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { ConfeetSocketService } from '../../confeet-socket.service';
 import { ServerEventService } from '../../server-events/server-event.service';
 import { CallEvents, CallType, CallConfig, CallStatus, CallInitiatePayload } from '../../../../models/conference_call/call_model';
+import { LocalService } from '../../../services/local.service';
 
 @Injectable({
     providedIn: 'root'
@@ -9,14 +10,24 @@ import { CallEvents, CallType, CallConfig, CallStatus, CallInitiatePayload } fro
 export class InitiateVideoCallService {
     constructor(
         private ws: ConfeetSocketService,
-        private serverEventService: ServerEventService
-    ) {}
+        private serverEventService: ServerEventService,
+        private local: LocalService
+    ) { }
 
-    execute(calleeId: string, conversationId: string): void {
+    execute(calleeIds: string | string[], conversationId: string): void {
+        const ids = Array.isArray(calleeIds) ? calleeIds : [calleeIds];
+        const user = this.local.getUser();
+        const callerId = user?.userId || '';
+        const callerName = ((user?.firstName || '') + ' ' + (user?.lastName || '')).trim() || user?.email || 'Unknown';
+        const callerAvatar = '';
+
         this.ws.sendEvent(CallEvents.CALL_INITIATE, <CallInitiatePayload>{
             callId: crypto.randomUUID(),
+            callerId: callerId,
+            callerName: callerName,
+            callerAvatar: callerAvatar,
             conversationId: conversationId,
-            calleeIds: [calleeId],
+            calleeIds: ids,
             callType: CallType.VIDEO,
             timeout: CallConfig.DEFAULT_TIMEOUT
         });

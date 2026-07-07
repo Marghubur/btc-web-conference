@@ -78,7 +78,7 @@ export class ChatContainerComponent implements AfterViewChecked {
     // React to conversation changes and load messages
     effect(() => {
       const conversation = this.ws.currentConversation();
-      if (conversation && conversation.id) {
+      if (conversation && (conversation.id || conversation.conversationId)) {
         // Reset page index and load first page of messages
         this.pageIndex = 1;
         this.lastMessageId = undefined; // Reset tracking
@@ -93,7 +93,7 @@ export class ChatContainerComponent implements AfterViewChecked {
       if (msgs && msgs.length > 0) {
         const latestMsg = msgs[msgs.length - 1];
         const currentLastId = latestMsg.id || latestMsg.messageId;
-        
+
         if (this.lastMessageId !== currentLastId) {
           this.lastMessageId = currentLastId;
           this.shouldScrollToBottom = true;
@@ -221,8 +221,8 @@ export class ChatContainerComponent implements AfterViewChecked {
     const prevMsgDate = new Date(messages[index - 1].createdAt || Date.now());
 
     const isSameDayAsPrev = currentMsgDate.getDate() === prevMsgDate.getDate() &&
-                            currentMsgDate.getMonth() === prevMsgDate.getMonth() &&
-                            currentMsgDate.getFullYear() === prevMsgDate.getFullYear();
+      currentMsgDate.getMonth() === prevMsgDate.getMonth() &&
+      currentMsgDate.getFullYear() === prevMsgDate.getFullYear();
 
     return !isSameDayAsPrev;
   }
@@ -233,8 +233,8 @@ export class ChatContainerComponent implements AfterViewChecked {
     const today = new Date();
 
     const isToday = date.getDate() === today.getDate() &&
-                    date.getMonth() === today.getMonth() &&
-                    date.getFullYear() === today.getFullYear();
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
 
     if (isToday) {
       return 'Today';
@@ -244,8 +244,8 @@ export class ChatContainerComponent implements AfterViewChecked {
     yesterday.setDate(today.getDate() - 1);
 
     const isYesterday = date.getDate() === yesterday.getDate() &&
-                        date.getMonth() === yesterday.getMonth() &&
-                        date.getFullYear() === yesterday.getFullYear();
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear();
 
     if (isYesterday) {
       return 'Yesterday';
@@ -312,12 +312,16 @@ export class ChatContainerComponent implements AfterViewChecked {
 
   // Audio call
   startAudioCall() {
-    this.initiateAudioCallService.execute(this.currentUserId, this.ws.currentConversation().id);
+    const calleeIds = (this.ws.currentConversation()?.participants || [])
+      .filter(p => p && p.userId !== this.currentUserId)
+      .map(p => p.userId);
+    this.initiateAudioCallService.execute(calleeIds, this.ws.currentConversation().id);
     this.router.navigate(['/btc/preview'], {
       state: {
         id: this.ws.currentConversation().id,
         type: CallType.AUDIO,
-        title: this.ws.currentConversation().conversationName ? this.ws.currentConversation().conversationName : 'NEW'
+        title: this.ws.currentConversation().conversationName ? this.ws.currentConversation().conversationName : 'NEW',
+        autoJoin: true
       }
     });
   }
@@ -493,7 +497,7 @@ export class ChatContainerComponent implements AfterViewChecked {
     ];
 
     // Call API to create group
-    this.chatService.createGroupConversation(this.currentUserId, groupName, this.ws.currentConversationId(), allMembers).then((res: ResponseModel) => {
+    this.chatService.createGroupConversation(this.currentUserId, null).then((res: ResponseModel) => {
       // Reset state
       if (res.isSuccess && res.responseBody) {
         this.notifyGroupCreatedService.execute(res.responseBody.id, this.currentUserId);
@@ -522,7 +526,9 @@ export class ChatContainerComponent implements AfterViewChecked {
       this.previousScrollHeight = this.messagesContainer.nativeElement.scrollHeight;
     }
 
-    this.chatService.getMessages(this.ws.currentConversation().id ?? '', this.pageIndex, 20, this.pageIndex > 1).then(() => {
+    const conv = this.ws.currentConversation();
+    const convId = (conv && (conv.id || conv.conversationId)) ? (conv.id || conv.conversationId) : '';
+    this.chatService.getMessages(convId || '', this.pageIndex, 20, this.pageIndex > 1).then(() => {
       this.pageIndex = this.pageIndex + 1;
       if (scrollToBottom) {
         this.shouldScrollToBottom = true;
@@ -547,13 +553,15 @@ export class ChatContainerComponent implements AfterViewChecked {
 
   private send(response: any) {
     if (this.message() != null && this.message() != '' && response.id != null) {
+      const currentUserName = this.user.firstName + " " + this.user.lastName;
       var event: any = {
         conversationId: response.id,
         messageId: crypto.randomUUID(),
         senderId: this.currentUserId,
         recievedId: null,
         type: "text",
-        body: this.message(),
+        content: this.message(),
+        senderName: currentUserName,
         fileUrl: null,
         replyTo: null,
         mentions: [],

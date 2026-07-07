@@ -14,11 +14,13 @@ import { CallType } from '../models/conference_call/call_model';
 import { ServerEventService } from '../providers/socket/server-events/server-event.service';
 import { ChatContainerComponent } from './chat-container/chat-container.component';
 import { TestSignalService } from '../providers/socket/client-events/call/test-sinal.service';
+import { MultiUserAutocompleteComponent } from '../shared/components/multi-user-autocomplete/multi-user-autocomplete.component';
+import { NotifyGroupCreatedService } from '../providers/socket/client-events/group/notify-group-created.service';
 
 @Component({
     selector: 'app-chat',
     standalone: true,
-    imports: [CommonModule, FormsModule, ChatContainerComponent],
+    imports: [CommonModule, FormsModule, ChatContainerComponent, MultiUserAutocompleteComponent],
     templateUrl: './chat.component.html',
     styleUrl: './chat.component.css',
 })
@@ -51,6 +53,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     memberSearchQuery: string = '';
     memberSearchResults: SearchResult[] = [];
     memberSearchSelectedIndex: number = -1;
+    isCreatingGroup: boolean = false;
 
     // Status Popover state (sidebar avatar)
     showStatusPopover: boolean = false;
@@ -89,7 +92,8 @@ export class ChatComponent implements OnInit, OnDestroy {
         private router: Router,
         public notificationService: NotificationService,
         private serverEventService: ServerEventService,
-        private testSignalService: TestSignalService
+        private testSignalService: TestSignalService,
+        private notifyGroupCreatedService: NotifyGroupCreatedService
     ) {
         // React to group notifications
         effect(() => {
@@ -347,13 +351,23 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
 
     selectChannelForConversation(conversation: Conversation) {
+        if (!conversation) return;
+        const currentId = this.ws.currentConversationId();
+        const targetId = conversation.id || conversation.conversationId || '';
+        if (currentId && targetId && currentId === targetId && this.chatService.messages().length > 0) {
+            return;
+        }
+
+        this.chatService.isMessagesLoading.set(true);
         this.ws.currentConversation.set(conversation);
-        this.ws.currentConversationId.set(conversation.id);
+        this.ws.currentConversationId.set(targetId || null);
 
         this.chatService.messages.set([]); // Clear existing messages
 
         // Notify the NotificationService which conversation is now active
-        this.notificationService.setActiveConversation(conversation.id);
+        if (targetId) {
+            this.notificationService.setActiveConversation(targetId);
+        }
     }
 
     isConversationSelected(item: Conversation): boolean {
@@ -372,6 +386,54 @@ export class ChatComponent implements OnInit, OnDestroy {
         this.memberSearchQuery = '';
         this.newGroupMembers = [];
         this.newGroupName = '';
+        this.memberSearchResults = [];
+    }
+
+    onMemberSearch(query: string): void {
+        this.memberSearchQuery = query;
+        if (!query || query.trim().length < 2) {
+            this.memberSearchResults = [];
+            return;
+        }
+        this.chatService.userAutocompleteSerach(query).then((res: SearchResult[]) => {
+            this.memberSearchResults = (res || []).filter(u => u.userId !== this.currentUserId);
+        });
+    }
+
+    onSelectedMembersChange(users: SearchResult[]): void {
+        this.newGroupMembers = users;
+    }
+
+    removeNewGroupMember(user: SearchResult): void {
+        this.newGroupMembers = this.newGroupMembers.filter(m => m.conversationId !== user.conversationId && (!m.userId || m.userId !== user.userId));
+    }
+
+    createGroup(): void {
+        if (!this.newGroupName.trim() || this.newGroupMembers.length === 0 || this.isCreatingGroup) return;
+
+        this.isCreatingGroup = true;
+        const selectedParticipants = this.newGroupMembers.reduce((acc, m) => [...acc, ...(m.participants || [])], []);
+
+        const allMembers: string[] = selectedParticipants.map(m => m.userId || '');
+        allMembers.push(this.currentUserId);
+        const createGroupRequest: any = {
+            groupName: this.newGroupName.trim(),
+            memberIds: allMembers
+        };
+
+        this.chatService.createGroupConversation(this.currentUserId, createGroupRequest).then((res: ResponseModel) => {
+            this.isCreatingGroup = false;
+            if (res.isSuccess && res.responseBody) {
+                this.notifyGroupCreatedService.execute(res.responseBody.id, this.currentUserId);
+                this.chatService.getMeetingRooms();
+                this.closeNewChatPopup();
+            } else {
+                console.error("Failed to create group:", res);
+            }
+        }).catch(err => {
+            this.isCreatingGroup = false;
+            console.error("Error creating group:", err);
+        });
     }
 
     // Status Popover Methods

@@ -173,7 +173,7 @@ export class RoomService {
       const msg = { message: `${participant.identity} joined the meeting`, id: crypto.randomUUID() };
       this._newMessage.set(msg);
       this.clearAfterDelay();
-      const audio = new Audio('/assets/notification-tone.wav');
+      const audio = new Audio('/assets/meeting_joining_tone.mp3');
       audio.play().catch(() => { });
 
       this.updateParticipantMediaStatus(participant);
@@ -192,7 +192,7 @@ export class RoomService {
       const msg = { message: `${participant.identity} left the meeting`, id: crypto.randomUUID() };
       this._newMessage.set(msg);
       this.clearAfterDelay();
-      const audio = new Audio('/assets/notification-tone.wav');
+      const audio = new Audio('/assets/meeting_joining_tone.mp3');
       audio.play().catch(() => { });
 
       this.participantMediaStatus.update((map) => {

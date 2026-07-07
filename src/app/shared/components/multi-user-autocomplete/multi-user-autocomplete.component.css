@@ -1,0 +1,347 @@
+.multi-autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+  font-family: inherit;
+}
+
+/* Input Container */
+.multi-autocomplete-input-box {
+  min-height: 48px;
+  padding: 6px 12px;
+  background: var(--teams-bg-main, #ffffff);
+  border: 1.5px solid var(--teams-border, #d1d5db);
+  border-radius: 12px;
+  cursor: text;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  box-sizing: border-box;
+}
+
+.multi-autocomplete-wrapper.focused .multi-autocomplete-input-box {
+  border-color: var(--teams-primary, #5b5fc7);
+  box-shadow: 0 0 0 4px rgba(91, 95, 199, 0.15);
+  background: var(--teams-bg-main, #ffffff);
+}
+
+/* Chips Container */
+.selected-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Individual User Chip */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  background: var(--teams-primary-light, rgba(91, 95, 199, 0.1));
+  border: 1px solid rgba(91, 95, 199, 0.2);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--teams-text-primary, #1f2937);
+  transition: all 0.15s ease;
+  animation: chipScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes chipScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.user-chip:hover {
+  background: rgba(91, 95, 199, 0.18);
+  border-color: rgba(91, 95, 199, 0.35);
+  transform: translateY(-1px);
+}
+
+.chip-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.chip-label {
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+  color: var(--teams-text-secondary, #4b5563);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.chip-remove-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.chip-remove-btn:hover {
+  background: #ef4444;
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+}
+
+/* Input Field Wrapper */
+.input-field-wrapper {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autocomplete-text-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 6px 4px;
+  font-size: 14px;
+  color: var(--teams-text-primary, #1f2937);
+  outline: none;
+}
+
+.autocomplete-text-input::placeholder {
+  color: var(--teams-text-muted, #9ca3af);
+}
+
+/* Inline Spinner */
+.spinner-inline {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(91, 95, 199, 0.2);
+  border-top-color: var(--teams-primary, #5b5fc7);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Dropdown Menu */
+.autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--teams-bg-main, #ffffff);
+  border: 1px solid var(--teams-border, #e5e7eb);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.15), 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 10000;
+  animation: dropdownFadeSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+@keyframes dropdownFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.autocomplete-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.autocomplete-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+.autocomplete-dropdown::-webkit-scrollbar-thumb {
+  background: var(--teams-border, #d1d5db);
+  border-radius: 3px;
+}
+.autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--teams-text-muted, #9ca3af);
+}
+
+/* Dropdown Status / No Results */
+.dropdown-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 16px;
+  color: var(--teams-text-secondary, #6b7280);
+  font-size: 14px;
+}
+
+.dropdown-status.no-results {
+  flex-direction: column;
+  gap: 8px;
+  color: var(--teams-text-muted, #9ca3af);
+  padding: 32px 16px;
+}
+
+.dropdown-status.no-results svg {
+  width: 36px;
+  height: 36px;
+  opacity: 0.5;
+}
+
+/* Dropdown Items */
+.dropdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.dropdown-item:hover,
+.dropdown-item.active {
+  background-color: var(--teams-hover, #f3f4f6);
+  transform: translateX(2px);
+}
+
+.dropdown-item.selected {
+  background-color: var(--teams-primary-light, rgba(91, 95, 199, 0.08));
+}
+
+.item-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--teams-text-primary, #1f2937);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-subtext {
+  font-size: 12px;
+  color: var(--teams-text-secondary, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.add-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--teams-border, #d1d5db);
+  color: var(--teams-text-muted, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.dropdown-item:hover .add-icon {
+  border-color: var(--teams-primary, #5b5fc7);
+  color: var(--teams-primary, #5b5fc7);
+  background: rgba(91, 95, 199, 0.1);
+  transform: scale(1.1);
+}
+
+.selected-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--teams-primary, #5b5fc7);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(91, 95, 199, 0.4);
+  animation: bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.selected-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes bounceIn {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}

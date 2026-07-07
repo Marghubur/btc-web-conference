@@ -185,7 +185,7 @@ export interface Message {
     conversationId: string;
     senderId: string;
     type: 'text' | 'audio' | 'video' | 'image' | 'file';
-    body: string;
+    content: string;
     fileUrl?: string | null;
     replyTo?: string | null;
     mentions: [];

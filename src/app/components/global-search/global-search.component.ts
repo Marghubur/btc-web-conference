@@ -206,11 +206,12 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
 
         if (result.conversation_id != null) {
             var data = result as any;
+
             data.conversationType = data.type.toLowerCase()
             data.conversationName = data.title;
             this.ws.currentConversation.set(data as Conversation);
             this.ws.currentConversationId.set(data.id);
-
+            this.chatService.isMessagesLoading.set(true);
             this.chatService.messages.set([]); // Clear existing messages
 
             // Notify the NotificationService which conversation is now active

@@ -1,0 +1,95 @@
+<div class="multi-autocomplete-wrapper" [class.focused]="isFocused">
+  <!-- Chips & Input Container -->
+  <div class="multi-autocomplete-input-box" (click)="onContainerClick()">
+    <div class="selected-chips">
+      @for (user of selectedUsers; track user.conversationId || user.userId) {
+        <div class="user-chip">
+          <div class="chip-avatar" [ngStyle]="{ 'background-color': getColorFromName(user.name) }">
+            {{ getInitials(user.name) }}
+          </div>
+          <span class="chip-label">{{ user.name }}</span>
+          <button type="button" class="chip-remove-btn" (click)="removeUser(user, $event)" [title]="'Remove ' + user.name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      }
+
+      <!-- Search Input -->
+      <div class="input-field-wrapper">
+        <input
+          #searchInput
+          type="text"
+          class="autocomplete-text-input"
+          [placeholder]="selectedUsers.length === 0 ? placeholder : 'Add more...'"
+          [(ngModel)]="query"
+          (input)="onInput()"
+          (focus)="onFocus()"
+          (blur)="onBlur()"
+          (keydown)="onKeyDown($event)"
+        />
+        @if (isLoading) {
+          <div class="spinner-inline"></div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Dropdown Menu -->
+  @if (isOpen && (query.trim().length >= 1 || filteredResults.length > 0)) {
+    <div class="autocomplete-dropdown" (click)="$event.stopPropagation()">
+      @if (isLoading) {
+        <div class="dropdown-status">
+          <div class="spinner"></div>
+          <span>Searching users...</span>
+        </div>
+      } @else if (filteredResults.length === 0) {
+        <div class="dropdown-status no-results">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <span>No matching users found</span>
+        </div>
+      } @else {
+        <div class="dropdown-list">
+          @for (user of filteredResults; track user.conversationId || user.userId; let idx = $index) {
+            <div
+              class="dropdown-item"
+              [class.selected]="isSelected(user)"
+              [class.active]="selectedIndex === idx"
+              (click)="toggleSelection(user, $event)"
+              (mouseenter)="selectedIndex = idx">
+              
+              <div class="item-avatar" [ngStyle]="{ 'background-color': getColorFromName(user.name) }">
+                @if (user.avatar) {
+                  <img [src]="user.avatar" [alt]="user.name" class="avatar-img" />
+                } @else {
+                  {{ getInitials(user.name) }}
+                }
+              </div>
+
+              <div class="item-details">
+                <div class="item-name">{{ user.name }}</div>
+                <div class="item-subtext">{{ user.designation || user.email || 'Member' }}</div>
+              </div>
+
+              <div class="item-action-icon">
+                @if (isSelected(user)) {
+                  <span class="selected-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                } @else {
+                  <span class="add-icon">+</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
