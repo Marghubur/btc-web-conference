@@ -17,6 +17,7 @@ export class ChatService {
     public searchResults = signal<SearchResult[]>([]);
     public userSearchResults = signal<UserDetail[]>([]);
     public isLoading = signal<boolean>(false);
+    public isMessagesLoading = signal<boolean>(false);
     private _isChatActive = signal<boolean>(false);
     readonly isChatActive = this._isChatActive.asReadonly();
 
@@ -104,24 +105,26 @@ export class ChatService {
     }
 
     async getMessages(conversationId: string, page: number, limit: number, append: boolean = false): Promise<void> {
-        // isLoading not set here to avoid flickering entire chat on pagination
-        const res = await this.http.get(`messages/get?id=${conversationId ?? ''}&page=${page}&limit=${limit}`);
-        if (res.isSuccess && res.responseBody && res.responseBody.messages) {
-            if (append) {
-                // If appending (e.g. infinite scroll), combine with existing
-                // Note: Logic depends on scroll direction. Typically infinite scroll loads OLDER messages (prepend)
-                // or newer (append). Assuming standard "load more" appends for now or component handles logic.
-                // Actually, for "load older" we usually prepend. 
-                // Let's simplified: Service just holds "current view's messages". 
-                // COMPLEXITY: State in Service for pagination is tricky. 
-                // Let's append if page > 1, else set.
-                if (page > 1) {
-                    this.messages.update(current => [...res.responseBody.messages.reverse(), ...current]);
+        if (page === 1 || !append) {
+            this.isMessagesLoading.set(true);
+        }
+        try {
+            // isLoading not set here to avoid flickering entire chat on pagination
+            const res = await this.http.get(`messages/get?id=${conversationId ?? ''}&page=${page}&limit=${limit}`);
+            if (res.isSuccess && res.responseBody && res.responseBody.messages) {
+                if (append) {
+                    if (page > 1) {
+                        this.messages.update(current => [...res.responseBody.messages.reverse(), ...current]);
+                    } else {
+                        this.messages.set(res.responseBody.messages.reverse());
+                    }
                 } else {
                     this.messages.set(res.responseBody.messages.reverse());
                 }
-            } else {
-                this.messages.set(res.responseBody.messages.reverse());
+            }
+        } finally {
+            if (page === 1 || !append) {
+                this.isMessagesLoading.set(false);
             }
         }
     }
@@ -136,8 +139,8 @@ export class ChatService {
         return res; // Keep return for Component to know ID of new chat
     }
 
-    async createGroupConversation(userId: string, groupName: string, conversationId: string, participants: Participant[]): Promise<ResponseModel> {
-        const res = await this.http.post(`conversations/create-group/${userId}/${groupName}/${conversationId}`, participants);
+    async createGroupConversation(userId: string, createGroupRequest: any): Promise<ResponseModel> {
+        const res = await this.http.post(`conversations/build-group/${userId}`, createGroupRequest);
         // If successful, we might want to refresh meeting rooms or add this one
         if (res.isSuccess) {
             // Optionally refresh list
@@ -226,5 +229,41 @@ export class ChatService {
         // Pick color based on hash
         const index = Math.abs(hash) % colors.length;
         return colors[index];
+    }
+
+    async userAutocompleteSerach(term: string): Promise<SearchResult[]> {
+        if (!term) {
+            this.searchResults.set([]);
+            return [];
+        }
+        this.isLoading.set(true);
+        const res = await this.http.get(`users/search?term=${term}&pageNumber=1&pageSize=30`);
+        let results: SearchResult[] = [];
+        if (res.isSuccess && res.responseBody && res.responseBody.data) {
+            results = (res.responseBody.data as any[]).map(user => ({
+                avatar: user.avatar || '',
+                conversationId: user.id || user.userId || '',
+                participants: [{
+                    userId: user.userId || user.id || '',
+                    username: user.username || user.email || '',
+                    firstName: user.firstName || '',
+                    lastName: user.lastName || '',
+                    email: user.email || '',
+                    avatar: user.avatar || '',
+                    joinedAt: null,
+                    role: 'member',
+                    status: (user.status || 'offline').toLowerCase()
+                }],
+                name: user.name || ((user.firstName || '') + ' ' + (user.lastName || '')).trim() || user.email || 'Unknown',
+                type: 'user',
+                userId: user.userId || user.id || '',
+                designation: user.designation || user.email || 'Member'
+            }));
+            this.searchResults.set(results);
+        } else {
+            this.searchResults.set([]);
+        }
+        this.isLoading.set(false);
+        return results;
     }
 }

@@ -8,13 +8,14 @@ import {
     MetricsResponse
 } from './search.models';
 import { AjaxService } from '../../providers/services/ajax.service';
+import { LocalService } from '../../providers/services/local.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class GlobalSearchService {
     private readonly http = inject(AjaxService);
-
+    private readonly local = inject(LocalService);
     // Configuration
     private readonly DEBOUNCE_TIME = 300; // ms
     private readonly MIN_SEARCH_LENGTH = 2;
@@ -128,7 +129,24 @@ export class GlobalSearchService {
 
             // Check if this result is still relevant
             if (this.query() === query) {
-                const results = this.transformResponse(response);
+                var results = this.transformResponse(response);
+                if (results != null && results.results.conversationCount > 0) {
+                    const currentUserId = this.local.getUser().userId;
+                    for (var conversation of results.results.conversations) {
+                        if (conversation.type.toLowerCase() == "direct" && conversation.searchableMemberInfo.some(x => x.includes(currentUserId))) {
+                            const otherMember = conversation.searchableMemberInfo.find(item => !item.includes(currentUserId));
+                            if (otherMember) {
+                                const parts = otherMember.split(/\s+/);
+                                const emailIndex = parts.findIndex(p => /\S+@\S+\.\S+/.test(p));
+
+                                if (emailIndex !== -1) {
+                                    conversation.title = parts.slice(0, emailIndex).join(' ');
+                                }
+                            }
+                        }
+
+                    }
+                }
                 this.results.set(results);
                 this.isLoading.set(false);
             }

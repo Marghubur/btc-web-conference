@@ -50,6 +50,8 @@ export class PreviewComponent implements OnDestroy {
     passCode: string = "";
     isSubmitted: boolean = false;
     isValidMeetingId: boolean = false;
+    autoJoin: boolean = false;
+    private autoJoinTriggered: boolean = false;
 
     // Permission Modal State
     showPermissionDeniedModal: boolean = false;
@@ -221,6 +223,10 @@ export class PreviewComponent implements OnDestroy {
             this.callType = state.type;
         }
 
+        if (state?.autoJoin !== undefined) {
+            this.autoJoin = state.autoJoin;
+        }
+
         // Update camera state based on call type (will be used by initializeMediaStream)
         // Note: The actual camera state is now managed by MeetingService
 
@@ -244,6 +250,17 @@ export class PreviewComponent implements OnDestroy {
             const hasRequiredPermissions = this.isAudioOnlyCall()
                 ? permissions.microphone === 'granted'
                 : permissions.camera === 'granted' && permissions.microphone === 'granted';
+
+            // Auto-join if autoJoin is enabled OR if it is an audio-only call
+            if ((this.autoJoin || this.isAudioOnlyCall()) && hasRequiredPermissions && !this.autoJoinTriggered) {
+                this.autoJoinTriggered = true;
+                setTimeout(() => {
+                    if (!this.meetingService.inMeeting()) {
+                        this.joinRoom();
+                    }
+                }, 100);
+                return;
+            }
 
             // Auto-show permission modal if permissions are denied
             if (permissions.camera === 'denied' || permissions.microphone === 'denied') {

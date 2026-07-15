@@ -2,26 +2,34 @@
 
 /* ===== CSS Variables for Teams Theme - Using Global Theme ===== */
 :host {
-    --teams-primary: #0b57d0; /* Google Blue */
+    --teams-primary: #0b57d0;
+    /* Google Blue */
     --teams-primary-hover: #0842a0;
     --teams-primary-light: #d3e3fd;
     --teams-bg-sidebar: #f8fafd;
-    --teams-bg-main: #ffffff; /* Pure White Google Chat background */
-    --teams-bg-message-sent: #d3e3fd; /* Google Chat Sent Bubble */
-    --teams-bg-message-received: #f0f4f9; /* Google Chat Received Bubble */
+    --teams-bg-main: #ffffff;
+    /* Pure White Google Chat background */
+    --teams-bg-message-sent: #d3e3fd;
+    /* Google Chat Sent Bubble */
+    --teams-bg-message-received: #f0f4f9;
+    /* Google Chat Received Bubble */
     --teams-text-primary: #1f1f1f;
     --teams-text-secondary: #444746;
     --teams-text-muted: #747775;
     --teams-border: #e0e2e5;
     --teams-hover: #f0f4f9;
     --teams-selected: #e8f0fe;
-    --teams-online: #34A853; /* Google Green */
-    --teams-offline: #9AA0A6; /* Google Gray */
-    --teams-away: #FBBC05; /* Google Yellow */
+    --teams-online: #34A853;
+    /* Google Green */
+    --teams-offline: #9AA0A6;
+    /* Google Gray */
+    --teams-away: #FBBC05;
+    /* Google Yellow */
     --teams-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --teams-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
     --teams-radius: 8px;
-    --teams-radius-large: 18px; /* Google Chat pill bubbles */
+    --teams-radius-large: 18px;
+    /* Google Chat pill bubbles */
     --teams-transition: all 0.2s ease;
 
     display: block;
@@ -671,7 +679,7 @@
 /* ===== WhatsApp Emoji Reaction Bar ===== */
 .emoji-reaction-bar {
     position: absolute;
-    top: -42px;
+    top: -15px;
     background: #ffffff;
     border: 1px solid #e0e2e5;
     border-radius: 24px;
@@ -689,6 +697,7 @@
         opacity: 0;
         transform: translateY(6px) scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -825,7 +834,8 @@
 
 .message-status svg[ngswitchcase="2"] path,
 .message-status svg[ng-reflect-ng-switch-case="2"] path {
-    fill: #0b57d0 !important; /* Google Blue for seen ticks */
+    fill: #0b57d0 !important;
+    /* Google Blue for seen ticks */
 }
 
 .message-status svg {
@@ -1064,8 +1074,15 @@
 }
 
 @keyframes headerPopoverIn {
-    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-    to   { opacity: 1; transform: translateY(0)   scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Shared popover inner styles (reused class names) */
@@ -1074,7 +1091,7 @@
     align-items: center;
     gap: 12px;
     padding: 16px 16px 12px;
-    background: linear-gradient(135deg, rgba(91,95,199,0.08) 0%, rgba(91,95,199,0.02) 100%);
+    background: linear-gradient(135deg, rgba(91, 95, 199, 0.08) 0%, rgba(91, 95, 199, 0.02) 100%);
     border-bottom: 1px solid var(--teams-border);
 }
 
@@ -1221,21 +1238,27 @@
     transition: background 0.15s ease, transform 0.1s ease;
 }
 
-.header-status-popover .status-msg-btn:active { transform: scale(0.96); }
+.header-status-popover .status-msg-btn:active {
+    transform: scale(0.96);
+}
 
 .header-status-popover .status-msg-btn.cancel {
     background: var(--teams-hover);
     color: var(--teams-text-secondary);
 }
 
-.header-status-popover .status-msg-btn.cancel:hover { background: var(--teams-border); }
+.header-status-popover .status-msg-btn.cancel:hover {
+    background: var(--teams-border);
+}
 
 .header-status-popover .status-msg-btn.save {
     background: var(--teams-primary);
     color: white;
 }
 
-.header-status-popover .status-msg-btn.save:hover { background: var(--teams-primary-hover); }
+.header-status-popover .status-msg-btn.save:hover {
+    background: var(--teams-primary-hover);
+}
 
 .header-status-popover .status-options-list {
     display: flex;
@@ -1271,7 +1294,7 @@
     border-radius: 50%;
     flex-shrink: 0;
     display: inline-block;
-    border: 1.5px solid rgba(0,0,0,0.1);
+    border: 1.5px solid rgba(0, 0, 0, 0.1);
 }
 
 .header-status-popover .status-option-label {
@@ -1294,17 +1317,160 @@
         margin-left: auto !important;
         margin-right: auto !important;
     }
-    
+
     .date-separator-wrapper {
         width: 100%;
         max-width: 1000px;
         margin-left: auto !important;
         margin-right: auto !important;
     }
-    
+
     .message-input-wrapper {
         max-width: 1000px;
         margin-left: auto !important;
         margin-right: auto !important;
     }
+}
+
+/* =====================================================
+   Chat Messages Loading & Empty States
+   ===================================================== */
+.chat-messages-loader-wrapper,
+.chat-messages-empty-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    margin: auto 0;
+    min-height: 300px;
+    width: 100%;
+    padding: 24px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.messages-loader-card,
+.empty-chat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: var(--teams-bg-secondary, rgba(255, 255, 255, 0.03));
+    /* border: 1px solid var(--teams-border, rgba(255, 255, 255, 0.08)); */
+    /* border-radius: 20px; */
+    padding: 36px 32px;
+    max-width: 360px;
+    width: 100%;
+    /* box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2); */
+    backdrop-filter: blur(12px);
+}
+
+.loader-spinner-ring {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 3px solid rgba(99, 102, 241, 0.15);
+    border-top-color: #6366f1;
+    border-right-color: #a855f7;
+    animation: spinLoader 0.8s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spinLoader {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.loader-title,
+.empty-chat-title {
+    color: var(--teams-text-primary, #ffffff);
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+}
+
+.loader-subtitle,
+.empty-chat-subtitle {
+    color: var(--teams-text-secondary, rgba(255, 255, 255, 0.6));
+    font-size: 13px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.empty-chat-icon {
+    font-size: 44px;
+    margin-bottom: 16px;
+    animation: bounceIcon 2s infinite ease-in-out;
+}
+
+@keyframes bounceIcon {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+/* =====================================================
+   E2E Encryption Banner (WhatsApp Style)
+   ===================================================== */
+.e2e-encryption-banner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 8px 0 16px 0;
+    padding: 0 16px;
+    z-index: 5;
+    animation: fadeIn 0.4s ease-out;
+    flex-shrink: 0;
+}
+
+.e2e-encryption-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #1a1a20;
+    color: #f3c84b;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    padding: 8px 16px;
+    border-radius: 8px;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(243, 200, 75, 0.15);
+}
+
+.e2e-lock-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #f3c84b;
+}
+
+.e2e-text {
+    color: #f3c84b;
+}
+
+.e2e-learn-more {
+    color: #f3c84b;
+    text-decoration: underline;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.e2e-learn-more:hover {
+    opacity: 0.8;
 }

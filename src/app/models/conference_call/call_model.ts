@@ -202,6 +202,10 @@ export interface CallParticipant {
 
 /** CallInitiatePayload is sent by caller to initiate a call */
 export interface CallInitiatePayload {
+    callId?: string;
+    callerId?: string;
+    callerName?: string;
+    callerAvatar?: string;
     conversationId: string;         // Conversation/room ID
     calleeIds: string[];            // User(s) to call
     callType: CallTypeValue;        // "audio" or "video"

@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AppNotification, NotificationService } from '../services/notification.service';
@@ -27,7 +27,7 @@ import { AppNotification, NotificationService } from '../services/notification.s
                         <span class="toast-title">{{ toast.title }}</span>
                         <button class="toast-close" (click)="dismiss(toast, $event)">×</button>
                     </div>
-                    <div class="toast-body">{{ toast.body | slice:0:100 }}{{ toast.body.length > 100 ? '...' : '' }}</div>
+                    <div class="toast-body">{{ toast.content | slice:0:100 }}{{ toast.content.length > 100 ? '...' : '' }}</div>
                     <div class="toast-time">{{ getTimeAgo(toast.timestamp) }}</div>
                 </div>
             }
@@ -149,11 +149,22 @@ export class ToastNotificationComponent {
     private notificationService = inject(NotificationService);
     private router = inject(Router);
 
+    private playNotificationTone(): void {
+        try {
+            const audio = new Audio('assets/message_notification_tone.mp3');
+            audio.play().catch(err => console.log('Audio playback prevented by browser:', err));
+        } catch (e) {
+            console.error('Error playing notification tone:', e);
+        }
+    }
+
     // Show only last 3 notifications
     visibleToasts = computed(() => {
-        return this.notificationService.notifications()
+        var result = this.notificationService.notifications()
             .filter(n => !n.read)
             .slice(0, 3);
+        this.playNotificationTone();
+        return result;
     });
 
     onToastClick(toast: AppNotification): void {
