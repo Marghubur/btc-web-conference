@@ -20,59 +20,44 @@
     <!-- Participant List -->
     <div class="roster-list">
         <!-- Section: In this call -->
+        <!-- Section: In this call -->
         <div class="roster-section-header">
-            <span>In this call ({{meetingService.remoteUsersCount + 1}})</span>
+            <span>In this call ({{inMeetingParticipants().length}})</span>
         </div>
-        <!-- Local Participant (You) -->
+        <!-- In-Meeting Participants (Local & Remote) -->
+        @for (participant of inMeetingParticipants(); track participant.id) {
         <div class="participant-item">
-            <div class="participant-avatar-wrapper">
-                <div class="participant-avatar"
-                    [ngStyle]="{'background-color': meetingService.getColorFromName(roomForm.value.participantName!)}">
-                    {{meetingService.getUserInitiaLetter(roomForm.value.participantName!)}}
+            <div class="participant-media-wrapper" [class.has-video]="hasVideoTrack(participant)">
+                @if (hasVideoTrack(participant)) {
+                <div class="participant-video-thumb">
+                    <video-component [track]="getVideoTrack(participant)!"
+                        [participantIdentity]="participant.identity"
+                        [local]="participant.isLocal"
+                        [isMute]="!isAudioEnabled(participant)">
+                    </video-component>
                 </div>
-                <span class="status-dot online"></span>
-            </div>
-            <div class="participant-info">
-                <span class="participant-name">{{roomForm.value.participantName!}} (You)</span>
-                <span class="participant-status-text">In this meeting</span>
-            </div>
-            <div class="participant-actions">
-                @if (!meetingService.isMicOn()) {
-                <span class="action-icon muted" title="Microphone off">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"
-                        fill="currentColor">
-                        <path
-                            d="m710-362-58-58q14-23 21-48t7-52h80q0 44-13 83.5T710-362ZM480-594Zm112 112-72-72v-206q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v126l-80-80v-46q0-50 35-85t85-35q50 0 85 35t35 85v240q0 11-2.5 20t-5.5 18ZM440-120v-123q-104-14-172-93t-68-184h80q0 83 57.5 141.5T480-320q34 0 64.5-10.5T600-360l57 57q-29 23-63.5 39T520-243v123h-80Zm352 64L56-792l56-56 736 736-56 56Z" />
-                    </svg>
-                </span>
-                }
-                @if (!meetingService.isCameraOn()) {
-                <span class="action-icon camera-off" title="Camera off">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"
-                        fill="currentColor">
-                        <path
-                            d="M880-260 720-420v67l-80-80v-287H353l-80-80h367q33 0 56.5 23.5T720-720v180l160-160v440ZM822-26 26-822l56-56L878-82l-56 56ZM498-575ZM382-464ZM160-800l80 80h-80v480h480v-80l80 80q0 33-23.5 56.5T640-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800Z" />
-                    </svg>
-                </span>
-                }
-            </div>
-        </div>
-        <!-- Remote Participants -->
-        @for (participant of meetingService.filteredInvitedParticipants(true); track participant.userId) {
-        <div class="participant-item">
-            <div class="participant-avatar-wrapper">
+                } @else {
                 <div class="participant-avatar"
                     [ngStyle]="{'background-color': meetingService.getColorFromName(participant.name)}">
                     {{meetingService.getUserInitiaLetter(participant.name)}}
                 </div>
-                <span class="status-dot online"></span>
+                }
+                <span class="status-dot" [class.online]="participant.isInLiveKit" [class.away]="!participant.isInLiveKit" [title]="participant.isInLiveKit ? 'In Call' : 'Connecting...'"></span>
             </div>
             <div class="participant-info">
                 <span class="participant-name">{{participant.name}}</span>
-                <span class="participant-status-text">In this meeting</span>
+                <span class="participant-status-text">
+                    @if (participant.isLocal) {
+                        In this meeting (You)
+                    } @else if (participant.isInLiveKit) {
+                        In this meeting
+                    } @else {
+                        Connecting to call...
+                    }
+                </span>
             </div>
             <div class="participant-actions">
-                @if (!meetingService.isParticipantAudioEnabled(participant.email)) {
+                @if (!isAudioEnabled(participant)) {
                 <span class="action-icon muted" title="Microphone off">
                     <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"
                         fill="currentColor">
@@ -81,7 +66,7 @@
                     </svg>
                 </span>
                 }
-                @if (!meetingService.isParticipantCameraEnabled(participant.email)) {
+                @if (!isCameraEnabled(participant)) {
                 <span class="action-icon camera-off" title="Camera off">
                     <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px"
                         fill="currentColor">

@@ -80,9 +80,39 @@
     background: var(--teams-bg-tertiary);
 }
 
-.participant-avatar-wrapper {
+.participant-avatar-wrapper,
+.participant-media-wrapper {
     position: relative;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.participant-media-wrapper.has-video {
+    width: 52px;
+    height: 52px;
+}
+
+.participant-video-thumb {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 1.5px solid var(--teams-accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    background: #111;
+}
+
+.participant-video-thumb ::ng-deep video-component,
+.participant-video-thumb ::ng-deep .video-container,
+.participant-video-thumb ::ng-deep video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 10px !important;
+    display: block !important;
 }
 
 .participant-avatar {
@@ -100,12 +130,13 @@
 
 .status-dot {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 10px;
-    height: 10px;
+    bottom: -1px;
+    right: -1px;
+    width: 11px;
+    height: 11px;
     border-radius: 50%;
     border: 2px solid var(--teams-bg-secondary);
+    z-index: 2;
 }
 
 .status-dot.online {

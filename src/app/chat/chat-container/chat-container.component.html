@@ -420,8 +420,8 @@
                 }
             </div>
             <div class="message-received-content">
-                <div class="message-sender-header">
-                    <span class="message-sender-name">{{ getSenderName(msg.senderId) }}</span>
+                <div class="message-sender-header ps-0">
+                    <span class="message-sender-name fw-bold text-dark">{{ getSenderName(msg.senderId) }}</span>
                     <span class="message-time-inline">{{ msg.createdAt | date: 'h:mm a' }}</span>
                 </div>
                 <div class="message-bubble received no-bg" (mouseenter)="hoveredMsgIndex = $index">

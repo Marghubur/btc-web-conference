@@ -37,14 +37,8 @@
             <p>No internet connection...</p>
         </div>
         } @else {
-        <div id="room" class="h-100">
-            <div class="row w-100 h-100 m-0">
-                <div class="col-md-3" [@slideFade]="isViewParticipant ? 'visible' : 'hidden'">
-                    <app-participant-roster [roomForm]="roomForm" [invitedParticipants]="invitedParticipants">
-                    </app-participant-roster>
-                </div>
-                <div class="p-0 h-100 d-flex flex-column"
-                    [ngClass]="{'w-100': !isViewParticipant, 'col-md-9': isViewParticipant}">
+        <div id="room" class="h-100 d-flex flex-row overflow-hidden position-relative w-100">
+            <div class="p-0 h-100 d-flex flex-column flex-grow-1 overflow-hidden main-conference-area">
                     <!-- Screen share component - always rendered, visibility controlled by CSS -->
                     <app-screenshare [ngClass]="{'d-none': !(currentScreenTrack != null || isMyshareScreen)}"
                         [isMyshareScreen]="isMyshareScreen" [localScreenTrack]="localScreenTrack"
@@ -143,6 +137,9 @@
                         </div> -->
                     </div>
                 </div>
+            <div class="roster-sidebar-container" [@rosterSlide]="isViewParticipant ? 'visible' : 'hidden'">
+                <app-participant-roster [roomForm]="roomForm" [invitedParticipants]="invitedParticipants">
+                </app-participant-roster>
             </div>
             @if(isChatEnabled) {
             <div class="chat-window py-2" id="chatWindow">

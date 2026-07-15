@@ -2,7 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { RoomService } from './../providers/services/room.service';
 import { LocalService } from './../providers/services/local.service';
 import { iNavigation } from './../providers/services/iNavigation';
-import { LocalVideoTrack, Room } from 'livekit-client';
+import { LocalVideoTrack, RemoteVideoTrack, Room } from 'livekit-client';
 import { CameraService } from './../providers/services/camera.service';
 import { VideoBackgroundService } from './../providers/services/video-background.service';
 import { DeviceService } from '../layout/device.service';
@@ -111,6 +111,10 @@ export class MeetingService {
   isParticipantAudioEnabled(participantIdentity: string): boolean {
     const status = this.roomService.getParticipantMediaStatus(participantIdentity);
     return status ? (status.hasAudioTrack && status.isAudioEnabled) : false;
+  }
+
+  getParticipantVideoTrack(participantIdentity: string): RemoteVideoTrack | undefined {
+    return this.roomService.getParticipantVideoTrack(participantIdentity);
   }
 
   // ==================== UI State Methods ====================

@@ -51,6 +51,17 @@ import { Conversation } from '../components/global-search/search.models';
             state('hidden', style({ opacity: 0, height: '0px', overflow: 'hidden', width: '0px' })),
             state('visible', style({ opacity: 1, height: '*', overflow: 'hidden' })),
             transition('hidden <=> visible', animate('300ms ease'))
+        ]),
+        trigger('rosterSlide', [
+            state('hidden', style({ width: '0px', minWidth: '0px', maxWidth: '0px', opacity: 0, overflow: 'hidden', borderLeftWidth: '0px' })),
+            state('visible', style({ width: '360px', minWidth: '360px', maxWidth: '360px', opacity: 1, overflow: 'hidden', borderLeftWidth: '1px' })),
+            transition('hidden => visible', [
+                style({ width: '0px', minWidth: '0px', maxWidth: '0px', opacity: 0, overflow: 'hidden', borderLeftWidth: '0px' }),
+                animate('320ms cubic-bezier(0.16, 1, 0.3, 1)')
+            ]),
+            transition('visible => hidden', [
+                animate('260ms cubic-bezier(0.4, 0, 1, 1)', style({ width: '0px', minWidth: '0px', maxWidth: '0px', opacity: 0, overflow: 'hidden', borderLeftWidth: '0px' }))
+            ])
         ])
     ]
 })
