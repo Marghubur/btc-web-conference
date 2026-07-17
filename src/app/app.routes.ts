@@ -92,7 +92,7 @@ export const routes: Routes = [
   { path: 'integrations', component: UnderConstructionComponent },
   { path: 'blog', component: UnderConstructionComponent },
   { path: 'careers', component: UnderConstructionComponent },
- // You can change this to a real component when your Contact form layout is ready!
+  // You can change this to a real component when your Contact form layout is ready!
 
   // ==========================================================================
   //  New Legal Link Routes Redirecting to Fallback

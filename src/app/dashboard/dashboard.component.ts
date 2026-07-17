@@ -9,7 +9,6 @@ import { LocalService } from '../providers/services/local.service';
 import { environment } from '../../environments/environment';
 import { ConfeetSocketService } from '../providers/socket/confeet-socket.service';
 import { MeetingDetail, ResponseModel, User } from '../models/model';
-import { Preview } from '../models/constant';
 import { Router } from '@angular/router';
 import { JoinCallService } from '../providers/socket/client-events/call/join-call.service';
 import { UserFilter } from '../models/user.filter';
@@ -38,7 +37,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showAll: boolean = false;
   duration: string = "00:00";
   today: Date = new Date();
-  recentMeetings: Array<Conversation> = [];
+  recentMeetings: Array<MeetingDetail> = [];
   allSchedularMeeting: Array<MeetingDetail> = [];
   user: User = null;
 
@@ -167,7 +166,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     console.log(value);
     this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
       if (res.responseBody) {
-        this.bindMeetings(res.responseBody);
+        this.bindMeetings(res.responseBody.QuickMeetings)
+        this.bindSchedularMeetings(res.responseBody.ScheduledMeetings as Array<MeetingDetail>);
         HideModal("createMeeting");
         this.isLoading = false;
         this.isSubmitted = false;
@@ -179,27 +179,69 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private loadData() {
     this.isPageReady = false;
-    this.http.get("meeting/get-recent-meetings").then((res: ResponseModel) => {
+    this.http.get("meeting/getAllMeetingByOrganizer").then((res: ResponseModel) => {
       if (res.responseBody) {
-        this.bindMeetings(res.responseBody as UserFilter);
+        this.bindMeetings(res.responseBody.QuickMeetings)
+        this.bindSchedularMeetings(res.responseBody.ScheduledMeetings as Array<MeetingDetail>);
         this.isPageReady = true;
       }
     }).catch(e => {
-      this.isPageReady = true;
-    })
+      console.error(e);
+    });
   }
 
-  private bindMeetings(res: UserFilter) {
-    this.recentMeetings = (res.data != null && res.data.length > 0) ? res.data as Conversation[] : [];
+  private bindMeetings(res: any) {
+    this.recentMeetings = (res != null && res.length > 0) ? res as MeetingDetail[] : [];
   }
 
-  joinMeeting(item: Conversation) {
-    this.ws.currentConversationId.set(item.id);
-    this.joinCallService.execute(this.user.userId, item.id);
+  private isUtcDate(date: any): boolean {
+    if (!date) return false;
+    if (typeof date === 'string') {
+      const upper = date.trim().toUpperCase();
+      if (upper.indexOf('Z') !== -1 || upper.indexOf('+00:00') !== -1 || upper.indexOf('-00:00') !== -1 || upper.endsWith('+0000') || upper.includes('UTC')) {
+        return true;
+      }
+      const separatorIndex = upper.indexOf('T') !== -1 ? upper.indexOf('T') : upper.indexOf(' ');
+      if (separatorIndex !== -1) {
+        const timePart = upper.substring(separatorIndex + 1);
+        if (timePart.indexOf('+') === -1 && timePart.indexOf('-') === -1) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private bindSchedularMeetings(res: Array<MeetingDetail>) {
+    this.allSchedularMeeting = res || [];
+    this.allSchedularMeeting.forEach(meeting => {
+      if (meeting.startDate) {
+        if (this.isUtcDate(meeting.startDate)) {
+          meeting.startDate = this.convertedDate(meeting.startDate);
+        }
+        const startDate = new Date(meeting.startDate);
+        meeting.startTime = this.formatTime(startDate);
+        if (meeting.endDate && this.isUtcDate(meeting.endDate)) {
+          meeting.endDate = this.convertedDate(meeting.endDate);
+        }
+        if (meeting.durationInSecond) {
+          meeting.endDate = new Date(startDate.getTime() + (meeting.durationInSecond * 1000));
+          meeting.endTime = this.formatTime(meeting.endDate);
+        } else if (meeting.endDate) {
+          meeting.endTime = this.formatTime(new Date(meeting.endDate));
+        }
+      }
+    });
+  }
+
+  joinMeeting(item: any) {
+    this.ws.currentConversationId.set(item.conversationId);
+    this.joinCallService.execute(this.user.userId, item.conversationId);
     this.router.navigate(['/btc/preview'], {
       state: {
-        id: item.id,
+        id: item.conversationId,
         type: CallType.AUDIO,
+        autoJoin: true,
         title: item.title ? item.title : 'Unknown'
       }
     });
@@ -237,7 +279,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     };
     this.http.post("meeting/generateQuickMeeting", meetingDetal).then((res: ResponseModel) => {
       if (res.responseBody) {
-        this.bindMeetings(res.responseBody);
+        this.bindMeetings(res.responseBody.QuickMeetings)
+        this.bindSchedularMeetings(res.responseBody.ScheduledMeetings as Array<MeetingDetail>);
         this.isLoading = false;
         HideModal("quickMeetingModal");
       }
@@ -250,8 +293,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return ToLocateDate(date);
   }
 
-  copyLink(item: MeetingDetail, tooltip: any) {
-    let url = environment.production ? `www.confeet.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
+  copyLink(item: any, tooltip: any) {
+    let targetId = item.meetingId && item.meetingDetailId ? `${item.meetingId}_${item.meetingDetailId}` : (item.meetingId || item.id);
+    let url = environment.production ? `https://www.confeet.com/#/btc/preview?meetingid=${targetId}` : `http://localhost:4200/#/btc/preview?meetingid=${targetId}`;
     navigator.clipboard.writeText(url).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();
@@ -261,7 +305,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  get visibleRecords(): Conversation[] {
+  get visibleRecords(): MeetingDetail[] {
     return this.showAll ? this.recentMeetings : this.recentMeetings.slice(0, 3);
   }
 
@@ -326,7 +370,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     this.isLoading = true;
-    this.http.post("validateMeetingIdPassCode", '').then((res: ResponseModel) => {
+    this.http.post("meeting/validateMeetingIdPassCode", {
+      meetingId: this.meetingDetail.meetingId,
+      meetingPassword: this.meetingDetail.meetingPassword
+    }).then((res: ResponseModel) => {
       if (res.responseBody) {
         HideModal("joinMeetingModal");
         let meeting = res.responseBody;
@@ -338,14 +385,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     })
   }
 
-  shareInviteLink(item: MeetingDetail, tooltip: any) {
-    let url = environment.production ? `www.axilcorps.com/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}` : `http://localhost:4200/#/btc/preview?meetingid=${item.meetingId}_${item.meetingDetailId}`;
-    let shareUrl = `${item.organizerName} invited you to a BottomHalf Meeting:
+  shareInviteLink(item: any, tooltip: any) {
+    let targetId = item.meetingId && item.meetingDetailId ? `${item.meetingId}_${item.meetingDetailId}` : (item.meetingId || item.id);
+    let url = environment.production ? `https://www.confeet.com/#/btc/preview?meetingid=${targetId}` : `http://localhost:4200/#/btc/preview?meetingid=${targetId}`;
+    let shareUrl = `${item.organizerName || 'Host'} invited you to a BottomHalf Meeting:
 
-                    ${item.title}
-                    ${this.toFullDateString(item.startDate)}
-                    ${item.startTime} - ${item.endTime} (IST)
-                    Meeting link: ${url}`;
+${item.title || 'Meeting'}
+${item.startDate ? this.toFullDateString(item.startDate) : ''}
+${item.startTime || ''} - ${item.endTime || ''} (IST)
+Meeting link: ${url}`;
 
     navigator.clipboard.writeText(shareUrl).then(() => {
       console.log('Copied to clipboard:');
@@ -358,8 +406,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   shareIdPasscodeLink(item: MeetingDetail, tooltip: any) {
     let shareUrl = `BottomHalf Meeting:
-                    Meeting ID: ${item.meetingId}
-                    Passcode: ${item.meetingPassword}`;
+Meeting ID: ${item.meetingId}
+Passcode: ${item.meetingPassword}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();

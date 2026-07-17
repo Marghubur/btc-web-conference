@@ -73,7 +73,7 @@
                 <i class="fa-solid fa-bolt"></i>
                 Quick Meetings
             </h2>
-            @if (allMeetings != null && allMeetings.length > 3) {
+            @if (recentMeetings != null && recentMeetings.length > 6) {
             <a href="javascript:void(0)" class="section-link" (click)="toggleView()">
                 {{ showAll ? 'Show less' : 'View all' }}
                 <i class="fa-solid fa-chevron-right ms-1"></i>
@@ -82,7 +82,7 @@
         </div>
 
         <div class="row g-4 mb-5">
-            @for (item of visibleRecords; track $index) {
+            @for (item of recentMeetings; track $index) {
             <div class="col-md-4">
                 <div class="meeting-card">
                     <div class="d-flex align-items-start justify-content-between mb-3">
@@ -98,7 +98,7 @@
                     </h5>
                     <div class="meeting-meta mb-3">
                         <i class="fa-regular fa-clock"></i>
-                        {{ item.lastMessageAt | date: 'MMM d, y • h:mm a' }}
+                        {{ item.startDate | date: 'MMM d, y • h:mm a' }}
                     </div>
                     <div class="d-flex gap-2">
                         <button class="btn-action-primary flex-grow-1" (click)="joinMeeting(item)">
@@ -114,7 +114,7 @@
             }
 
             <!-- Empty State -->
-            @if (!visibleRecords || visibleRecords.length === 0) {
+            @if (!recentMeetings || recentMeetings.length === 0) {
             <div class="col-12">
                 <div class="empty-state">
                     <div class="empty-icon">
@@ -134,10 +134,12 @@
                 <i class="fa-regular fa-calendar-days"></i>
                 Scheduled Meetings
             </h2>
+            @if (allSchedularMeeting.length > 6) {
             <a href="javascript:void(0)" class="section-link">
-                View calendar
+                View all
                 <i class="fa-solid fa-chevron-right ms-1"></i>
             </a>
+            }
         </div>
 
         <div class="row g-4">
@@ -336,7 +338,7 @@
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label">Meeting ID <span class="text-danger">*</span></label>
-                    <input type="number" placeholder="Enter meeting ID" class="form-control"
+                    <input type="text" placeholder="Enter meeting ID" class="form-control"
                         [(ngModel)]="meetingDetail.meetingId"
                         [ngClass]="{'error-field':isSubmitted && (meetingDetail.meetingId == '' || meetingDetail.meetingId == null)}">
                 </div>

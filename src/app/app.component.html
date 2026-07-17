@@ -1,3 +1,4 @@
+<app-splash *ngIf="showSplash" (splashComplete)="showSplash = false"></app-splash>
 <div class="overflow-hidden">
     <router-outlet></router-outlet>
 </div>

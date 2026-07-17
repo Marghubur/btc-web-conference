@@ -12,6 +12,10 @@ import { ResponseModel, User } from '../models/model';
 import { DeviceService } from '../layout/device.service';
 import { CallType } from '../models/conference_call/call_model';
 import { MeetingService } from '../meeting/meeting.service';
+import { ConfeetSocketService } from '../providers/socket/confeet-socket.service';
+import { ServerEventService } from '../providers/socket/server-events/server-event.service';
+import { InitiateAudioJoiningRequestService } from '../providers/socket/client-events/call/initiate-audio-joining-request.service';
+import { environment } from '../../environments/environment';
 
 @Component({
     selector: 'app-preview',
@@ -57,7 +61,12 @@ export class PreviewComponent implements OnDestroy {
     showPermissionDeniedModal: boolean = false;
     selectedBrowser: string = 'chrome'; // Default to chrome
     accessToken: string = "";
+    queryMeetingId: string | null = null;
 
+    // Guest Lobby State
+    isWaitingInLobby: boolean = false;
+    private subscriptions = new Subscription();
+    private conversationId: string = null;
     constructor(
         private nav: iNavigation,
         private route: ActivatedRoute,
@@ -66,11 +75,15 @@ export class PreviewComponent implements OnDestroy {
         private local: LocalService,
         private meetingService: MeetingService,
         private http: AjaxService,
-        private deviceService: DeviceService
+        private deviceService: DeviceService,
+        private ws: ConfeetSocketService,
+        private serverEventService: ServerEventService,
+        private initiateAudioJoiningRequestService: InitiateAudioJoiningRequestService
     ) {
         this.isLoggedIn = local.isLoggedIn();
         this.route.queryParamMap.subscribe(params => {
-            this.accessToken = params.get('access_token');
+            this.accessToken = params.get('access_token') || "";
+            this.queryMeetingId = params.get('meetingid') || params.get('meetingId') || null;
         });
     }
 
@@ -83,17 +96,50 @@ export class PreviewComponent implements OnDestroy {
             this.readRoutedMeetingDetail();
             if (this.meetingId) {
                 this.subscribeToPermissions();
+            } else if (this.queryMeetingId) {
+                this.meetingId = this.queryMeetingId;
+                await this.validatMeetingId();
             } else {
                 await this.initializeMediaStream();
                 this.subscribeToPermissions();
             }
         } else {
-            this.validatMeetingId();
+            if (this.queryMeetingId && !this.meetingId) {
+                this.meetingId = this.queryMeetingId;
+            }
+            if (this.permissions.camera !== 'granted' || this.permissions.microphone !== 'granted') {
+                try {
+                    await this.mediaPerm.requestPermissions(true, true);
+                    await this.deviceService.loadDevices();
+                } catch (e) {
+                    console.error('Permission request failed:', e);
+                }
+            }
+            this.autoSelectDevices();
+            await this.validatMeetingId();
         }
     }
 
-    /** Validate meeting ID for non-logged-in users */
+    /** Validate meeting ID for non-logged-in users or query links */
     async validatMeetingId() {
+        const targetId = this.meetingId || this.queryMeetingId;
+        if (targetId) {
+            try {
+                const res: ResponseModel = await this.http.get('meeting/validateMeetingById?meetingId=' + targetId);
+                if (res.responseBody && (res.responseBody.id || res.responseBody.meetingId)) {
+                    this.isValidMeetingId = true;
+                    this.meetingId = res.responseBody.conversationId || res.responseBody.meetingId;
+                    this.meetingTitle = res.responseBody.conversationName || res.responseBody.title || "Meeting";
+                    this.conversationId = res.responseBody.conversationId;
+                    await this.initializeMediaStream();
+                    this.subscribeToPermissions();
+                    return;
+                }
+            } catch (e) {
+                console.error('Error validating by meetingId:', e);
+            }
+        }
+
         if (!this.accessToken) {
             this.isValidMeetingId = false;
             return;
@@ -128,6 +174,7 @@ export class PreviewComponent implements OnDestroy {
         }
         this.clearVideoElement();
         this.subscription?.unsubscribe();
+        this.subscriptions.unsubscribe();
         this.destroyPermission();
         this.mediaPerm.destroy();
     }
@@ -213,6 +260,8 @@ export class PreviewComponent implements OnDestroy {
 
         if (state?.id) {
             this.meetingId = state.id;
+        } else if (this.queryMeetingId) {
+            this.meetingId = this.queryMeetingId;
         }
 
         if (state?.title) {
@@ -376,7 +425,13 @@ export class PreviewComponent implements OnDestroy {
         this.saveUser();
         this.meetingService.meetingId = this.meetingId;
         this.meetingService.maximize();
+
         this.meetingService.userJoinRoom();
+    }
+
+    cancelLobbyRequest() {
+        this.isWaitingInLobby = false;
+        this.startPreview();
     }
 
     private validatePermissions(): boolean {
@@ -452,7 +507,9 @@ export class PreviewComponent implements OnDestroy {
             user.isCameraOn = this.isVideoCall() && isCameraOn;
             user.isMicOn = isMicOn;
         } else {
+            const existingUser = this.local.getUser();
             user = {
+                userId: existingUser?.userId || ('guest_' + Math.random().toString(36).substring(2, 9)),
                 isMicOn: isMicOn,
                 isCameraOn: this.isVideoCall() && isCameraOn,
                 firstName: this.userName,

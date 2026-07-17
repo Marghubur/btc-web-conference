@@ -5,10 +5,14 @@ import { NgbDatepickerModule, NgbDateStruct, NgbTooltipModule, NgbModalModule } 
 import { AjaxService } from '../providers/services/ajax.service';
 import { iNavigation } from '../providers/services/iNavigation';
 import { LocalService } from '../providers/services/local.service';
-import { HideModal, ShowModal } from '../providers/services/common.service';
+import { HideModal, ShowModal, ToLocateDate } from '../providers/services/common.service';
 import { environment } from '../../environments/environment';
-import { MeetingDetail, ResponseModel } from '../models/model';
+import { MeetingDetail, ResponseModel, User } from '../models/model';
 import { Preview } from '../models/constant';
+import { ConfeetSocketService } from '../providers/socket/confeet-socket.service';
+import { Router } from '@angular/router';
+import { CallType } from '../models/conference_call/call_model';
+import { JoinCallService } from '../providers/socket/client-events/call/join-call.service';
 
 interface CalendarDay {
     date: Date;
@@ -78,13 +82,18 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Selected meeting for details popup
     selectedMeeting: MeetingDetail | null = null;
+    user: User = null;
+    private columnLayoutCache: { [key: string]: { width: string, left: string } } = {};
+    private lastLayoutCacheDate: string = '';
 
     constructor(
-        private nav: iNavigation,
-        private local: LocalService,
+        private ws: ConfeetSocketService,
+        private router: Router,
         private fb: FormBuilder,
         private http: AjaxService,
-        private ngZone: NgZone
+        private ngZone: NgZone,
+        private local: LocalService,
+        private joinCallService: JoinCallService
     ) {
         const today = new Date();
         this.minPickerDate = {
@@ -95,6 +104,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     ngOnInit(): void {
+        this.user = this.local.getUser();
         this.generateTimeSlots();
         this.generateMeetingTimes();
         this.initForm();
@@ -197,7 +207,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     // Load meetings data
     loadData(): void {
         this.isPageReady = false;
-        this.http.get("meeting/getAllMeetingByOrganizer").then((res: ResponseModel) => {
+        this.http.get("meeting/getAllScheduleMeetingByOrganizer").then((res: ResponseModel) => {
             if (res.responseBody) {
                 this.bindMeetings(res.responseBody);
                 this.updateCalendar();
@@ -208,18 +218,53 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
         });
     }
 
-    bindMeetings(res: any): void {
-        this.allMeetings = res || [];
-        this.allSchedularMeeting = this.allMeetings.filter(x => !x.hasQuickMeeting);
+    private isUtcDate(date: any): boolean {
+        if (typeof date === 'string') {
+            return !date.endsWith('Z') && !date.includes('+') && !date.includes('-0') && !date.match(/-\d{2}:\d{2}$/);
+        }
+        return false;
+    }
 
-        // Parse meeting times
+    private convertedDate(date: any) {
+        return ToLocateDate(date);
+    }
+
+    bindMeetings(res: any): void {
+        let rawList: any[] = [];
+        if (Array.isArray(res)) {
+            rawList = res;
+        } else if (res && typeof res === 'object') {
+            if (Array.isArray(res.ScheduledMeetings) || Array.isArray(res.QuickMeetings)) {
+                rawList = [...(res.ScheduledMeetings || []), ...(res.QuickMeetings || [])];
+            } else if (Array.isArray(res.data)) {
+                rawList = res.data;
+            } else if (Array.isArray(res.Meetings)) {
+                rawList = res.Meetings;
+            } else {
+                rawList = [res];
+            }
+        }
+        this.allMeetings = rawList;
+        this.allSchedularMeeting = this.allMeetings.filter(x => !x.hasQuickMeeting);
+        this.columnLayoutCache = {};
+        this.lastLayoutCacheDate = '';
+
+        // Parse meeting times and convert UTC to local system time
         this.allSchedularMeeting.forEach(meeting => {
             if (meeting.startDate) {
+                if (this.isUtcDate(meeting.startDate)) {
+                    meeting.startDate = this.convertedDate(meeting.startDate);
+                }
                 const startDate = new Date(meeting.startDate);
                 meeting.startTime = this.formatTime(startDate);
+                if (meeting.endDate && this.isUtcDate(meeting.endDate)) {
+                    meeting.endDate = this.convertedDate(meeting.endDate);
+                }
                 if (meeting.durationInSecond) {
                     meeting.endDate = new Date(startDate.getTime() + (meeting.durationInSecond * 1000));
                     meeting.endTime = this.formatTime(meeting.endDate);
+                } else if (meeting.endDate) {
+                    meeting.endTime = this.formatTime(new Date(meeting.endDate));
                 }
             }
         });
@@ -233,6 +278,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
             this.currentDate = new Date(this.currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
         } else {
             this.currentDate = new Date(this.currentDate.getTime() - 24 * 60 * 60 * 1000);
+            this.selectedDate = new Date(this.currentDate);
         }
         this.updateCalendar();
     }
@@ -244,6 +290,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
             this.currentDate = new Date(this.currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
         } else {
             this.currentDate = new Date(this.currentDate.getTime() + 24 * 60 * 60 * 1000);
+            this.selectedDate = new Date(this.currentDate);
         }
         this.updateCalendar();
     }
@@ -256,6 +303,9 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
     setViewMode(mode: 'day' | 'week' | 'month'): void {
         this.viewMode = mode;
+        if (mode === 'day' && this.selectedDate) {
+            this.currentDate = new Date(this.selectedDate);
+        }
         this.updateCalendar();
     }
 
@@ -336,24 +386,187 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     getMeetingsForDate(date: Date): MeetingDetail[] {
         return this.allSchedularMeeting.filter(meeting => {
             if (!meeting.startDate) return false;
-            const meetingDate = new Date(meeting.startDate);
-            return this.isSameDay(meetingDate, date);
+            const meetingStart = new Date(meeting.startDate);
+            const meetingEnd = meeting.endDate ? new Date(meeting.endDate) : new Date(meetingStart.getTime() + (meeting.durationInSecond ? meeting.durationInSecond * 1000 : 3600000));
+
+            const checkDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const startDay = new Date(meetingStart.getFullYear(), meetingStart.getMonth(), meetingStart.getDate());
+            const endDay = new Date(meetingEnd.getFullYear(), meetingEnd.getMonth(), meetingEnd.getDate());
+
+            return checkDay >= startDay && checkDay <= endDay;
         });
+    }
+
+    // Get meetings STARTING in a specific time slot for single-card Teams style display
+    getMeetingsStartingInTimeSlot(date: Date, slot: TimeSlot): MeetingDetail[] {
+        return this.allSchedularMeeting.filter(meeting => {
+            if (!meeting.startDate) return false;
+
+            const meetingStart = new Date(meeting.startDate);
+            const meetingEnd = meeting.endDate ? new Date(meeting.endDate) : new Date(meetingStart.getTime() + (meeting.durationInSecond ? meeting.durationInSecond * 1000 : 3600000));
+
+            const checkDayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+            const checkDayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+
+            if (meetingEnd <= checkDayStart || meetingStart > checkDayEnd) return false;
+
+            // If meeting started on a previous day, it starts visually at slot 00:00 for today
+            if (meetingStart < checkDayStart) {
+                return slot.hour === 0 && slot.minute === 0;
+            }
+
+            // Otherwise check if meetingStart falls exactly into this 30-minute slot
+            const slotStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), slot.hour, slot.minute, 0, 0);
+            const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
+
+            return meetingStart >= slotStart && meetingStart < slotEnd;
+        });
+    }
+
+    // Calculate Teams-style height in pixels for a single card spanning multiple slots
+    getMeetingSlotHeight(meeting: MeetingDetail, viewType: 'week' | 'day', date: Date): number {
+        if (!meeting.startDate) return viewType === 'week' ? 45 : 57;
+
+        const meetingStart = new Date(meeting.startDate);
+        const meetingEnd = meeting.endDate ? new Date(meeting.endDate) : new Date(meetingStart.getTime() + (meeting.durationInSecond ? meeting.durationInSecond * 1000 : 3600000));
+
+        const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+        const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 24, 0, 0, 0);
+
+        const effectiveStart = meetingStart < dayStart ? dayStart : meetingStart;
+        const effectiveEnd = meetingEnd > dayEnd ? dayEnd : meetingEnd;
+
+        const durationMinutes = Math.max(30, (effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60));
+        const slotsSpan = durationMinutes / 30;
+
+        // In week view, each slot row is 49px (48px min-height + 1px border).
+        // In day view, each slot row is 61px (60px min-height + 1px border).
+        const slotHeight = viewType === 'week' ? 49 : 61;
+
+        return Math.max(slotHeight - 4, slotsSpan * slotHeight - 4);
+    }
+
+    // Calculate Teams-style collision layout (width and left position) for overlapping meetings on a day
+    getMeetingColumnLayout(meeting: MeetingDetail, date: Date): { width: string, left: string } {
+        const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+        // Clear cache if date changed
+        if (this.lastLayoutCacheDate !== dateKey) {
+            this.columnLayoutCache = {};
+            this.lastLayoutCacheDate = dateKey;
+        }
+
+        const meetingKey = `${meeting.meetingDetailId || meeting.meetingId || meeting.title}_${dateKey}`;
+        if (this.columnLayoutCache[meetingKey]) {
+            return this.columnLayoutCache[meetingKey];
+        }
+
+        const dayMeetings = this.getMeetingsForDate(date);
+        if (!dayMeetings || dayMeetings.length === 0) {
+            return { width: 'calc(100% - 4px)', left: '2px' };
+        }
+
+        // Convert meetings to time intervals in minutes from start of day
+        const dayStartMs = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).getTime();
+        const dayEndMs = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999).getTime();
+
+        const intervals = dayMeetings.map(m => {
+            const start = m.startDate ? new Date(m.startDate).getTime() : dayStartMs;
+            const end = m.endDate ? new Date(m.endDate).getTime() : (start + (m.durationInSecond ? m.durationInSecond * 1000 : 3600000));
+
+            const effStart = Math.max(dayStartMs, start);
+            const effEnd = Math.min(dayEndMs, Math.max(effStart + 30 * 60 * 1000, end));
+
+            const startMin = Math.floor((effStart - dayStartMs) / 60000);
+            const endMin = Math.ceil((effEnd - dayStartMs) / 60000);
+
+            return {
+                meeting: m,
+                startMin,
+                endMin,
+                colIndex: 0,
+                totalCols: 1
+            };
+        });
+
+        // Sort by start time ascending, then duration descending
+        intervals.sort((a, b) => {
+            if (a.startMin !== b.startMin) return a.startMin - b.startMin;
+            return (b.endMin - b.startMin) - (a.endMin - a.startMin);
+        });
+
+        // Partition into overlapping clusters (collision groups)
+        let cluster: typeof intervals = [];
+        let clusterMaxEnd = -1;
+
+        const processCluster = (cls: typeof intervals) => {
+            if (cls.length === 0) return;
+            const assigned: typeof intervals = [];
+            let maxCol = 0;
+
+            cls.forEach(item => {
+                let col = 0;
+                while (true) {
+                    const conflict = assigned.some(already =>
+                        already.colIndex === col &&
+                        Math.max(item.startMin, already.startMin) < Math.min(item.endMin, already.endMin)
+                    );
+                    if (!conflict) break;
+                    col++;
+                }
+                item.colIndex = col;
+                if (col > maxCol) maxCol = col;
+                assigned.push(item);
+            });
+
+            const totalCols = maxCol + 1;
+            cls.forEach(item => {
+                const widthPercent = 100 / totalCols;
+                const leftPercent = widthPercent * item.colIndex;
+                const mKey = `${item.meeting.meetingDetailId || item.meeting.meetingId || item.meeting.title}_${dateKey}`;
+
+                if (totalCols === 1) {
+                    this.columnLayoutCache[mKey] = { width: 'calc(100% - 4px)', left: '2px' };
+                } else {
+                    this.columnLayoutCache[mKey] = {
+                        width: `calc(${widthPercent}% - 4px)`,
+                        left: `calc(${leftPercent}% + 2px)`
+                    };
+                }
+            });
+        };
+
+        intervals.forEach(item => {
+            if (cluster.length === 0) {
+                cluster.push(item);
+                clusterMaxEnd = item.endMin;
+            } else if (item.startMin < clusterMaxEnd) {
+                cluster.push(item);
+                if (item.endMin > clusterMaxEnd) clusterMaxEnd = item.endMin;
+            } else {
+                processCluster(cluster);
+                cluster = [item];
+                clusterMaxEnd = item.endMin;
+            }
+        });
+        processCluster(cluster);
+
+        return this.columnLayoutCache[meetingKey] || { width: 'calc(100% - 4px)', left: '2px' };
+    }
+
+    getMeetingWidth(meeting: MeetingDetail, date: Date): string {
+        return this.getMeetingColumnLayout(meeting, date).width;
+    }
+
+    getMeetingLeft(meeting: MeetingDetail, date: Date): string {
+        return this.getMeetingColumnLayout(meeting, date).left;
     }
 
     // Get meetings for a specific time slot
     getMeetingsForTimeSlot(date: Date, slot: TimeSlot): MeetingDetail[] {
         return this.allSchedularMeeting.filter(meeting => {
             if (!meeting.startDate) return false;
-            const meetingDate = new Date(meeting.startDate);
-            if (!this.isSameDay(meetingDate, date)) return false;
-
-            const meetingHour = meetingDate.getHours();
-            const meetingMinute = meetingDate.getMinutes();
-
-            // Check if meeting starts in this slot
-            return meetingHour === slot.hour &&
-                ((slot.minute === 0 && meetingMinute < 30) || (slot.minute === 30 && meetingMinute >= 30));
+            return this.isMeetingInTimeSlot(meeting, date, slot);
         });
     }
 
@@ -362,9 +575,13 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
         if (!meeting.startDate) return false;
 
         const meetingStart = new Date(meeting.startDate);
-        const meetingEnd = meeting.endDate ? new Date(meeting.endDate) : new Date(meetingStart.getTime() + 3600000);
+        const meetingEnd = meeting.endDate ? new Date(meeting.endDate) : new Date(meetingStart.getTime() + (meeting.durationInSecond ? meeting.durationInSecond * 1000 : 3600000));
 
-        if (!this.isSameDay(meetingStart, date) && !this.isSameDay(meetingEnd, date)) return false;
+        const checkDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const startDay = new Date(meetingStart.getFullYear(), meetingStart.getMonth(), meetingStart.getDate());
+        const endDay = new Date(meetingEnd.getFullYear(), meetingEnd.getMonth(), meetingEnd.getDate());
+
+        if (checkDay < startDay || checkDay > endDay) return false;
 
         const slotStart = new Date(date);
         slotStart.setHours(slot.hour, slot.minute, 0, 0);
@@ -383,6 +600,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     // Select date
     selectDate(day: CalendarDay): void {
         this.selectedDate = day.date;
+        this.currentDate = new Date(day.date);
         this.calendarDays.forEach(d => d.isSelected = false);
         day.isSelected = true;
     }
@@ -583,9 +801,17 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // Join meeting
-    joinMeeting(meeting: MeetingDetail): void {
-        meeting.meetingId = `${meeting.meetingId}_${meeting.meetingDetailId}`;
-        this.nav.navigate(Preview, meeting);
+    joinMeeting(item: MeetingDetail): void {
+        this.ws.currentConversationId.set(item.conversationId);
+        this.joinCallService.execute(this.user.userId, item.conversationId);
+        this.router.navigate(['/btc/preview'], {
+            state: {
+                id: item.conversationId,
+                type: CallType.AUDIO,
+                autoJoin: true,
+                title: item.title ? item.title : 'Unknown'
+            }
+        });
     }
 
     // Show meeting details
@@ -595,10 +821,11 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // Copy meeting link
-    copyMeetingLink(meeting: MeetingDetail, tooltip: any): void {
+    copyMeetingLink(meeting: any, tooltip: any): void {
+        const targetId = meeting.meetingId && meeting.meetingDetailId ? `${meeting.meetingId}_${meeting.meetingDetailId}` : (meeting.meetingId || meeting.id);
         const url = environment.production
-            ? `www.axilcorps.com/#/btc/preview?meetingid=${meeting.meetingId}_${meeting.meetingDetailId}`
-            : `http://localhost:4200/#/btc/preview?meetingid=${meeting.meetingId}_${meeting.meetingDetailId}`;
+            ? `https://www.confeet.com/#/btc/preview?meetingid=${targetId}`
+            : `http://localhost:4200/#/btc/preview?meetingid=${targetId}`;
 
         navigator.clipboard.writeText(url).then(() => {
             tooltip.open();
@@ -619,9 +846,19 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
         return `${hours}:${minStr} ${ampm}`;
     }
 
-    // Get meeting color class based on index
-    getMeetingColor(index: number): string {
+    // Get meeting color class based on index or meeting ID
+    getMeetingColor(index: number | any): string {
         const colors = ['meeting-purple', 'meeting-blue', 'meeting-green', 'meeting-orange', 'meeting-pink'];
-        return colors[index % colors.length];
+        if (typeof index === 'object' && index !== null) {
+            const id = index.meetingDetailId || index.meetingId || index.title || '';
+            let hash = 0;
+            const str = id.toString();
+            for (let i = 0; i < str.length; i++) {
+                hash = (hash << 5) - hash + str.charCodeAt(i);
+                hash |= 0;
+            }
+            return colors[Math.abs(hash) % colors.length];
+        }
+        return colors[(index as number) % colors.length];
     }
 }

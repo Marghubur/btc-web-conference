@@ -23,6 +23,7 @@ export interface MeetingDetail {
   endTime?: string;
   organizerName?: string;
   hasQuickMeeting?: boolean;
+  conversationId?: string;
 }
 
 
