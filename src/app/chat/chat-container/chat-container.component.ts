@@ -268,6 +268,58 @@ export class ChatContainerComponent implements AfterViewChecked {
     return 'Member';
   }
 
+  getSenderStatus(senderId: string): string {
+    if (!senderId) return 'offline';
+    if (senderId === this.currentUserId) return this.headerUserStatus;
+    const p = (this.ws.currentConversation()?.participants || []).find(part => part.userId === senderId);
+    return (p?.status || 'available').toLowerCase();
+  }
+
+  getSenderStatusColor(senderId: string): string {
+    const status = this.getSenderStatus(senderId);
+    switch (status) {
+      case 'available':
+      case 'online':
+        return '#92c353'; // Teams Green
+      case 'busy':
+      case 'dnd':
+        return '#c4314b'; // Teams Red
+      case 'away':
+      case 'brb':
+        return '#f8d22a'; // Teams Yellow
+      default:
+        return '#8a8886'; // Teams Gray
+    }
+  }
+
+  isSequentialMessage(index: number): boolean {
+    if (index <= 0) return false;
+    const messages = this.chatService.messages();
+    if (!messages || !messages[index] || !messages[index - 1]) return false;
+    const current = messages[index];
+    const prev = messages[index - 1];
+
+    if (current.senderId !== prev.senderId) return false;
+    if (this.shouldShowDateSeparator(index)) return false;
+
+    const currentTime = new Date(current.createdAt || Date.now()).getTime();
+    const prevTime = new Date(prev.createdAt || Date.now()).getTime();
+    return (currentTime - prevTime) <= 5 * 60 * 1000;
+  }
+
+  isMentioned(msg: any): boolean {
+    if (!msg || !msg.content || msg.senderId === this.currentUserId) return false;
+    if (msg.mentions && Array.isArray(msg.mentions) && msg.mentions.length > 0) {
+      if (msg.mentions.some((m: any) => m === this.currentUserId || m.userId === this.currentUserId)) {
+        return true;
+      }
+    }
+    if (this.user && this.user.firstName && msg.content.toLowerCase().includes(this.user.firstName.toLowerCase())) {
+      return true;
+    }
+    return false;
+  }
+
   quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
   hoveredMsgIndex: number | null = null;
 

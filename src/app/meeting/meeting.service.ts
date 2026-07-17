@@ -2,7 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { RoomService } from './../providers/services/room.service';
 import { LocalService } from './../providers/services/local.service';
 import { iNavigation } from './../providers/services/iNavigation';
-import { LocalVideoTrack, RemoteVideoTrack, Room } from 'livekit-client';
+import { LocalVideoTrack, RemoteParticipant, RemoteVideoTrack, Room } from 'livekit-client';
 import { CameraService } from './../providers/services/camera.service';
 import { VideoBackgroundService } from './../providers/services/video-background.service';
 import { DeviceService } from '../layout/device.service';
@@ -42,6 +42,28 @@ export class MeetingService {
   get remoteUsersCount(): number {
     return this.remoteParticipants().size;
   }
+
+  activeSpeakers = this.roomService.activeSpeakers;
+  lastActiveSpeaker = this.roomService.lastActiveSpeaker;
+
+  sortedRemoteParticipants = computed(() => {
+    const participants = Array.from(this.remoteParticipants().values());
+    const active = this.activeSpeakers();
+    const lastActive = this.lastActiveSpeaker();
+
+    return participants.sort((a, b) => {
+      const aSpeaking = active.has(a.identity);
+      const bSpeaking = active.has(b.identity);
+
+      if (aSpeaking && !bSpeaking) return -1;
+      if (!aSpeaking && bSpeaking) return 1;
+
+      if (a.identity === lastActive) return -1;
+      if (b.identity === lastActive) return 1;
+
+      return a.identity.localeCompare(b.identity);
+    });
+  });
 
 
   /** Preview stream for camera preview before joining */
@@ -111,6 +133,11 @@ export class MeetingService {
   isParticipantAudioEnabled(participantIdentity: string): boolean {
     const status = this.roomService.getParticipantMediaStatus(participantIdentity);
     return status ? (status.hasAudioTrack && status.isAudioEnabled) : false;
+  }
+
+  isParticipantActiveSpeaker(participantIdentity: string): boolean {
+    if (!participantIdentity) return false;
+    return this.activeSpeakers().has(participantIdentity);
   }
 
   getParticipantVideoTrack(participantIdentity: string): RemoteVideoTrack | undefined {
