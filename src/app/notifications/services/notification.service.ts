@@ -145,6 +145,13 @@ export class NotificationService {
             })
         );
 
+        // Message reactions
+        this.subscriptions.add(
+            this.ws.messageReacted$.subscribe(event => {
+                this.handleMessageReacted(event);
+            })
+        );
+
         // Typing indicator
         this.subscriptions.add(
             this.ws.userTyping$.subscribe(typing => {
@@ -300,16 +307,24 @@ export class NotificationService {
         }
     }
 
-    private handleSeen(seen: MessageSeen): void {
-        // Update message status in active conversation
-        const msg = this.chatService.messages().find(m => m.id === seen.id);
-        if (msg) {
-            // Mark as seen in UI
-            console.log('Message seen:', seen.id);
-            this.chatService.messages.update(msgs =>
-                msgs.map(x => x.id === seen.id ? { ...x, status: 3 } : x)
-            );
-        }
+	private handleSeen(seen: MessageSeen): void {
+		// Update message status in active conversation
+		const msg = this.chatService.messages().find(m => m.id === seen.id);
+		if (msg) {
+			// Mark as seen in UI
+			console.log('Message seen:', seen.id);
+			this.chatService.messages.update(msgs =>
+				msgs.map(x => x.id === seen.id ? { ...x, status: 3 } : x)
+			);
+		}
+	}
+
+    private handleMessageReacted(event: any): void {
+        const payload = event && event.payload ? event.payload : event;
+        if (!payload || !payload.messageId) return;
+        this.chatService.messages.update(msgs =>
+            msgs.map(m => (m.id === payload.messageId || (m as any).messageId === payload.messageId) ? { ...m, reactions: payload.reactions || [] } : m)
+        );
     }
 
     private handleTyping(typing: TypingIndicator): void {

@@ -188,7 +188,7 @@
 
                 @if (!isChatSectionCollapsed) {
                 <div class="section-list direct-list">
-                    @for (item of directConversations; track item.id || $index) {
+                    @for (item of directConversations; track item.id ? item.id + '-' + $index : $index) {
                     <a href="javascript:void(0)" class="conversation-item"
                         [class.selected]="isConversationSelected(item)" (click)="selectChannelForConversation(item)">
 
@@ -259,7 +259,7 @@
 
                 @if (!isSpacesSectionCollapsed) {
                 <div class="section-list spaces-list">
-                    @for (item of groupConversations; track item.id || $index) {
+                    @for (item of groupConversations; track item.id ? item.id + '-' + $index : $index) {
                     <a href="javascript:void(0)" class="conversation-item space-item"
                         [class.selected]="isConversationSelected(item)" (click)="selectChannelForConversation(item)">
 

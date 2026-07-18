@@ -1,4 +1,4 @@
-import { Component, inject, Input, signal, ViewChild, ElementRef, AfterViewChecked, effect } from '@angular/core';
+import { Component, inject, Input, signal, ViewChild, ElementRef, AfterViewChecked, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -38,7 +38,11 @@ export class ChatContainerComponent implements AfterViewChecked {
   currentUserId: string = "";
 
   // Message state
+  @ViewChild('messageInputRef') messageInputRef!: ElementRef<HTMLInputElement>;
   message = signal<string | null>('');
+  stagedFile = signal<any | null>(null);
+  pendingUploads = signal<any[]>([]);
+  replyingToMessage = signal<any | null>(null);
   pageIndex: number = 1;
   private shouldScrollToBottom = false;
   private shouldPreserveScrollPosition = false;
@@ -70,6 +74,17 @@ export class ChatContainerComponent implements AfterViewChecked {
     { value: 'away', label: 'Be right back', color: '#f8d22a' },
     { value: 'offline', label: 'Appear offline', color: '#8a8886' },
   ] as const;
+
+  // Emoji Picker state & categories
+  showEmojiPicker = signal<boolean>(false);
+  selectedEmojiCategory = signal<string>('smileys');
+
+  readonly emojiCategories = [
+    { id: 'smileys', label: 'Smileys', icon: '😀', emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺', '😨', '😰', '😥'] },
+    { id: 'gestures', label: 'Gestures', icon: '👍', emojis: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '🦵', '🦶', '👂', '👃', '🧠', '👀', '👁️', '👅', '👄'] },
+    { id: 'hearts', label: 'Hearts', icon: '❤️', emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '⭐', '🌟', '✨', '⚡', '🔥'] },
+    { id: 'objects', label: 'Celebrations & Objects', icon: '🎉', emojis: ['🎉', '🎊', '🎈', '🎂', '🍰', '🍾', '🥂', '🍻', '🍺', '🍹', '🍸', '🍷', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🎯', '🎲', '🎳', '🎮', '🎰', '🎁', '🎀', '🧧', '🖼️', '🎨', '🧵', '🧶', '👓', '🕶️', '🥽', '🥼', '👔', '👕', '👖', '🧣', '🧤', '🧥', '🧦', '👗', '👘', '🥻', '🩱', '🩲', '🩳', '👙', '👚', '👛', '👜', '👝', '🎒', '👞', '👟', '🥾', '🥿', '👠', '👡', '🩰', 'BOOTS', '👑', '👒', '🎩', '🎓', '🧢', 'HELMET', 'PRAYER_BEADS', 'LIPSTICK', 'RING', 'GEM_STONE'] }
+  ];
 
   constructor() {
     this.user = this.local.getUser();
@@ -307,21 +322,215 @@ export class ChatContainerComponent implements AfterViewChecked {
     return (currentTime - prevTime) <= 5 * 60 * 1000;
   }
 
-  isMentioned(msg: any): boolean {
-    if (!msg || !msg.content || msg.senderId === this.currentUserId) return false;
-    if (msg.mentions && Array.isArray(msg.mentions) && msg.mentions.length > 0) {
-      if (msg.mentions.some((m: any) => m === this.currentUserId || m.userId === this.currentUserId)) {
-        return true;
-      }
-    }
-    if (this.user && this.user.firstName && msg.content.toLowerCase().includes(this.user.firstName.toLowerCase())) {
-      return true;
-    }
-    return false;
-  }
-
   quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
   hoveredMsgIndex: number | null = null;
+
+  showMentionDropdown = signal<boolean>(false);
+  mentionQuery = signal<string>('');
+  pendingMentions = new Set<string>();
+  mentionSelectedIndex = signal<number>(0);
+
+  isUploadingFile = signal<boolean>(false);
+
+  parseFileContent(content: string | null): { fileName: string; fileSize?: number; fileType?: string; url?: string } {
+    if (!content) return { fileName: 'Attached File' };
+    try {
+      if (content.startsWith('{') && content.endsWith('}')) {
+        return JSON.parse(content);
+      }
+    } catch (e) { }
+    return { fileName: content };
+  }
+
+  formatFileSize(bytes?: number): string {
+    if (!bytes || isNaN(bytes)) return '';
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  getMentionParticipants(): Participant[] {
+    const conv = this.ws.currentConversation();
+    if (!conv || !conv.participants) return [];
+    const query = this.mentionQuery().toLowerCase().trim();
+    return conv.participants.filter(p => {
+      if (!p || p.userId === this.currentUserId) return false;
+      const fullName = ((p.firstName || '') + ' ' + (p.lastName || '')).toLowerCase();
+      const email = (p.email || '').toLowerCase();
+      return query === '' || fullName.includes(query) || email.includes(query);
+    });
+  }
+
+  getMentionName(userId: string): string {
+    const conv = this.ws.currentConversation();
+    if (!conv || !conv.participants) return 'Member';
+    const participant = conv.participants.find(p => p.userId === userId);
+    if (participant) {
+      return `${participant.firstName || ''} ${participant.lastName || ''}`.trim();
+    }
+    return 'Member';
+  }
+
+  formatMessageContent(msg: any): string {
+    if (!msg || !msg.content) return '';
+    let content = '';
+
+    if (msg.type === 'file') {
+      try {
+        const fileData = JSON.parse(msg.content);
+        if (!fileData.text) return '';
+        content = fileData.text;
+      } catch (e) {
+        return '';
+      }
+    } else {
+      content = msg.content;
+    }
+
+    // Simple HTML escaping to prevent XSS
+    content = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    if (msg.mentions && msg.mentions.length > 0) {
+      const conv = this.ws.currentConversation();
+      if (conv && conv.participants) {
+        msg.mentions.forEach((userId: string) => {
+          const participant = conv.participants.find((p: Participant) => p.userId === userId);
+          if (participant) {
+            const fullName = `${participant.firstName || ''} ${participant.lastName || ''}`.trim();
+            const escapedName = fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`@${escapedName}(?!\\w)`, 'gi'); // gi just in case case differs
+            const mentionClass = userId === this.currentUserId ? 'mention-badge mention-me' : 'mention-badge';
+            content = content.replace(regex, `<span class="${mentionClass}">@${fullName}</span>`);
+          }
+        });
+      }
+    }
+    return content;
+  }
+
+  onMessageInput(event: any): void {
+    const input = event.target as HTMLInputElement;
+    const val = input.value || '';
+    this.message.set(val);
+
+    const cursor = input.selectionStart || val.length;
+    const textBeforeCursor = val.substring(0, cursor);
+    const atMatch = textBeforeCursor.match(/(?:^|\s)@([^@]{0,30})$/);
+
+    if (atMatch) {
+      const query = atMatch[1];
+      // If the query contains more than 2 spaces, probably just a normal sentence after a mention
+      if (query.split(' ').length > 2) {
+        this.showMentionDropdown.set(false);
+        return;
+      }
+
+      // If the query exactly matches a participant's name that is already mentioned, don't show
+      const isAlreadyMentioned = Array.from(this.pendingMentions).some(userId => {
+        const p = this.ws.currentConversation()?.participants?.find(x => x.userId === userId);
+        if (!p) return false;
+        const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
+        return query.startsWith(fullName);
+      });
+
+      if (isAlreadyMentioned) {
+        this.showMentionDropdown.set(false);
+        return;
+      }
+
+      this.mentionQuery.set(query);
+      this.showMentionDropdown.set(true);
+      this.mentionSelectedIndex.set(0);
+    } else {
+      this.showMentionDropdown.set(false);
+    }
+  }
+
+  selectMention(participant: Participant): void {
+    const val = this.message() || '';
+    const atIndex = val.lastIndexOf('@');
+    if (atIndex !== -1) {
+      const prefix = val.substring(0, atIndex);
+      const mentionName = `${participant.firstName || ''} ${participant.lastName || ''}`.trim();
+      const newText = `${prefix}@${mentionName} `;
+      this.message.set(newText);
+      if (participant.userId) {
+        this.pendingMentions.add(participant.userId);
+      }
+    }
+    this.showMentionDropdown.set(false);
+    setTimeout(() => {
+      if (this.messageInputRef) {
+        this.messageInputRef.nativeElement.focus();
+      }
+    }, 0);
+  }
+
+  onInputKeydown(event: KeyboardEvent): void {
+    if (!this.showMentionDropdown()) return;
+    const items = this.getMentionParticipants();
+    if (items.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.mentionSelectedIndex.update(idx => (idx + 1) % items.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.mentionSelectedIndex.update(idx => (idx - 1 + items.length) % items.length);
+    } else if (event.key === 'Enter' || event.key === 'Tab') {
+      event.preventDefault();
+      const selected = items[this.mentionSelectedIndex() || 0];
+      if (selected) {
+        this.selectMention(selected);
+      }
+    } else if (event.key === 'Escape') {
+      this.showMentionDropdown.set(false);
+    }
+  }
+
+  toggleEmojiPicker(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.showEmojiPicker.update(v => !v);
+  }
+
+  selectEmojiCategory(categoryId: string): void {
+    this.selectedEmojiCategory.set(categoryId);
+  }
+
+  getActiveCategoryEmojis(): string[] {
+    const cat = this.emojiCategories.find(c => c.id === this.selectedEmojiCategory());
+    return cat ? cat.emojis : [];
+  }
+
+  onEmojiSelect(emoji: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.message.update(curr => (curr || '') + emoji);
+  }
+
+  isPureEmoji(content: string): boolean {
+    if (!content) return false;
+    const trimmed = content.trim();
+    // Check if the string has only emoji characters and is reasonably short (1 to 6 emojis)
+    // Using a robust regex approach or clean emoji matching
+    if (trimmed.length > 20) return false;
+    const nonEmojiChars = trimmed.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{2300}-\u{23FF}\s]/gu, '');
+    return nonEmojiChars.length === 0 && trimmed.length > 0;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (this.showEmojiPicker() && !target.closest('.emoji-picker-popover') && !target.closest('.input-action-btn[title="Emoji"]')) {
+      this.showEmojiPicker.set(false);
+    }
+    if (this.showMentionDropdown() && !target.closest('.mention-dropdown-popover') && !target.closest('.message-input')) {
+      this.showMentionDropdown.set(false);
+    }
+  }
 
   reactToMessage(msg: any, emoji: string): void {
     if (!msg.reactions) {
@@ -341,6 +550,17 @@ export class ChatContainerComponent implements AfterViewChecked {
       });
     }
     this.chatService.messages.update(msgs => [...msgs]);
+
+    const messageId = msg.messageId || msg.id;
+    const convId = msg.conversationId || this.ws.currentConversationId() || '';
+    if (messageId && convId) {
+      this.ws.sendMessageReaction({
+        messageId: messageId,
+        conversationId: convId,
+        userId: this.currentUserId,
+        emoji: emoji
+      });
+    }
   }
 
   getUniqueReactions(reactions: any[]): { emoji: string; count: number; hasUserReacted: boolean }[] {
@@ -530,6 +750,38 @@ export class ChatContainerComponent implements AfterViewChecked {
     this.memberSearchSelectedIndex = -1;
   }
 
+  async addMemberToExistingGroup(member: SearchResult): Promise<void> {
+    const conv = this.ws.currentConversation();
+    if (!conv || !conv.id) return;
+
+    try {
+      await this.chatService.addMembersToGroup(conv.id, this.currentUserId, [member.userId]);
+
+      // Optimistically add to UI
+      if (!conv.participants) conv.participants = [];
+      conv.participants.push({
+        userId: member.userId,
+        email: '',
+        firstName: member.name.split(' ')[0],
+        lastName: member.name.split(' ').slice(1).join(' ') || '',
+        avatar: '',
+        status: 'offline',
+        username: member.name,
+        joinedAt: new Date(),
+        role: 'member'
+      });
+      conv.memberCount = (conv.memberCount || 0) + 1;
+
+      // Close dropdown and clear search
+      this.memberSearchQuery = '';
+      this.memberSearchResults = [];
+      this.memberSearchSelectedIndex = -1;
+      this.showMembersDropdown = false;
+    } catch (err) {
+      console.error('Failed to add member to group', err);
+    }
+  }
+
   removeNewGroupMember(member: SearchResult): void {
     this.newGroupMembers = this.newGroupMembers.filter(m => m.conversationId !== member.conversationId);
   }
@@ -603,32 +855,104 @@ export class ChatContainerComponent implements AfterViewChecked {
     }
   }
 
-  private send(response: any) {
-    if (this.message() != null && this.message() != '' && response.id != null) {
-      const currentUserName = this.user.firstName + " " + this.user.lastName;
-      var event: any = {
-        conversationId: response.id,
-        messageId: crypto.randomUUID(),
-        senderId: this.currentUserId,
-        recievedId: null,
-        type: "text",
-        content: this.message(),
-        senderName: currentUserName,
-        fileUrl: null,
-        replyTo: null,
-        mentions: [],
-        reactions: [],
-        clientType: "web",
-        createdAt: new Date(),
-        editedAt: null,
-        status: 1
-      }
+  cleanMessageBeforeSending(rawText: string, mentions: string[]): string {
+    let text = rawText;
+    const conv = this.ws.currentConversation();
+    if (!conv || !conv.participants) return text;
 
-      this.chatService.messages.update(msgs => [...msgs, event]);
-      this.ws.sendMessage(event);
-      this.message.set('');
-      this.shouldScrollToBottom = true; // Scroll to bottom after sending
+    mentions.forEach(userId => {
+      const participant = conv.participants.find(p => p.userId === userId);
+      if (participant) {
+        const fullName = `${participant.firstName || ''} ${participant.lastName || ''}`.trim();
+        const escapedName = fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Match @fullName followed optionally by space, removing it from the text
+        const regex = new RegExp(`@${escapedName}\\s*`, 'gi');
+        text = text.replace(regex, '');
+      }
+    });
+    return text.trim();
+  }
+
+  private send(response: any) {
+    const hasText = this.message() != null && this.message() !== '';
+    const hasFile = this.stagedFile() != null;
+
+    if ((!hasText && !hasFile) || response.id == null) {
+      return;
     }
+
+    const currentUserName = this.user.firstName + " " + this.user.lastName;
+    const mentionsArray = Array.from(this.pendingMentions);
+    const cleanContent = this.cleanMessageBeforeSending(this.message() || '', mentionsArray);
+
+    let event: any = {
+      conversationId: response.id,
+      messageId: crypto.randomUUID(),
+      senderId: this.currentUserId,
+      recievedId: null,
+      type: hasFile ? "file" : "text",
+      senderName: currentUserName,
+      replyTo: this.replyingToMessage() ? (this.replyingToMessage().id || this.replyingToMessage().messageId) : null,
+      mentions: mentionsArray,
+      reactions: [],
+      clientType: "web",
+      createdAt: new Date(),
+      editedAt: null,
+      status: 1
+    };
+
+    if (hasFile) {
+      const fileData = this.stagedFile();
+      event.fileUrl = fileData.url;
+      event.content = JSON.stringify({
+        fileName: fileData.fileName,
+        fileSize: fileData.fileSize,
+        fileType: fileData.fileType,
+        url: fileData.url,
+        text: cleanContent // embed text in file JSON
+      });
+      this.stagedFile.set(null);
+    } else {
+      event.content = cleanContent;
+      event.fileUrl = null;
+    }
+
+    this.chatService.messages.update(msgs => [...msgs, event]);
+    this.ws.sendMessage(event);
+    this.message.set('');
+    this.pendingMentions.clear();
+    this.replyingToMessage.set(null);
+    this.shouldScrollToBottom = true;
+  }
+
+  setReplyTo(msg: any) {
+    this.replyingToMessage.set(msg);
+    if (this.messageInputRef) {
+      this.messageInputRef.nativeElement.focus();
+    }
+  }
+
+  cancelReply() {
+    this.replyingToMessage.set(null);
+  }
+
+  getRepliedMessage(replyToId: string): any {
+    if (!replyToId) return null;
+    return this.chatService.messages().find(m => m.id === replyToId || m.messageId === replyToId);
+  }
+
+  getMessageSnippet(msg: any): string {
+    if (!msg) return '';
+    if (msg.type === 'file') {
+      try {
+        const fileData = JSON.parse(msg.content);
+        return fileData.fileName || 'File attachment';
+      } catch (e) {
+        return 'File attachment';
+      }
+    }
+    const txt = msg.content || '';
+    return txt.length > 50 ? txt.substring(0, 50) + '...' : txt;
   }
 
   scrollToBottom(): void {
@@ -639,5 +963,104 @@ export class ChatContainerComponent implements AfterViewChecked {
     } catch (err) {
       console.error('Error scrolling to bottom:', err);
     }
+  }
+
+  async onFileSelected(event: any) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    if (!this.ws.currentConversation() || !this.ws.currentConversation().id) {
+      if (this.ws.currentConversation() && this.ws.currentConversation().id == null) {
+        try {
+          const res: any = await this.chatService.createConversation(this.currentUserId, this.ws.currentConversation());
+          if (res && res.id) {
+            this.ws.currentConversation().id = res.id;
+          } else {
+            alert("Please start the conversation with a text message before attaching files.");
+            input.value = '';
+            return;
+          }
+        } catch (e) {
+          alert("Please start the conversation with a text message before attaching files.");
+          input.value = '';
+          return;
+        }
+      } else {
+        alert("Please select a conversation first.");
+        input.value = '';
+        return;
+      }
+    }
+
+    this.isUploadingFile.set(true);
+    const uploadId = crypto.randomUUID();
+    this.pendingUploads.update(uploads => [...uploads, { id: uploadId, fileName: file.name, fileSize: file.size }]);
+
+    try {
+      const payload = {
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream',
+        conversationId: this.ws.currentConversation().id
+      };
+
+      const res: any = await this.chatService.getPresignedUrl(payload);
+      if (res.isSuccess && res.responseBody) {
+        const { uploadUrl, publicUrl } = res.responseBody;
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type || 'application/octet-stream'
+          }
+        });
+
+        if (uploadRes.ok || uploadRes.status === 200) {
+          this.stagedFile.set({ fileName: file.name, url: publicUrl, fileSize: file.size, fileType: file.type });
+        } else {
+          alert('File upload to Cloudflare R2 failed: Status ' + uploadRes.status);
+        }
+      } else {
+        alert('Could not obtain presigned upload URL from server.');
+      }
+    } catch (err) {
+      console.error('File upload error:', err);
+      alert('Error uploading file.');
+    } finally {
+      this.isUploadingFile.set(false);
+      this.pendingUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
+      input.value = '';
+    }
+  }
+
+  removeStagedFile() {
+    this.stagedFile.set(null);
+  }
+
+  private sendFileMessage(fileName: string, fileUrl: string, fileSize: number, fileType: string) {
+    const response = this.ws.currentConversation();
+    if (!response || !response.id) return;
+    const currentUserName = this.user.firstName + " " + this.user.lastName;
+    const event: any = {
+      conversationId: response.id,
+      messageId: crypto.randomUUID(),
+      senderId: this.currentUserId,
+      recievedId: null,
+      type: "file",
+      content: JSON.stringify({ fileName, fileSize, fileType, url: fileUrl }),
+      senderName: currentUserName,
+      fileUrl: fileUrl,
+      replyTo: null,
+      mentions: [],
+      reactions: [],
+      clientType: "web",
+      createdAt: new Date(),
+      editedAt: null,
+      status: 1
+    };
+
+    this.chatService.messages.update(msgs => [...msgs, event]);
+    this.ws.sendMessage(event);
+    this.shouldScrollToBottom = true;
   }
 }
