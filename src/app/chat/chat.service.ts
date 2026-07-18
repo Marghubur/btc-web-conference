@@ -4,6 +4,7 @@ import { Conversation, Participant, SearchResult, UserDetail } from '../componen
 import { HttpService } from '../providers/services/http.service';
 import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
 import { ResponseModel } from '../models/model';
+import { LocalService } from '../providers/services/local.service';
 
 @Injectable({
     providedIn: 'root'
@@ -20,11 +21,15 @@ export class ChatService {
     public isMessagesLoading = signal<boolean>(false);
     private _isChatActive = signal<boolean>(false);
     readonly isChatActive = this._isChatActive.asReadonly();
-
+    private currentUserId: string = "";
 
     constructor(private http: HttpService,
-        private ws: ConfeetSocketService
-    ) { }
+        private ws: ConfeetSocketService,
+        private local: LocalService
+    ) {
+        const user = this.local.getUser();
+        this.currentUserId = user.userId;
+    }
 
     setIsChatStatus(isActive: boolean, requestFrom: string = 'Auto') {
         console.log('[IsChatStatus changed from: ' + requestFrom + '] ------------------------: ', isActive);
@@ -45,6 +50,10 @@ export class ChatService {
         //     this.meetingRooms.set(res.responseBody.data || []);
         // }
         this.isLoading.set(false);
+    }
+
+    async getPresignedUrl(payload: { fileName: string, contentType: string, conversationId: string }): Promise<any> {
+        return this.http.post('storage/presigned-url', payload);
     }
 
     async searchUsers(term: string): Promise<void> {
@@ -112,14 +121,18 @@ export class ChatService {
             // isLoading not set here to avoid flickering entire chat on pagination
             const res = await this.http.get(`messages/get?id=${conversationId ?? ''}&page=${page}&limit=${limit}`);
             if (res.isSuccess && res.responseBody && res.responseBody.messages) {
+                var messages = res.responseBody.messages;
+                for (let i = 0; i < messages.length; i++) {
+                    messages[i].isMentioned = this.isMentioned(messages[i])
+                }
                 if (append) {
                     if (page > 1) {
-                        this.messages.update(current => [...res.responseBody.messages.reverse(), ...current]);
+                        this.messages.update(current => [...messages.reverse(), ...current]);
                     } else {
-                        this.messages.set(res.responseBody.messages.reverse());
+                        this.messages.set(messages.reverse());
                     }
                 } else {
-                    this.messages.set(res.responseBody.messages.reverse());
+                    this.messages.set(messages.reverse());
                 }
             }
         } finally {
@@ -127,6 +140,19 @@ export class ChatService {
                 this.isMessagesLoading.set(false);
             }
         }
+    }
+
+    private isMentioned(msg: any): boolean {
+        if (!msg || !msg.content || msg.senderId === this.currentUserId) return false;
+        if (msg.mentions && Array.isArray(msg.mentions) && msg.mentions.length > 0) {
+            if (msg.mentions.some((m: any) => m === this.currentUserId || m.userId === this.currentUserId)) {
+                return true;
+            }
+        }
+        // if (this.user && this.user.firstName && msg.content.toLowerCase().includes(this.user.firstName.toLowerCase())) {
+        //   return true;
+        // }
+        return false;
     }
 
     async createConversation(userId: string, conversation: Conversation): Promise<ResponseModel> {
@@ -147,6 +173,17 @@ export class ChatService {
             // this.getMeetingRooms(); 
         }
         return res; // Keep return for Component to know ID of new chat
+    }
+
+    async addMembersToGroup(conversationId: string, addedBy: string, userIds: string[]) {
+        try {
+            const url = `conversations/add-members/${conversationId}?addedBy=${addedBy}`;
+            const res: any = await this.http.post(url, userIds);
+            return res;
+        } catch (error) {
+            console.error('Error adding members:', error);
+            throw error;
+        }
     }
 
     // Helper Methods

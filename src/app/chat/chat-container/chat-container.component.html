@@ -114,91 +114,129 @@
                     </div>
                     <!-- Divider -->
                     <div class="dropdown-divider"></div>
-                    <!-- Create Group Section -->
+                    <!-- Add/Create Group Section -->
                     <div class="dropdown-section">
-                        @if (!showCreateGroupInput) {
-                        <button class="create-group-btn" (click)="showCreateGroupInput = true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 5v14M5 12h14" />
-                            </svg>
-                            <span>Create a Group</span>
-                        </button>
+                        @if (ws.currentConversation()?.conversationType !== 'group') {
+                            @if (!showCreateGroupInput) {
+                            <button class="create-group-btn" (click)="showCreateGroupInput = true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                <span>Create a Group</span>
+                            </button>
+                            } @else {
+                            <div class="create-group-form">
+                                <!-- Auto-generated Group Name -->
+                                <div class="form-group">
+                                    <label class="form-label">Group Name</label>
+                                    <input type="text" class="group-name-input" [(ngModel)]="newGroupName"
+                                        [placeholder]="getDefaultGroupName()" />
+                                </div>
+
+                                <!-- Selected Members -->
+                                <div class="form-group">
+                                    <label class="form-label">Members</label>
+                                    <div class="selected-members">
+                                        @for (member of ws.currentConversation()?.participants; track member.userId) {
+                                        <div class="selected-member-chip">
+                                            <div class="chip-avatar"
+                                                [ngStyle]="{ 'background-color': getColorFromName(member.firstName, member.lastName) }">
+                                                {{ getUserInitiaLetter(member.firstName, member.lastName) }}
+                                            </div>
+                                            <span>{{ member.firstName }}</span>
+                                        </div>
+                                        }
+                                        @for (member of newGroupMembers; track member.userId) {
+                                        <div class="selected-member-chip new-member">
+                                            <div class="chip-avatar"
+                                                [ngStyle]="{ 'background-color': getColorFromName(member.name, null) }">
+                                                {{ getUserInitiaLetter(member.name, null) }}
+                                            </div>
+                                            <span>{{ member.name.split(' ')[0] }}</span>
+                                            <button class="remove-member-btn"
+                                                (click)="removeNewGroupMember(member)">×</button>
+                                        </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Add Members Search -->
+                                <div class="form-group">
+                                    <label class="form-label">Add Members</label>
+                                    <div class="add-member-search">
+                                        <svg class="search-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <circle cx="11" cy="11" r="8" />
+                                            <path d="M21 21l-4.35-4.35" />
+                                        </svg>
+                                        <input type="text" class="member-search-input" placeholder="Search users to add..."
+                                            [(ngModel)]="memberSearchQuery" (input)="onMemberSearch()"
+                                            (keydown)="onMemberSearchKeydown($event)" />
+                                    </div>
+                                    <!-- Search Results -->
+                                    @if (memberSearchResults.length > 0) {
+                                    <div class="member-search-results">
+                                        @for (result of memberSearchResults; track result.conversationId; let idx =
+                                        $index) {
+                                        <div class="member-search-item" [class.selected]="memberSearchSelectedIndex === idx"
+                                            (click)="addMemberToGroup(result)"
+                                            (mouseenter)="memberSearchSelectedIndex = idx">
+                                            <div class="member-avatar"
+                                                [ngStyle]="{ 'background-color': getColorFromName(result.name, null) }">
+                                                {{ getUserInitiaLetter(result.name, null) }}
+                                            </div>
+                                            <div class="member-info">
+                                                <span class="member-name">{{ result.name }}</span>
+                                                <span class="member-email">{{ result.email }}</span>
+                                            </div>
+                                        </div>
+                                        }
+                                    </div>
+                                    }
+                                </div>
+
+                                <div class="create-group-actions">
+                                    <button class="btn-cancel" (click)="cancelCreateGroup()">Cancel</button>
+                                    <button class="btn-create" (click)="createGroup()">Create</button>
+                                </div>
+                            </div>
+                            }
                         } @else {
-                        <div class="create-group-form">
-                            <!-- Auto-generated Group Name -->
-                            <div class="form-group">
-                                <label class="form-label">Group Name</label>
-                                <input type="text" class="group-name-input" [(ngModel)]="newGroupName"
-                                    [placeholder]="getDefaultGroupName()" />
-                            </div>
-
-                            <!-- Selected Members -->
-                            <div class="form-group">
-                                <label class="form-label">Members</label>
-                                <div class="selected-members">
-                                    @for (member of ws.currentConversation()?.participants; track member.userId) {
-                                    <div class="selected-member-chip">
-                                        <div class="chip-avatar"
-                                            [ngStyle]="{ 'background-color': getColorFromName(member.firstName, member.lastName) }">
-                                            {{ getUserInitiaLetter(member.firstName, member.lastName) }}
-                                        </div>
-                                        <span>{{ member.firstName }}</span>
+                            <!-- Existing Group Add Members Form -->
+                            <div class="create-group-form pt-2">
+                                <div class="form-group">
+                                    <label class="form-label">Add Member to Group</label>
+                                    <div class="add-member-search">
+                                        <svg class="search-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <circle cx="11" cy="11" r="8" />
+                                            <path d="M21 21l-4.35-4.35" />
+                                        </svg>
+                                        <input type="text" class="member-search-input" placeholder="Search users to add..."
+                                            [(ngModel)]="memberSearchQuery" (input)="onMemberSearch()"
+                                            (keydown)="onMemberSearchKeydown($event)" />
                                     </div>
-                                    }
-                                    @for (member of newGroupMembers; track member.userId) {
-                                    <div class="selected-member-chip new-member">
-                                        <div class="chip-avatar"
-                                            [ngStyle]="{ 'background-color': getColorFromName(member.name, null) }">
-                                            {{ getUserInitiaLetter(member.name, null) }}
+                                    <!-- Search Results -->
+                                    @if (memberSearchResults.length > 0) {
+                                    <div class="member-search-results">
+                                        @for (result of memberSearchResults; track result.conversationId; let idx = $index) {
+                                        <div class="member-search-item" [class.selected]="memberSearchSelectedIndex === idx"
+                                            (click)="addMemberToExistingGroup(result)"
+                                            (mouseenter)="memberSearchSelectedIndex = idx">
+                                            <div class="member-avatar"
+                                                [ngStyle]="{ 'background-color': getColorFromName(result.name, null) }">
+                                                {{ getUserInitiaLetter(result.name, null) }}
+                                            </div>
+                                            <div class="member-info">
+                                                <span class="member-name">{{ result.name }}</span>
+                                                <span class="member-email">{{ result.email }}</span>
+                                            </div>
                                         </div>
-                                        <span>{{ member.name.split(' ')[0] }}</span>
-                                        <button class="remove-member-btn"
-                                            (click)="removeNewGroupMember(member)">×</button>
-                                    </div>
-                                    }
-                                </div>
-                            </div>
-
-                            <!-- Add Members Search -->
-                            <div class="form-group">
-                                <label class="form-label">Add Members</label>
-                                <div class="add-member-search">
-                                    <svg class="search-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <circle cx="11" cy="11" r="8" />
-                                        <path d="M21 21l-4.35-4.35" />
-                                    </svg>
-                                    <input type="text" class="member-search-input" placeholder="Search users to add..."
-                                        [(ngModel)]="memberSearchQuery" (input)="onMemberSearch()"
-                                        (keydown)="onMemberSearchKeydown($event)" />
-                                </div>
-                                <!-- Search Results -->
-                                @if (memberSearchResults.length > 0) {
-                                <div class="member-search-results">
-                                    @for (result of memberSearchResults; track result.conversationId; let idx =
-                                    $index) {
-                                    <div class="member-search-item" [class.selected]="memberSearchSelectedIndex === idx"
-                                        (click)="addMemberToGroup(result)"
-                                        (mouseenter)="memberSearchSelectedIndex = idx">
-                                        <div class="member-avatar"
-                                            [ngStyle]="{ 'background-color': getColorFromName(result.name, null) }">
-                                            {{ getUserInitiaLetter(result.name, null) }}
-                                        </div>
-                                        <div class="member-info">
-                                            <span class="member-name">{{ result.name }}</span>
-                                            <span class="member-email">{{ result.email }}</span>
-                                        </div>
+                                        }
                                     </div>
                                     }
                                 </div>
-                                }
                             </div>
-
-                            <div class="create-group-actions">
-                                <button class="btn-cancel" (click)="cancelCreateGroup()">Cancel</button>
-                                <button class="btn-create" (click)="createGroup()">Create</button>
-                            </div>
-                        </div>
                         }
                     </div>
                 </div>
@@ -353,8 +391,51 @@
                     <span class="message-time-inline">{{ msg.createdAt | date: 'h:mm a' }}</span>
                 </div>
                 }
-                <div class="message-bubble sent" (mouseenter)="hoveredMsgIndex = $index">
-                    <div class="message-content black-text pe-2">{{ msg.content }}</div>
+                <div class="message-bubble sent" [class.jumbo-emoji]="isPureEmoji(msg.content)"
+                    (mouseenter)="hoveredMsgIndex = $index">
+                    @if (msg.replyTo && getRepliedMessage(msg.replyTo)) {
+                    <div class="replied-message-preview" title="Replied to message">
+                        <strong>{{ getRepliedMessage(msg.replyTo).senderName }}</strong>
+                        <div class="text-truncate text-light small">{{ getMessageSnippet(getRepliedMessage(msg.replyTo))
+                            }}</div>
+                    </div>
+                    }
+                    @if (msg.mentions && msg.mentions.length > 0) {
+                    <div class="mentions-header-group">
+                        @for (userId of msg.mentions; track userId) {
+                        <span class="mention-badge">&#64;{{ getMentionName(userId) }}</span>
+                        }
+                    </div>
+                    }
+                    @if (msg.type === 'file') {
+                    @let fileData = parseFileContent(msg.content);
+                    <div class="file-attachment-card">
+                        <div class="file-icon-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                        </div>
+                        <div class="file-details">
+                            <span class="file-name" [title]="fileData.fileName">{{ fileData.fileName }}</span>
+                            @if (fileData.fileSize) { <span class="file-size">{{ formatFileSize(fileData.fileSize)
+                                }}</span> }
+                        </div>
+                        @if (fileData.url || msg.fileUrl) {
+                        <a [href]="fileData.url || msg.fileUrl" target="_blank" download class="file-download-btn"
+                            title="Download file" (click)="$event.stopPropagation()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                        </a>
+                        }
+                    </div>
+                    }
+                    @if (formatMessageContent(msg)) {
+                    <div class="message-content black-text pe-2" [innerHTML]="formatMessageContent(msg)"></div>
+                    }
                     <div class="message-meta-inline position-absolute">
                         <span class="message-status">
                             <ng-container [ngSwitch]="msg.status">
@@ -390,6 +471,15 @@
                     @for (emoji of quickEmojis; track emoji) {
                     <button type="button" class="reaction-emoji-btn" (click)="reactToMessage(msg, emoji)">{{ emoji
                         }}</button>
+                    }
+                    @if (msg.id) {
+                    <button type="button" class="reaction-emoji-btn action-btn" title="Reply" (click)="setReplyTo(msg)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="9 17 4 12 9 7" />
+                            <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+                        </svg>
+                    </button>
                     }
                 </div>
                 }
@@ -455,14 +545,56 @@
                 <div class="message-sender-header ps-0">
                     <span class="message-sender-name">{{ getSenderName(msg.senderId) }}</span>
                     <span class="message-time-inline">{{ msg.createdAt | date: 'h:mm a' }}</span>
-                    @if (isMentioned(msg)) {
+                    @if (msg.isMentioned) {
                     <span class="mention-badge-icon" title="You were mentioned">&#64;</span>
                     }
                 </div>
                 }
-                <div class="message-bubble received" [class.mentioned-bubble]="isMentioned(msg)"
-                    (mouseenter)="hoveredMsgIndex = $index">
-                    <div class="message-content black-text">{{ msg.content }}</div>
+                <div class="message-bubble received" [class.mentioned-bubble]="msg.isMentioned"
+                    [class.jumbo-emoji]="isPureEmoji(msg.content)" (mouseenter)="hoveredMsgIndex = $index">
+                    @if (msg.replyTo && getRepliedMessage(msg.replyTo)) {
+                    <div class="replied-message-preview" title="Replied to message">
+                        <strong>{{ getRepliedMessage(msg.replyTo).senderName }}</strong>
+                        <div class="text-truncate text-muted small">{{ getMessageSnippet(getRepliedMessage(msg.replyTo))
+                            }}</div>
+                    </div>
+                    }
+                    @if (msg.mentions && msg.mentions.length > 0) {
+                    <div class="mentions-header-group">
+                        @for (userId of msg.mentions; track userId) {
+                        <span class="mention-badge">&#64;{{ getMentionName(userId) }}</span>
+                        }
+                    </div>
+                    }
+                    @if (msg.type === 'file') {
+                    @let fileData = parseFileContent(msg.content);
+                    <div class="file-attachment-card">
+                        <div class="file-icon-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                        </div>
+                        <div class="file-details">
+                            <span class="file-name" [title]="fileData.fileName">{{ fileData.fileName }}</span>
+                            @if (fileData.fileSize) { <span class="file-size">{{ formatFileSize(fileData.fileSize)
+                                }}</span> }
+                        </div>
+                        @if (fileData.url || msg.fileUrl) {
+                        <a [href]="fileData.url || msg.fileUrl" target="_blank" download class="file-download-btn"
+                            title="Download file" (click)="$event.stopPropagation()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                        </a>
+                        }
+                    </div>
+                    }
+                    @if (formatMessageContent(msg)) {
+                    <div class="message-content black-text" [innerHTML]="formatMessageContent(msg)"></div>
+                    }
                 </div>
 
                 <!-- Floating Teams Emoji Reaction Bar -->
@@ -471,6 +603,15 @@
                     @for (emoji of quickEmojis; track emoji) {
                     <button type="button" class="reaction-emoji-btn" (click)="reactToMessage(msg, emoji)">{{ emoji
                         }}</button>
+                    }
+                    @if (msg.id) {
+                    <button type="button" class="reaction-emoji-btn action-btn" title="Reply" (click)="setReplyTo(msg)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="9 17 4 12 9 7" />
+                            <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+                        </svg>
+                    </button>
                     }
                 </div>
                 }
@@ -490,10 +631,116 @@
         </div>
         }
         }
+
+        @for (upload of pendingUploads(); track upload.id) {
+        <div class="message-wrapper sent">
+            <div class="message-sent-content">
+                <div class="message-bubble sent">
+                    <div class="file-attachment-card uploading-card position-relative">
+                        <div class="file-icon-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                        </div>
+                        <div class="file-details">
+                            <span class="file-name" [title]="upload.fileName">{{ upload.fileName }}</span>
+                            <span class="file-size">Uploading...</span>
+                        </div>
+                        <div class="upload-spinner-overlay">
+                            <span class="upload-spinner"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        }
     </div>
 
     <!-- Message Input Area -->
-    <div class="message-input-container">
+    <div class="message-input-container position-relative">
+        <!-- Reply Mode Banner -->
+        @if (replyingToMessage()) {
+        <div class="reply-banner d-flex align-items-center justify-content-between">
+            <div class="reply-content text-truncate">
+                <strong>Replying to {{ replyingToMessage().senderName }}</strong>
+                <div class="text-muted small text-truncate">{{ getMessageSnippet(replyingToMessage()) }}</div>
+            </div>
+            <button class="btn-close ms-2 flex-shrink-0" (click)="cancelReply()" title="Cancel Reply"></button>
+        </div>
+        }
+
+        @if (showEmojiPicker()) {
+        <div class="emoji-picker-popover shadow-lg" (click)="$event.stopPropagation()">
+            <div class="emoji-picker-header">
+                @for (cat of emojiCategories; track cat.id) {
+                <button class="emoji-cat-tab" [class.active]="selectedEmojiCategory() === cat.id"
+                    (click)="selectEmojiCategory(cat.id)" [title]="cat.label">
+                    {{ cat.icon }}
+                </button>
+                }
+            </div>
+            <div class="emoji-picker-grid custom-scrollbar">
+                @for (emoji of getActiveCategoryEmojis(); track emoji) {
+                <button class="emoji-grid-btn" (click)="onEmojiSelect(emoji, $event)" [title]="emoji">
+                    {{ emoji }}
+                </button>
+                }
+            </div>
+        </div>
+        }
+        @if (showMentionDropdown()) {
+        <div class="mention-dropdown-popover shadow-lg" (click)="$event.stopPropagation()">
+            <div class="mention-dropdown-header">Mention a participant</div>
+            <div class="mention-dropdown-list">
+                @for (participant of getMentionParticipants(); track participant.userId; let i = $index) {
+                <div class="mention-item" [class.selected]="i === mentionSelectedIndex()"
+                    (click)="selectMention(participant)">
+                    @if (participant.avatar && !failedAvatars.has(participant.avatar)) {
+                    <img [src]="participant.avatar" (error)="onAvatarError(participant.avatar)"
+                        class="avatar msg-avatar avatar-img" alt="sender" />
+                    } @else {
+                    <div class="avatar msg-avatar"
+                        [ngStyle]="{ 'background-color': getColorFromName(participant.firstName, participant.lastName) }">
+                        {{ getUserInitiaLetter(participant.firstName, participant.lastName) }}
+                    </div>
+                    }
+                    <div class="mention-details">
+                        <span class="mention-name">{{ participant.firstName }} {{ participant.lastName }}</span>
+                        <span class="mention-email">{{ participant.email || 'Participant' }}</span>
+                    </div>
+                </div>
+                } @empty {
+                <div class="mention-empty-item">No matching participants</div>
+                }
+            </div>
+        </div>
+        }
+
+        @if (stagedFile()) {
+        <div class="staged-file-preview">
+            <div class="file-attachment-card">
+                <div class="file-icon-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                </div>
+                <div class="file-details">
+                    <span class="file-name" [title]="stagedFile().fileName">{{ stagedFile().fileName }}</span>
+                    @if (stagedFile().fileSize) { <span class="file-size">{{ formatFileSize(stagedFile().fileSize)
+                        }}</span> }
+                </div>
+                <button class="remove-staged-file-btn" (click)="removeStagedFile()" title="Remove attachment">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        }
+
         <div class="message-input-wrapper">
             <div class="input-actions-left">
                 <button class="input-action-btn" title="Format">
@@ -503,13 +750,20 @@
                         <path d="M12 4v16" />
                     </svg>
                 </button>
-                <button class="input-action-btn" title="Attach file">
+                <input type="file" #fileAttachmentInput (change)="onFileSelected($event)" style="display: none;" />
+                <button class="input-action-btn" title="Attach file" (click)="fileAttachmentInput.click()"
+                    [disabled]="isUploadingFile()">
+                    @if (isUploadingFile()) {
+                    <span class="upload-spinner"></span>
+                    } @else {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path
                             d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                     </svg>
+                    }
                 </button>
-                <button class="input-action-btn" title="Emoji">
+                <button class="input-action-btn" title="Emoji" (click)="toggleEmojiPicker($event)"
+                    [class.active]="showEmojiPicker()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10" />
                         <path d="M8 14s1.5 2 4 2 4-2 4-2" />
@@ -528,12 +782,12 @@
                 </button>
             </div>
 
-            <input type="text" class="message-input" [disabled]="!ws.currentConversation()" [value]="message()"
-                (input)="message.set($event.target.value)" (keyup.enter)="sendMessage()"
-                placeholder="Type a new message" />
+            <input type="text" #messageInputRef class="message-input" [disabled]="!ws.currentConversation()"
+                [value]="message()" (input)="onMessageInput($event)" (keydown)="onInputKeydown($event)"
+                (keyup.enter)="sendMessage()" placeholder="Type a new message or @mention" />
 
             <div class="input-actions-right">
-                <button class="send-btn" [disabled]="!ws.currentConversation() || !message()" (click)="sendMessage()"
+                <button class="send-btn" [disabled]="!ws.currentConversation() || (!message() && !stagedFile())" (click)="sendMessage()"
                     title="Send message">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />

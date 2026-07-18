@@ -22,6 +22,7 @@ export class ConfeetSocketService {
     error$: Observable<ErrorPayload>;
     pong$: Observable<PongPayload>;
     initUserList$: Observable<User[]>;
+    messageReacted$: Observable<any>;
     //--------------------------------------------------------------
     currentConversation = signal<Conversation | null>(null);
     currentConversationId = signal<string | null>(null);
@@ -42,6 +43,7 @@ export class ConfeetSocketService {
         this.error$ = this.onEvent<ErrorPayload>(WsEvents.ERROR);
         this.pong$ = this.onEvent<PongPayload>(WsEvents.PONG);
         this.initUserList$ = this.onEvent<User[]>(WsEvents.INIT_USERLIST);
+        this.messageReacted$ = this.onEvent<any>(WsEvents.MESSAGE_REACTED);
         console.log(this.initUserList$)
     }
 
@@ -94,6 +96,11 @@ export class ConfeetSocketService {
     // Send message
     sendMessage(message: Partial<Message>): void {
         this.send(WsEvents.SEND_MESSAGE, message);
+    }
+
+    // Send message reaction
+    sendMessageReaction(payload: { messageId: string, conversationId: string, userId: number | string, emoji: string }): void {
+        this.send(WsEvents.REACT_MESSAGE, payload);
     }
 
     // Send message
@@ -195,6 +202,7 @@ export interface Message {
     editedAt?: Date | null,
     status?: number;
     recievedId?: string;
+    isMentioned?: boolean;
 }
 
 export interface Reactions {
@@ -244,12 +252,14 @@ export const WsEvents = {
     MARK_SEEN: 'mark_seen',
     TYPING: 'typing',
     AUDIO_CALL_REQUEST: 'audio_call_request',
+    REACT_MESSAGE: 'react_message',
     HEARTBEAT: 'heartbeat', // Client sends ping for heartbeat
     INIT_USERLIST: 'init_userlist',
 
     // Server -> Client
     NEW_MESSAGE: 'new_message',
     MESSAGE_SENT: 'message_sent',
+    MESSAGE_REACTED: 'message_reacted',
     DELIVERED: 'delivered',
     SEEN: 'seen',
     USER_TYPING: 'user_typing',
