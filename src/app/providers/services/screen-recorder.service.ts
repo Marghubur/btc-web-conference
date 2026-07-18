@@ -308,7 +308,7 @@ export class ScreenRecorderService {
 
         let formData = new FormData();
         formData.append('file', wavBlob);
-        this.http.post("https://www.axilcorps.com/stt/transcribe/audio-to-text", formData).subscribe({
+        this.http.post("https://www.confeet.com/stt/transcribe/audio-to-text", formData).subscribe({
           next: (res: any) => {
             if (res && res._response_body) {
               // Trigger download

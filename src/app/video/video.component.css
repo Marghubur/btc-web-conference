@@ -77,9 +77,12 @@
     height: 16px;
 }
 
-/* Active Speaker Highlight */
-.video-container.active-speaker {
-    box-shadow: 0 0 0 3px #6264a7, 0 8px 24px rgba(98, 100, 167, 0.3);
+/* Active Speaker Highlight - Teams Style Blue Border */
+.video-container.active-speaker,
+.video-container.active-speaker-border {
+    border: 3px solid #0078d4 !important;
+    box-shadow: 0 0 16px rgba(0, 120, 212, 0.65) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Video Mirror for Local Preview */

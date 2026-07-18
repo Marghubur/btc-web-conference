@@ -96,10 +96,13 @@
                     <div class="time-label">{{ slot.display }}</div>
                     @for (date of weekDates; track $index; let dayIndex = $index) {
                     <div class="time-cell" (click)="openScheduleModal(date, slot)">
-                        @for (meeting of getMeetingsForTimeSlot(date, slot); track $index) {
-                        <div class="meeting-block" [class]="getMeetingColor($index)"
+                        @for (meeting of getMeetingsStartingInTimeSlot(date, slot); track $index) {
+                        <div class="meeting-block week-meeting-block" [class]="getMeetingColor(meeting)"
+                            [style.height.px]="getMeetingSlotHeight(meeting, 'week', date)"
+                            [style.width]="getMeetingWidth(meeting, date)"
+                            [style.left]="getMeetingLeft(meeting, date)"
                             (click)="showMeetingDetails(meeting); $event.stopPropagation()">
-                            <div class="meeting-time">{{ meeting.startTime }}</div>
+                            <div class="meeting-time">{{ meeting.startTime }} - {{ meeting.endTime }}</div>
                             <div class="meeting-title-block">{{ meeting.title }}</div>
                         </div>
                         }
@@ -133,8 +136,11 @@
                 <div class="time-row day-time-row">
                     <div class="time-label">{{ slot.display }}</div>
                     <div class="time-cell day-time-cell" (click)="openScheduleModal(currentDate, slot)">
-                        @for (meeting of getMeetingsForTimeSlot(currentDate, slot); track $index) {
-                        <div class="meeting-block day-meeting-block" [class]="getMeetingColor($index)"
+                        @for (meeting of getMeetingsStartingInTimeSlot(currentDate, slot); track $index) {
+                        <div class="meeting-block day-meeting-block" [class]="getMeetingColor(meeting)"
+                            [style.height.px]="getMeetingSlotHeight(meeting, 'day', currentDate)"
+                            [style.width]="getMeetingWidth(meeting, currentDate)"
+                            [style.left]="getMeetingLeft(meeting, currentDate)"
                             (click)="showMeetingDetails(meeting); $event.stopPropagation()">
                             <div class="meeting-info">
                                 <div class="meeting-time-full">{{ meeting.startTime }} - {{ meeting.endTime }}</div>

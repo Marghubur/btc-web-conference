@@ -4,6 +4,7 @@ import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { JwtService } from './jwt.service';
 import { environment } from '../../../environments/environment';
+import { AccessToken } from '../../models/constant';
 
 @Injectable({
   providedIn: 'root'
@@ -21,6 +22,32 @@ export class AuthInitService {
 
   initialize(): Promise<boolean> {
     const url = `${environment.appServerBaseUrl}auth/v1/regenerateToken`;
+    // ── Guard 1: Document Visibility ──────────────────────────────────────────
+    // If the browser is pre-fetching or loading this in a background tab,
+    // document.visibilityState will be 'hidden' or 'prerender'.
+    if (document.visibilityState !== 'visible') {
+      console.log('[AuthInit] Skipping silent refresh — document not visible (pre-fetch/background load).');
+      return Promise.resolve(false);
+    }
+
+    const token = this.jwtService.getJwtToken();
+    const expiredOnStr = localStorage.getItem(AccessToken);
+
+    let needsRefresh = false;
+    if (!token || !expiredOnStr) {
+      needsRefresh = true;
+    } else {
+      const expiredOn = new Date(expiredOnStr);
+      const now = new Date();
+      if (expiredOn.getTime() <= now.getTime()) {
+        needsRefresh = true;
+      }
+    }
+
+    if (!needsRefresh) {
+      // Token is valid, proceed normally
+      return Promise.resolve(true);
+    }
 
     // Silently attempt to get a new access token using the background HttpOnly cookie
     return firstValueFrom(
@@ -43,6 +70,7 @@ export class AuthInitService {
         }
       }
 
+      this.jwtService.removeJwtToken();
       return false;
     });
   }

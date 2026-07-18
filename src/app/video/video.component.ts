@@ -18,6 +18,7 @@ export class VideoComponent implements AfterViewInit, OnDestroy {
     local = input(false);
     isMute = input(false);
     isScreenShare = input(false);
+    isActiveSpeaker = input(false);
 
     private attachedElement: HTMLVideoElement | null = null;
 

@@ -32,6 +32,8 @@ export class RoomService {
   remoteSharescreenTrack = signal<any>(null);
   participantMediaStatus = signal<Map<string, any>>(new Map());
   remoteParticipants = signal<Map<string, RemoteParticipant>>(new Map());
+  activeSpeakers = signal<Set<string>>(new Set());
+  lastActiveSpeaker = signal<string | null>(null);
   latestScreenShare = new BehaviorSubject<{ participant: Participant; track: RemoteVideoTrack; } | null>(null);
   // Expose reactions as observable
   reactions = signal<{ id: string; emoji: string, name: string }[]>([]);
@@ -80,6 +82,15 @@ export class RoomService {
   async joinRoom(roomName: string, participantName: string): Promise<Room> {
     const room = new Room();
     this.room.set(room);
+
+    // Listen for active speakers changed
+    room.on(RoomEvent.ActiveSpeakersChanged, (speakers: Participant[]) => {
+      const activeSet = new Set<string>(speakers.map(s => s.identity));
+      this.activeSpeakers.set(activeSet);
+      if (speakers.length > 0) {
+        this.lastActiveSpeaker.set(speakers[0].identity);
+      }
+    });
 
     // Listen for subscribed tracks
     room.on(
@@ -396,6 +407,8 @@ export class RoomService {
     this.remoteTracksMap.set(new Map());
     this.remoteParticipants.set(new Map());
     this.participantMediaStatus.set(new Map());
+    this.activeSpeakers.set(new Set());
+    this.lastActiveSpeaker.set(null);
   }
 
   private clearAfterDelay() {

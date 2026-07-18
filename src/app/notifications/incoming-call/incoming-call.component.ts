@@ -8,6 +8,7 @@ import { DismissJoiningRequestService } from '../../providers/socket/client-even
 import { CallType } from '../../models/conference_call/call_model';
 import { Router } from '@angular/router';
 import { ConfeetSocketService } from '../../providers/socket/confeet-socket.service';
+import { MeetingService } from '../../meeting/meeting.service';
 
 @Component({
     selector: 'app-incoming-call',
@@ -23,6 +24,7 @@ export class IncomingCallComponent implements OnDestroy {
     rejectCallService = inject(RejectCallService);
     dismissJoiningRequestService = inject(DismissJoiningRequestService);
     ws = inject(ConfeetSocketService);
+    meetingService = inject(MeetingService);
     private router = inject(Router);
 
     private ringtoneAudio: HTMLAudioElement | null = null;
@@ -101,18 +103,20 @@ export class IncomingCallComponent implements OnDestroy {
     joinCall(): void {
         const request = this.incomingCall();
         if (request && request.conversationId) {
-            this.ws.currentConversationId.set(request.conversationId);
             this.stopRingtone();
             this.stopTimer();
             this.acceptJoiningRequestService.execute(request.conversationId, request.callerId);
-            this.router.navigate(['/btc/preview'], {
-                state: {
-                    id: request.conversationId,
-                    type: request.callType || CallType.AUDIO,
-                    title: request.callerName || 'Call',
-                    autoJoin: true
-                }
-            });
+            if (!this.meetingService.inMeeting()) {
+                this.ws.currentConversationId.set(request.conversationId);
+                this.router.navigate(['/btc/preview'], {
+                    state: {
+                        id: request.conversationId,
+                        type: request.callType || CallType.AUDIO,
+                        title: request.callerName || 'Call',
+                        autoJoin: true
+                    }
+                });
+            }
         }
     }
 

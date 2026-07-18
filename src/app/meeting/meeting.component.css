@@ -68,7 +68,23 @@
     flex-direction: row;
     background: var(--teams-bg-primary);
     overflow: hidden;
-    justify-content: space-between;
+    position: relative;
+}
+
+.main-conference-area {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    transition: flex 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.roster-sidebar-container {
+    flex: 0 0 auto;
+    height: 100%;
+    border-left: 1px solid var(--teams-border);
+    background: var(--teams-bg-secondary);
+    z-index: 20;
+    overflow: hidden;
 }
 
 .chat-window {
@@ -137,6 +153,12 @@
     height: 100%;
     object-fit: cover !important;
     border-radius: 8px;
+}
+
+.avatar-container.active-speaker-border {
+    border: 3px solid #0078d4 !important;
+    box-shadow: 0 0 16px rgba(0, 120, 212, 0.65) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Grid Layouts Based on Participant Count */
@@ -1409,7 +1431,8 @@ textarea:focus {
     height: 50px !important;
     padding: 0 12px !important;
     justify-content: space-between;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
+    /* background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%); */
+    background: var(--teams-bg-secondary);
 }
 
 /* Mini mode controls - show only essential buttons */
@@ -1592,6 +1615,7 @@ textarea:focus {
         opacity: 0;
         transform: scale(0.95) translateY(10px);
     }
+
     100% {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -1639,7 +1663,9 @@ textarea:focus {
         transform: scale(0.8);
         opacity: 0.8;
     }
-    80%, 100% {
+
+    80%,
+    100% {
         transform: scale(1.6);
         opacity: 0;
     }
@@ -1680,6 +1706,7 @@ textarea:focus {
     0% {
         transform: translateX(-100%);
     }
+
     100% {
         transform: translateX(300%);
     }

@@ -2,34 +2,36 @@
 
 /* ===== CSS Variables for Teams Theme - Using Global Theme ===== */
 :host {
-    --teams-primary: #0b57d0;
-    /* Google Blue */
-    --teams-primary-hover: #0842a0;
-    --teams-primary-light: #d3e3fd;
-    --teams-bg-sidebar: #f8fafd;
-    --teams-bg-main: #ffffff;
-    /* Pure White Google Chat background */
-    --teams-bg-message-sent: #d3e3fd;
-    /* Google Chat Sent Bubble */
-    --teams-bg-message-received: #f0f4f9;
-    /* Google Chat Received Bubble */
-    --teams-text-primary: #1f1f1f;
-    --teams-text-secondary: #444746;
-    --teams-text-muted: #747775;
+    --teams-primary: #5b5fc7;
+    /* Teams Purple/Blue */
+    --teams-primary-hover: #4f52b2;
+    --teams-primary-light: #f0e8f5;
+    --teams-bg-sidebar: #f5f5f5;
+    --teams-bg-main: #faf9f8;
+    /* Teams light gray canvas where white cards float */
+    --teams-bg-header: #ffffff;
+    --teams-bg-message-sent: #efe8f8;
+    /* Teams Sent Bubble light lavender */
+    --teams-bg-message-received: #ffffff;
+    /* Teams Received Bubble white card */
+    --teams-text-primary: #242424;
+    --teams-text-secondary: #424242;
+    --teams-text-muted: #616161;
     --teams-border: #e0e2e5;
     --teams-hover: #f0f4f9;
     --teams-selected: #e8f0fe;
-    --teams-online: #34A853;
-    /* Google Green */
-    --teams-offline: #9AA0A6;
-    /* Google Gray */
-    --teams-away: #FBBC05;
-    /* Google Yellow */
-    --teams-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --teams-online: #92c353;
+    /* Teams Green */
+    --teams-offline: #8a8886;
+    /* Teams Gray */
+    --teams-away: #f8d22a;
+    /* Teams Yellow */
+    --teams-busy: #c4314b;
+    /* Teams Red */
+    --teams-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
     --teams-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
-    --teams-radius: 8px;
-    --teams-radius-large: 18px;
-    /* Google Chat pill bubbles */
+    --teams-radius: 6px;
+    --teams-radius-large: 8px;
     --teams-transition: all 0.2s ease;
 
     display: block;
@@ -141,41 +143,89 @@
 
 /* Message Sender & Avatar formatting */
 .msg-avatar-container {
+    position: relative;
+    width: 36px;
     margin-right: 12px;
     flex-shrink: 0;
     align-self: flex-start;
     margin-top: 2px;
 }
 
+.msg-avatar-container.avatar-hidden {
+    visibility: hidden;
+}
+
 .msg-avatar {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 13px !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    font-size: 14px !important;
+}
+
+.sender-presence-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--teams-bg-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    z-index: 2;
+}
+
+.sender-presence-badge svg {
+    width: 8px;
+    height: 8px;
 }
 
 .message-received-content {
     display: flex;
     flex-direction: column;
-    max-width: 65%;
+    max-width: 70%;
+    position: relative;
 }
 
 .message-sender-header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
     margin-bottom: 4px;
-    padding-left: 4px;
+    padding-left: 2px;
+}
+
+.message-sender-header.sent-header {
+    justify-content: flex-end;
+    padding-right: 2px;
 }
 
 .message-sender-name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--teams-text-secondary);
+    color: var(--teams-text-primary);
 }
 
 .message-time-inline {
     font-size: 11px;
     color: var(--teams-text-muted);
+}
+
+.mention-badge-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: var(--teams-busy, #c4314b);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    margin-left: 4px;
 }
 
 .chat-user-info {
@@ -614,7 +664,7 @@
 
 .message-wrapper {
     display: flex;
-    margin-bottom: 16px;
+    margin-bottom: 4px;
     animation: messageSlideIn 0.2s ease;
 }
 
@@ -635,18 +685,37 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 20px 0 12px 0;
+    margin: 24px 0 16px 0;
     width: 100%;
+    position: relative;
+}
+
+.date-separator-wrapper::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background-color: var(--teams-border, #e0e2e5);
+    z-index: 1;
 }
 
 .date-separator-pill {
-    background-color: #f1f1f1;
-    color: #9e8b8b;
+    background-color: var(--teams-bg-main, #faf9f8);
+    border: 1px solid var(--teams-border, #e0e2e5);
+    color: var(--teams-text-muted, #616161);
     font-size: 12px;
-    font-weight: 500;
-    padding: 4px 14px;
+    font-weight: 600;
+    padding: 3px 16px;
     border-radius: 14px;
     letter-spacing: 0.2px;
+    z-index: 2;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.message-wrapper.sequential {
+    margin-bottom: 6px !important;
 }
 
 .message-wrapper.sent {
@@ -661,33 +730,22 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    max-width: 65%;
-}
-
-.message-received-content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    max-width: 65%;
+    max-width: 70%;
     position: relative;
 }
 
-.message-sent-content {
-    position: relative;
-}
-
-/* ===== WhatsApp Emoji Reaction Bar ===== */
+/* ===== Teams Emoji Reaction Bar ===== */
 .emoji-reaction-bar {
     position: absolute;
-    top: -15px;
+    top: -16px;
     background: #ffffff;
-    border: 1px solid #e0e2e5;
-    border-radius: 24px;
-    padding: 4px 8px;
+    border: 1px solid var(--teams-border);
+    border-radius: 20px;
+    padding: 2px 6px;
     display: flex;
     align-items: center;
     gap: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     z-index: 10;
     animation: fadeInHover 0.15s ease-out forwards;
 }
@@ -715,8 +773,8 @@
 .reaction-emoji-btn {
     background: transparent;
     border: none;
-    font-size: 18px;
-    padding: 4px 6px;
+    font-size: 16px;
+    padding: 3px 5px;
     border-radius: 50%;
     cursor: pointer;
     transition: transform 0.15s ease, background-color 0.15s ease;
@@ -727,7 +785,7 @@
 
 .reaction-emoji-btn:hover {
     transform: scale(1.3);
-    background-color: #f0f4f9;
+    background-color: var(--teams-hover);
 }
 
 /* ===== Displayed Reactions Badge ===== */
@@ -749,7 +807,7 @@
 
 .reaction-pill {
     background: #ffffff;
-    border: 1px solid #e0e2e5;
+    border: 1px solid var(--teams-border);
     border-radius: 12px;
     padding: 2px 8px;
     font-size: 12px;
@@ -763,40 +821,57 @@
 
 .reaction-pill:hover {
     transform: scale(1.08);
-    background: #f8fafd;
+    background: var(--teams-hover);
 }
 
 .reaction-pill.user-reacted {
-    background: #e8f0fe;
-    border-color: #a8c7fa;
-}
-
-.message-sender-header.sent-header {
-    justify-content: flex-end;
+    background: var(--teams-selected);
+    border-color: var(--teams-primary);
 }
 
 .message-bubble {
     max-width: 100%;
     position: relative;
+    border-radius: var(--teams-radius, 6px);
+    box-shadow: var(--teams-shadow);
+    padding: 7px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    transition: box-shadow 0.15s ease;
 }
 
-.message-bubble.no-bg {
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 4px 0 !important;
+.message-bubble:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
-.message-bubble.sent.no-bg {
+.message-bubble.received {
+    background-color: var(--teams-bg-message-received, #ffffff);
+    color: var(--teams-text-primary, #242424);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.message-bubble.received.mentioned-bubble {
+    border-left: 3px solid var(--teams-busy, #c4314b) !important;
+    background-color: #fffafb !important;
+}
+
+.message-bubble.sent {
+    background-color: var(--teams-bg-message-sent, #efe8f8);
+    color: var(--teams-text-primary, #242424);
+    border: 1px solid rgba(91, 95, 199, 0.1);
     display: flex;
+    flex-direction: column;
     align-items: flex-end;
-    gap: 8px;
-    justify-content: flex-end;
+}
+
+.message-bubble.sent .message-content {
+    width: 100%;
+    text-align: left;
 }
 
 .message-content.black-text {
-    color: #1f1f1f !important;
+    color: var(--teams-text-primary, #242424) !important;
     font-size: 14px;
     line-height: 1.5;
     font-weight: 400;
@@ -807,8 +882,11 @@
 .message-meta-inline {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     flex-shrink: 0;
     padding-bottom: 2px;
+    bottom: 0;
+    right: 0;
 }
 
 .message-meta {
@@ -834,37 +912,37 @@
 
 .message-status svg[ngswitchcase="2"] path,
 .message-status svg[ng-reflect-ng-switch-case="2"] path {
-    fill: #0b57d0 !important;
-    /* Google Blue for seen ticks */
+    fill: var(--teams-primary, #5b5fc7) !important;
 }
 
 .message-status svg {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
 }
 
 /* Message Input Area */
 .message-input-container {
-    padding: 16px 24px 24px;
+    padding: 16px 24px 20px;
     flex-shrink: 0;
-    background-color: var(--teams-bg-main);
+    background-color: var(--teams-bg-header, #ffffff);
     border-top: 1px solid var(--teams-border);
 }
 
 .message-input-wrapper {
     display: flex;
     align-items: flex-end;
-    background-color: var(--teams-bg-sidebar);
-    border-radius: var(--teams-radius-large);
-    border: 1px solid var(--teams-border);
+    background-color: #ffffff;
+    border-radius: var(--teams-radius, 6px);
+    border: 1px solid #c8c6c4;
     transition: var(--teams-transition);
     overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .message-input-wrapper:focus-within {
-    border-color: var(--teams-primary);
-    box-shadow: 0 0 0 2px rgba(91, 95, 199, 0.15);
-    background-color: var(--teams-bg-main);
+    border-color: var(--teams-primary, #5b5fc7);
+    box-shadow: 0 0 0 1px var(--teams-primary, #5b5fc7);
+    background-color: #ffffff;
 }
 
 .input-actions-left {
