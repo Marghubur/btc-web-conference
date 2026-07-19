@@ -56,6 +56,22 @@ export class ChatService {
         return this.http.post('storage/presigned-url', payload);
     }
 
+    async startMultipartUpload(payload: { fileName: string, contentType: string, conversationId: string }): Promise<any> {
+        return this.http.post('storage/multipart/start', payload);
+    }
+
+    async getMultipartPreSignedUrl(payload: { fileKey: string, uploadId: string, partNumber: number }): Promise<any> {
+        return this.http.post('storage/multipart/url', payload);
+    }
+
+    async completeMultipartUpload(payload: { fileKey: string, uploadId: string, parts: { partNumber: number, eTag: string }[] }): Promise<any> {
+        return this.http.post('storage/multipart/complete', payload);
+    }
+
+    async deleteFile(fileKey: string): Promise<any> {
+        return this.http.delete(`storage/delete?fileKey=${encodeURIComponent(fileKey)}`);
+    }
+
     async searchUsers(term: string): Promise<void> {
         if (!term) {
             this.searchResults.set([]);
@@ -78,8 +94,9 @@ export class ChatService {
                 avatar: user.avatar,
                 conversationId: user.id,
                 email: user.email,
+                userId: user.id,
                 participants: [{
-                    userId: user.userId,
+                    userId: user.id,
                     username: user.username,
                     firstName: user.firstName,
                     lastName: user.lastName,
@@ -91,7 +108,6 @@ export class ChatService {
                 }],
                 name: user.firstName + ' ' + user.lastName,
                 type: 'user',
-                userId: user.userId,
                 designation: user.designation
             })));
         }

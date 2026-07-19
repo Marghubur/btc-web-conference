@@ -426,6 +426,54 @@ export class ChatComponent implements OnInit, OnDestroy {
             if (res.isSuccess && res.responseBody) {
                 this.notifyGroupCreatedService.execute(res.responseBody.id, this.currentUserId);
                 this.chatService.getMeetingRooms();
+                
+                const currentUserName = this.user.firstName + " " + (this.user.lastName || '');
+                const convId = res.responseBody.id;
+
+                // 1st Notification: Sent to the whole group so members see it
+                let groupMsg: any = {
+                    conversationId: convId,
+                    messageId: crypto.randomUUID(),
+                    senderId: this.currentUserId,
+                    recievedId: null,
+                    type: "text",
+                    senderName: currentUserName,
+                    replyTo: null,
+                    mentions: [],
+                    reactions: [],
+                    clientType: "web",
+                    createdAt: new Date(),
+                    editedAt: null,
+                    status: 1,
+                    content: `Group "${this.newGroupName.trim()}" was created by ${currentUserName}.`,
+                    fileUrl: null
+                };
+                this.ws.sendEvent('send_notification', groupMsg);
+
+                // 2nd Notification: Sent specifically to the newly added members
+                allMembers.forEach(memberId => {
+                    if (memberId !== this.currentUserId) {
+                        let directMsg: any = {
+                            conversationId: convId, 
+                            messageId: crypto.randomUUID(),
+                            senderId: this.currentUserId,
+                            recievedId: memberId,
+                            type: "text",
+                            senderName: currentUserName,
+                            replyTo: null,
+                            mentions: [],
+                            reactions: [],
+                            clientType: "web",
+                            createdAt: new Date(),
+                            editedAt: null,
+                            status: 1,
+                            content: `You were added to the group "${this.newGroupName.trim()}" by ${currentUserName}.`,
+                            fileUrl: null
+                        };
+                        this.ws.sendEvent('send_notification', directMsg);
+                    }
+                });
+
                 this.closeNewChatPopup();
             } else {
                 console.error("Failed to create group:", res);

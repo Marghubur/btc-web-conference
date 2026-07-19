@@ -81,7 +81,7 @@
             </button>
             <!-- Members Button with Dropdown -->
             <div class="members-dropdown-container" [class.open]="showMembersDropdown">
-                <button class="header-action-btn" title="Members" (click)="toggleMembersDropdown()">
+                <button class="header-action-btn" title="Members" (click)="toggleMembersDropdown($event)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                         <circle cx="9" cy="7" r="4" />
@@ -91,7 +91,8 @@
                 </button>
                 <!-- Dropdown Panel -->
                 @if (showMembersDropdown) {
-                <div class="members-dropdown-panel" (click)="$event.stopPropagation()">
+                <div class="members-dropdown-panel" (click)="stopMembersPopoverPropagation($event)"
+                    [ngStyle]="{ 'position': 'fixed', 'top': membersPopoverTop + 'px', 'left': membersPopoverLeft + 'px', 'z-index': 1050, 'box-shadow': '0 4px 16px rgba(0,0,0,0.15)' }">
                     <!-- Members Section -->
                     <div class="dropdown-section">
                         <h4 class="dropdown-section-title">Members ({{
@@ -117,126 +118,127 @@
                     <!-- Add/Create Group Section -->
                     <div class="dropdown-section">
                         @if (ws.currentConversation()?.conversationType !== 'group') {
-                            @if (!showCreateGroupInput) {
-                            <button class="create-group-btn" (click)="showCreateGroupInput = true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 5v14M5 12h14" />
-                                </svg>
-                                <span>Create a Group</span>
-                            </button>
-                            } @else {
-                            <div class="create-group-form">
-                                <!-- Auto-generated Group Name -->
-                                <div class="form-group">
-                                    <label class="form-label">Group Name</label>
-                                    <input type="text" class="group-name-input" [(ngModel)]="newGroupName"
-                                        [placeholder]="getDefaultGroupName()" />
-                                </div>
-
-                                <!-- Selected Members -->
-                                <div class="form-group">
-                                    <label class="form-label">Members</label>
-                                    <div class="selected-members">
-                                        @for (member of ws.currentConversation()?.participants; track member.userId) {
-                                        <div class="selected-member-chip">
-                                            <div class="chip-avatar"
-                                                [ngStyle]="{ 'background-color': getColorFromName(member.firstName, member.lastName) }">
-                                                {{ getUserInitiaLetter(member.firstName, member.lastName) }}
-                                            </div>
-                                            <span>{{ member.firstName }}</span>
-                                        </div>
-                                        }
-                                        @for (member of newGroupMembers; track member.userId) {
-                                        <div class="selected-member-chip new-member">
-                                            <div class="chip-avatar"
-                                                [ngStyle]="{ 'background-color': getColorFromName(member.name, null) }">
-                                                {{ getUserInitiaLetter(member.name, null) }}
-                                            </div>
-                                            <span>{{ member.name.split(' ')[0] }}</span>
-                                            <button class="remove-member-btn"
-                                                (click)="removeNewGroupMember(member)">×</button>
-                                        </div>
-                                        }
-                                    </div>
-                                </div>
-
-                                <!-- Add Members Search -->
-                                <div class="form-group">
-                                    <label class="form-label">Add Members</label>
-                                    <div class="add-member-search">
-                                        <svg class="search-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2">
-                                            <circle cx="11" cy="11" r="8" />
-                                            <path d="M21 21l-4.35-4.35" />
-                                        </svg>
-                                        <input type="text" class="member-search-input" placeholder="Search users to add..."
-                                            [(ngModel)]="memberSearchQuery" (input)="onMemberSearch()"
-                                            (keydown)="onMemberSearchKeydown($event)" />
-                                    </div>
-                                    <!-- Search Results -->
-                                    @if (memberSearchResults.length > 0) {
-                                    <div class="member-search-results">
-                                        @for (result of memberSearchResults; track result.conversationId; let idx =
-                                        $index) {
-                                        <div class="member-search-item" [class.selected]="memberSearchSelectedIndex === idx"
-                                            (click)="addMemberToGroup(result)"
-                                            (mouseenter)="memberSearchSelectedIndex = idx">
-                                            <div class="member-avatar"
-                                                [ngStyle]="{ 'background-color': getColorFromName(result.name, null) }">
-                                                {{ getUserInitiaLetter(result.name, null) }}
-                                            </div>
-                                            <div class="member-info">
-                                                <span class="member-name">{{ result.name }}</span>
-                                                <span class="member-email">{{ result.email }}</span>
-                                            </div>
-                                        </div>
-                                        }
-                                    </div>
-                                    }
-                                </div>
-
-                                <div class="create-group-actions">
-                                    <button class="btn-cancel" (click)="cancelCreateGroup()">Cancel</button>
-                                    <button class="btn-create" (click)="createGroup()">Create</button>
-                                </div>
-                            </div>
-                            }
+                        @if (!showCreateGroupInput) {
+                        <button class="create-group-btn" (click)="showCreateGroupInput = true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
+                            <span>Create a Group</span>
+                        </button>
                         } @else {
-                            <!-- Existing Group Add Members Form -->
-                            <div class="create-group-form pt-2">
-                                <div class="form-group">
-                                    <label class="form-label">Add Member to Group</label>
-                                    <div class="add-member-search">
-                                        <svg class="search-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2">
-                                            <circle cx="11" cy="11" r="8" />
-                                            <path d="M21 21l-4.35-4.35" />
-                                        </svg>
-                                        <input type="text" class="member-search-input" placeholder="Search users to add..."
-                                            [(ngModel)]="memberSearchQuery" (input)="onMemberSearch()"
-                                            (keydown)="onMemberSearchKeydown($event)" />
-                                    </div>
-                                    <!-- Search Results -->
-                                    @if (memberSearchResults.length > 0) {
-                                    <div class="member-search-results">
-                                        @for (result of memberSearchResults; track result.conversationId; let idx = $index) {
-                                        <div class="member-search-item" [class.selected]="memberSearchSelectedIndex === idx"
-                                            (click)="addMemberToExistingGroup(result)"
-                                            (mouseenter)="memberSearchSelectedIndex = idx">
-                                            <div class="member-avatar"
-                                                [ngStyle]="{ 'background-color': getColorFromName(result.name, null) }">
-                                                {{ getUserInitiaLetter(result.name, null) }}
-                                            </div>
-                                            <div class="member-info">
-                                                <span class="member-name">{{ result.name }}</span>
-                                                <span class="member-email">{{ result.email }}</span>
-                                            </div>
+                        <div class="create-group-form">
+                            <!-- Auto-generated Group Name -->
+                            <div class="form-group">
+                                <label class="form-label">Group Name</label>
+                                <input type="text" class="group-name-input" [(ngModel)]="newGroupName"
+                                    [placeholder]="getDefaultGroupName()" />
+                            </div>
+
+                            <!-- Selected Members -->
+                            <div class="form-group">
+                                <label class="form-label">Members</label>
+                                <div class="selected-members">
+                                    @for (member of ws.currentConversation()?.participants; track member.userId) {
+                                    <div class="selected-member-chip">
+                                        <div class="chip-avatar"
+                                            [ngStyle]="{ 'background-color': getColorFromName(member.firstName, member.lastName) }">
+                                            {{ getUserInitiaLetter(member.firstName, member.lastName) }}
                                         </div>
-                                        }
+                                        <span>{{ member.firstName }}</span>
+                                    </div>
+                                    }
+                                    @for (member of newGroupMembers; track member.userId) {
+                                    <div class="selected-member-chip new-member">
+                                        <div class="chip-avatar"
+                                            [ngStyle]="{ 'background-color': getColorFromName(member.name, null) }">
+                                            {{ getUserInitiaLetter(member.name, null) }}
+                                        </div>
+                                        <span>{{ member.name.split(' ')[0] }}</span>
+                                        <button class="remove-member-btn"
+                                            (click)="removeNewGroupMember(member)">×</button>
                                     </div>
                                     }
                                 </div>
                             </div>
+
+                            <!-- Add Members Search -->
+                            <div class="form-group">
+                                <label class="form-label">Add Members</label>
+                                <div class="add-member-search">
+                                    <svg class="search-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <circle cx="11" cy="11" r="8" />
+                                        <path d="M21 21l-4.35-4.35" />
+                                    </svg>
+                                    <input type="text" class="member-search-input" placeholder="Search users to add..."
+                                        [(ngModel)]="memberSearchQuery" (input)="onMemberSearch()"
+                                        (keydown)="onMemberSearchKeydown($event)" />
+                                </div>
+                                <!-- Search Results -->
+                                @if (memberSearchResults.length > 0) {
+                                <div class="member-search-results">
+                                    @for (result of memberSearchResults; track result.conversationId; let idx =
+                                    $index) {
+                                    <div class="member-search-item" [class.selected]="memberSearchSelectedIndex === idx"
+                                        (click)="addMemberToGroup(result)"
+                                        (mouseenter)="memberSearchSelectedIndex = idx">
+                                        <div class="member-avatar"
+                                            [ngStyle]="{ 'background-color': getColorFromName(result.name, null) }">
+                                            {{ getUserInitiaLetter(result.name, null) }}
+                                        </div>
+                                        <div class="member-info">
+                                            <span class="member-name">{{ result.name }}</span>
+                                            <span class="member-email">{{ result.email }}</span>
+                                        </div>
+                                    </div>
+                                    }
+                                </div>
+                                }
+                            </div>
+
+                            <div class="create-group-actions">
+                                <button class="btn-cancel" (click)="cancelCreateGroup()">Cancel</button>
+                                <button class="btn-create" (click)="createGroup()">Create</button>
+                            </div>
+                        </div>
+                        }
+                        } @else {
+                        <!-- Existing Group Add Members Form -->
+                        <div class="create-group-form pt-2">
+                            <div class="form-group">
+                                <label class="form-label">Add Member to Group</label>
+                                <div class="add-member-search">
+                                    <svg class="search-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <circle cx="11" cy="11" r="8" />
+                                        <path d="M21 21l-4.35-4.35" />
+                                    </svg>
+                                    <input type="text" class="member-search-input" placeholder="Search users to add..."
+                                        [(ngModel)]="memberSearchQuery" (input)="onMemberSearch()"
+                                        (keydown)="onMemberSearchKeydown($event)" />
+                                </div>
+                                <!-- Search Results -->
+                                @if (memberSearchResults.length > 0) {
+                                <div class="member-search-results">
+                                    @for (result of memberSearchResults; track result.conversationId; let idx = $index)
+                                    {
+                                    <div class="member-search-item" [class.selected]="memberSearchSelectedIndex === idx"
+                                        (click)="addMemberToExistingGroup(result)"
+                                        (mouseenter)="memberSearchSelectedIndex = idx">
+                                        <div class="member-avatar"
+                                            [ngStyle]="{ 'background-color': getColorFromName(result.name, null) }">
+                                            {{ getUserInitiaLetter(result.name, null) }}
+                                        </div>
+                                        <div class="member-info">
+                                            <span class="member-name">{{ result.name }}</span>
+                                            <span class="member-email">{{ result.email }}</span>
+                                        </div>
+                                    </div>
+                                    }
+                                </div>
+                                }
+                            </div>
+                        </div>
                         }
                     </div>
                 </div>
@@ -632,7 +634,7 @@
         }
         }
 
-        @for (upload of pendingUploads(); track upload.id) {
+        <!-- @for (upload of pendingUploads(); track upload.id) {
         <div class="message-wrapper sent">
             <div class="message-sent-content">
                 <div class="message-bubble sent">
@@ -654,7 +656,7 @@
                 </div>
             </div>
         </div>
-        }
+        } -->
     </div>
 
     <!-- Message Input Area -->
@@ -717,27 +719,48 @@
         </div>
         }
 
-        @if (stagedFile()) {
-        <div class="staged-file-preview">
-            <div class="file-attachment-card">
-                <div class="file-icon-box">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                    </svg>
+        @if (stagedFiles() && stagedFiles().length > 0) {
+        <div class="staged-file-preview-container" style="display: flex; gap: 10px; flex-wrap: wrap; padding: 10px;">
+            @for (file of stagedFiles(); track $index) {
+            <div class="staged-file-preview">
+                <div class="file-attachment-card">
+                    <div class="file-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                    </div>
+                    <div class="file-details">
+                        <span class="file-name" [title]="file.fileName">{{ file.fileName }}</span>
+                        @if (file.fileSize) { <span class="file-size">{{ formatFileSize(file.fileSize) }}</span> }
+                    </div>
+                    <button class="remove-staged-file-btn" (click)="removeStagedFile($index)" title="Remove attachment">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
                 </div>
-                <div class="file-details">
-                    <span class="file-name" [title]="stagedFile().fileName">{{ stagedFile().fileName }}</span>
-                    @if (stagedFile().fileSize) { <span class="file-size">{{ formatFileSize(stagedFile().fileSize)
-                        }}</span> }
-                </div>
-                <button class="remove-staged-file-btn" (click)="removeStagedFile()" title="Remove attachment">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
             </div>
+            }
+        </div>
+        }
+
+        @if (pendingUploads() && pendingUploads().length > 0) {
+        <div class="upload-progress-container" style="padding: 10px;">
+            @for (upload of pendingUploads(); track upload.id) {
+            <div class="upload-progress-item" style="margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                    <span>Uploading: {{ upload.fileName }}</span>
+                    <span>{{ upload.progress }}%</span>
+                </div>
+                <div class="progress-bar-bg"
+                    style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+                    <div class="progress-bar-fill" [style.width.%]="upload.progress"
+                        style="height: 100%; background: var(--teams-brand); transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+            }
         </div>
         }
 
@@ -750,7 +773,8 @@
                         <path d="M12 4v16" />
                     </svg>
                 </button>
-                <input type="file" #fileAttachmentInput (change)="onFileSelected($event)" style="display: none;" />
+                <input type="file" multiple #fileAttachmentInput (change)="onFileSelected($event)"
+                    style="display: none;" />
                 <button class="input-action-btn" title="Attach file" (click)="fileAttachmentInput.click()"
                     [disabled]="isUploadingFile()">
                     @if (isUploadingFile()) {
@@ -787,8 +811,9 @@
                 (keyup.enter)="sendMessage()" placeholder="Type a new message or @mention" />
 
             <div class="input-actions-right">
-                <button class="send-btn" [disabled]="!ws.currentConversation() || (!message() && !stagedFile())" (click)="sendMessage()"
-                    title="Send message">
+                <button class="send-btn"
+                    [disabled]="!ws.currentConversation() || (!message() && (!stagedFiles() || stagedFiles().length === 0))"
+                    (click)="sendMessage()" title="Send message">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                     </svg>

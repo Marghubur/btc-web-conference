@@ -1,5 +1,6 @@
 import { Component, inject, Input, signal, ViewChild, ElementRef, AfterViewChecked, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpEventType, HttpRequest, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ConfeetSocketService } from '../../providers/socket/confeet-socket.service';
@@ -29,6 +30,7 @@ export class ChatContainerComponent implements AfterViewChecked {
   private router = inject(Router);
   private initiateAudioCallService = inject(InitiateAudioCallService);
   private notifyGroupCreatedService = inject(NotifyGroupCreatedService);
+  private httpClient = inject(HttpClient);
 
   // User data
   user: User = {
@@ -39,8 +41,9 @@ export class ChatContainerComponent implements AfterViewChecked {
 
   // Message state
   @ViewChild('messageInputRef') messageInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('membersDropdownRef') membersDropdownRef!: ElementRef;
   message = signal<string | null>('');
-  stagedFile = signal<any | null>(null);
+  stagedFiles = signal<any[]>([]);
   pendingUploads = signal<any[]>([]);
   replyingToMessage = signal<any | null>(null);
   pageIndex: number = 1;
@@ -51,6 +54,8 @@ export class ChatContainerComponent implements AfterViewChecked {
 
   // Members dropdown state
   showMembersDropdown: boolean = false;
+  membersPopoverTop: number = 0;
+  membersPopoverLeft: number = 0;
   showCreateGroupInput: boolean = false;
   newGroupName: string = '';
   newGroupMembers: SearchResult[] = [];
@@ -136,6 +141,8 @@ export class ChatContainerComponent implements AfterViewChecked {
       this.shouldPreserveScrollPosition = false;
     }
   }
+
+
 
   // Helper methods
   getCurrentInitiaLetter(conversation: Conversation): string {
@@ -524,6 +531,12 @@ export class ChatContainerComponent implements AfterViewChecked {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
+
+    // If the click target was removed from the DOM during event bubbling, ignore it
+    if (target && !document.contains(target)) {
+      return;
+    }
+
     if (this.showEmojiPicker() && !target.closest('.emoji-picker-popover') && !target.closest('.input-action-btn[title="Emoji"]')) {
       this.showEmojiPicker.set(false);
     }
@@ -598,12 +611,39 @@ export class ChatContainerComponent implements AfterViewChecked {
     });
   }
 
-  // Members Dropdown Methods
-  toggleMembersDropdown(): void {
-    this.showMembersDropdown = !this.showMembersDropdown;
-    if (!this.showMembersDropdown) {
-      this.cancelCreateGroup();
+  // Members Popover Methods
+  private membersPopoverCloseHandler = (event: Event) => {
+    // If the click target was removed from the DOM during event bubbling (e.g. clicking a search result), ignore it
+    if (event.target instanceof Node && !document.contains(event.target)) {
+      return;
     }
+    this.showMembersDropdown = false;
+    this.cancelCreateGroup();
+    document.removeEventListener('click', this.membersPopoverCloseHandler);
+  };
+
+  toggleMembersDropdown(event: Event): void {
+    event.stopPropagation();
+    this.showMembersDropdown = !this.showMembersDropdown;
+    
+    if (this.showMembersDropdown) {
+      // Compute fixed position for popover
+      const trigger = event.currentTarget as HTMLElement;
+      const rect = trigger.getBoundingClientRect();
+      this.membersPopoverTop = rect.bottom + 6;
+      this.membersPopoverLeft = rect.right - 280; // Approximate width of the panel to align right edges
+      
+      setTimeout(() => {
+        document.addEventListener('click', this.membersPopoverCloseHandler);
+      }, 0);
+    } else {
+      this.cancelCreateGroup();
+      document.removeEventListener('click', this.membersPopoverCloseHandler);
+    }
+  }
+
+  stopMembersPopoverPropagation(event: Event): void {
+    event.stopPropagation();
   }
 
   cancelCreateGroup(): void {
@@ -777,6 +817,53 @@ export class ChatContainerComponent implements AfterViewChecked {
       this.memberSearchResults = [];
       this.memberSearchSelectedIndex = -1;
       this.showMembersDropdown = false;
+      this.cancelCreateGroup();
+
+      const currentUserName = this.user.firstName + " " + (this.user.lastName || '');
+
+      // 1st Notification: Sent to the whole group so existing members see it
+      let groupMsg: any = {
+        conversationId: conv.id,
+        messageId: crypto.randomUUID(),
+        senderId: this.currentUserId,
+        recievedId: null,
+        type: "text",
+        senderName: currentUserName,
+        replyTo: null,
+        mentions: [],
+        reactions: [],
+        clientType: "web",
+        createdAt: new Date(),
+        editedAt: null,
+        status: 1,
+        content: `${member.name} was added to the group by ${currentUserName}.`,
+        fileUrl: null
+      };
+      
+      this.chatService.messages.update(msgs => [...msgs, groupMsg]);
+      this.ws.sendEvent('send_notification', groupMsg);
+
+      // 2nd Notification: Sent specifically to the newly added member
+      let directMsg: any = {
+        conversationId: conv.id, 
+        messageId: crypto.randomUUID(),
+        senderId: this.currentUserId,
+        recievedId: member.userId,
+        type: "text",
+        senderName: currentUserName,
+        replyTo: null,
+        mentions: [],
+        reactions: [],
+        clientType: "web",
+        createdAt: new Date(),
+        editedAt: null,
+        status: 1,
+        content: `You were added to this group by ${currentUserName}.`,
+        fileUrl: null
+      };
+      // We don't add this to the local UI because it's meant for the other user.
+      this.ws.sendEvent('send_notification', directMsg);
+
     } catch (err) {
       console.error('Failed to add member to group', err);
     }
@@ -875,7 +962,8 @@ export class ChatContainerComponent implements AfterViewChecked {
 
   private send(response: any) {
     const hasText = this.message() != null && this.message() !== '';
-    const hasFile = this.stagedFile() != null;
+    const files = this.stagedFiles();
+    const hasFile = files && files.length > 0;
 
     if ((!hasText && !hasFile) || response.id == null) {
       return;
@@ -885,40 +973,60 @@ export class ChatContainerComponent implements AfterViewChecked {
     const mentionsArray = Array.from(this.pendingMentions);
     const cleanContent = this.cleanMessageBeforeSending(this.message() || '', mentionsArray);
 
-    let event: any = {
-      conversationId: response.id,
-      messageId: crypto.randomUUID(),
-      senderId: this.currentUserId,
-      recievedId: null,
-      type: hasFile ? "file" : "text",
-      senderName: currentUserName,
-      replyTo: this.replyingToMessage() ? (this.replyingToMessage().id || this.replyingToMessage().messageId) : null,
-      mentions: mentionsArray,
-      reactions: [],
-      clientType: "web",
-      createdAt: new Date(),
-      editedAt: null,
-      status: 1
-    };
-
     if (hasFile) {
-      const fileData = this.stagedFile();
-      event.fileUrl = fileData.url;
-      event.content = JSON.stringify({
-        fileName: fileData.fileName,
-        fileSize: fileData.fileSize,
-        fileType: fileData.fileType,
-        url: fileData.url,
-        text: cleanContent // embed text in file JSON
-      });
-      this.stagedFile.set(null);
+      for (let i = 0; i < files.length; i++) {
+        const fileData = files[i];
+        const isFirst = i === 0;
+
+        let event: any = {
+          conversationId: response.id,
+          messageId: crypto.randomUUID(),
+          senderId: this.currentUserId,
+          recievedId: null,
+          type: "file",
+          senderName: currentUserName,
+          replyTo: isFirst && this.replyingToMessage() ? (this.replyingToMessage().id || this.replyingToMessage().messageId) : null,
+          mentions: isFirst ? mentionsArray : [],
+          reactions: [],
+          clientType: "web",
+          createdAt: new Date(),
+          editedAt: null,
+          status: 1,
+          fileUrl: fileData.url,
+          content: JSON.stringify({
+            fileName: fileData.fileName,
+            fileSize: fileData.fileSize,
+            fileType: fileData.fileType,
+            url: fileData.url,
+            text: isFirst ? cleanContent : ''
+          })
+        };
+        this.chatService.messages.update(msgs => [...msgs, event]);
+        this.ws.sendMessage(event);
+      }
+      this.stagedFiles.set([]);
     } else {
-      event.content = cleanContent;
-      event.fileUrl = null;
+      let event: any = {
+        conversationId: response.id,
+        messageId: crypto.randomUUID(),
+        senderId: this.currentUserId,
+        recievedId: null,
+        type: "text",
+        senderName: currentUserName,
+        replyTo: this.replyingToMessage() ? (this.replyingToMessage().id || this.replyingToMessage().messageId) : null,
+        mentions: mentionsArray,
+        reactions: [],
+        clientType: "web",
+        createdAt: new Date(),
+        editedAt: null,
+        status: 1,
+        content: cleanContent,
+        fileUrl: null
+      };
+      this.chatService.messages.update(msgs => [...msgs, event]);
+      this.ws.sendMessage(event);
     }
 
-    this.chatService.messages.update(msgs => [...msgs, event]);
-    this.ws.sendMessage(event);
     this.message.set('');
     this.pendingMentions.clear();
     this.replyingToMessage.set(null);
@@ -968,7 +1076,8 @@ export class ChatContainerComponent implements AfterViewChecked {
   async onFileSelected(event: any) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
-    const file = input.files[0];
+    const files = Array.from(input.files);
+
     if (!this.ws.currentConversation() || !this.ws.currentConversation().id) {
       if (this.ws.currentConversation() && this.ws.currentConversation().id == null) {
         try {
@@ -993,48 +1102,148 @@ export class ChatContainerComponent implements AfterViewChecked {
     }
 
     this.isUploadingFile.set(true);
-    const uploadId = crypto.randomUUID();
-    this.pendingUploads.update(uploads => [...uploads, { id: uploadId, fileName: file.name, fileSize: file.size }]);
 
-    try {
-      const payload = {
-        fileName: file.name,
-        contentType: file.type || 'application/octet-stream',
-        conversationId: this.ws.currentConversation().id
-      };
+    const uploadPromises = files.map(async (file) => {
+        const uploadId = crypto.randomUUID();
+        this.pendingUploads.update(uploads => [...uploads, { id: uploadId, fileName: file.name, fileSize: file.size, progress: 0 }]);
 
-      const res: any = await this.chatService.getPresignedUrl(payload);
-      if (res.isSuccess && res.responseBody) {
-        const { uploadUrl, publicUrl } = res.responseBody;
+        try {
+            const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+            if (file.size > CHUNK_SIZE) {
+                // Multipart Upload
+                const startPayload = {
+                    fileName: file.name,
+                    contentType: file.type || 'application/octet-stream',
+                    conversationId: this.ws.currentConversation().id
+                };
+                const startRes: any = await this.chatService.startMultipartUpload(startPayload);
+                if (!startRes.isSuccess || !startRes.responseBody) throw new Error("Failed to start multipart");
+                const { uploadId: s3UploadId, fileKey } = startRes.responseBody;
+                
+                const numChunks = Math.ceil(file.size / CHUNK_SIZE);
+                let completedParts: { partNumber: number, eTag: string }[] = [];
+                let uploadedBytes = 0;
 
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type || 'application/octet-stream'
-          }
-        });
+                // Upload chunks concurrently in batches of 4
+                const CONCURRENCY = 4;
+                for (let i = 0; i < numChunks; i += CONCURRENCY) {
+                    const chunkPromises = [];
+                    for (let j = 0; j < CONCURRENCY && i + j < numChunks; j++) {
+                        const partNumber = i + j + 1;
+                        const start = (partNumber - 1) * CHUNK_SIZE;
+                        const end = Math.min(start + CHUNK_SIZE, file.size);
+                        const chunk = file.slice(start, end);
 
-        if (uploadRes.ok || uploadRes.status === 200) {
-          this.stagedFile.set({ fileName: file.name, url: publicUrl, fileSize: file.size, fileType: file.type });
-        } else {
-          alert('File upload to Cloudflare R2 failed: Status ' + uploadRes.status);
+                        const chunkPromise = (async () => {
+                            const urlRes: any = await this.chatService.getMultipartPreSignedUrl({ fileKey, uploadId: s3UploadId, partNumber });
+                            if (!urlRes.isSuccess || !urlRes.responseBody) throw new Error("Failed to get part url");
+                            const uploadUrl = urlRes.responseBody.uploadUrl;
+
+                            return await new Promise<{partNumber: number, eTag: string}>((resolve, reject) => {
+                                const req = new HttpRequest('PUT', uploadUrl, chunk, { reportProgress: true });
+                                let lastLoaded = 0;
+                                this.httpClient.request(req).subscribe({
+                                    next: (event: any) => {
+                                        if (event.type === HttpEventType.UploadProgress && event.total) {
+                                            const diff = event.loaded - lastLoaded;
+                                            lastLoaded = event.loaded;
+                                            uploadedBytes += diff;
+                                            this.pendingUploads.update(uploads => {
+                                                const up = uploads.find(u => u.id === uploadId);
+                                                if (up) up.progress = Math.round((uploadedBytes / file.size) * 100);
+                                                return [...uploads];
+                                            });
+                                        } else if (event.type === HttpEventType.Response) {
+                                            if (event.status === 200 || event.ok) {
+                                                const eTag = event.headers.get('ETag');
+                                                if (!eTag) reject(new Error("No ETag in response"));
+                                                else resolve({ partNumber, eTag: eTag });
+                                            } else {
+                                                reject(new Error("Part upload failed"));
+                                            }
+                                        }
+                                    },
+                                    error: (err) => reject(err)
+                                });
+                            });
+                        })();
+                        chunkPromises.push(chunkPromise);
+                    }
+                    const results = await Promise.all(chunkPromises);
+                    completedParts.push(...results);
+                }
+
+                completedParts.sort((a, b) => a.partNumber - b.partNumber);
+                const completeRes: any = await this.chatService.completeMultipartUpload({ fileKey, uploadId: s3UploadId, parts: completedParts });
+                if (!completeRes.isSuccess || !completeRes.responseBody) throw new Error("Complete failed");
+                
+                this.stagedFiles.update(files => [...files, { fileName: file.name, url: completeRes.responseBody.publicUrl, fileSize: file.size, fileType: file.type, fileKey: fileKey }]);
+            } else {
+                // Standard Single Upload
+                const payload = {
+                    fileName: file.name,
+                    contentType: file.type || 'application/octet-stream',
+                    conversationId: this.ws.currentConversation().id
+                };
+                const res: any = await this.chatService.getPresignedUrl(payload);
+                if (res.isSuccess && res.responseBody) {
+                    const { uploadUrl, publicUrl, fileKey } = res.responseBody;
+                    
+                    await new Promise((resolve, reject) => {
+                        const req = new HttpRequest('PUT', uploadUrl, file, {
+                            reportProgress: true,
+                            responseType: 'text',
+                            headers: new HttpHeaders({ 'Content-Type': 'application/octet-stream' })
+                        });
+                        this.httpClient.request(req).subscribe({
+                            next: (event: any) => {
+                                if (event.type === HttpEventType.UploadProgress && event.total) {
+                                    const progress = Math.round(100 * event.loaded / event.total);
+                                    this.pendingUploads.update(uploads => {
+                                        const up = uploads.find(u => u.id === uploadId);
+                                        if (up) up.progress = progress;
+                                        return [...uploads];
+                                    });
+                                } else if (event.type === HttpEventType.Response) {
+                                    if (event.status === 200 || event.ok) {
+                                        this.stagedFiles.update(files => [...files, { fileName: file.name, url: publicUrl, fileSize: file.size, fileType: file.type, fileKey: fileKey }]);
+                                        resolve(event);
+                                    } else {
+                                        reject(new Error("Upload failed"));
+                                    }
+                                }
+                            },
+                            error: (err) => reject(err)
+                        });
+                    });
+                } else {
+                    throw new Error("Presigned URL failed");
+                }
+            }
+        } catch (err) {
+            console.error('File upload error:', err);
+            alert(`Error uploading file: ${file.name}`);
+        } finally {
+            this.pendingUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
         }
-      } else {
-        alert('Could not obtain presigned upload URL from server.');
-      }
-    } catch (err) {
-      console.error('File upload error:', err);
-      alert('Error uploading file.');
-    } finally {
-      this.isUploadingFile.set(false);
-      this.pendingUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
-      input.value = '';
-    }
+    });
+
+    await Promise.all(uploadPromises);
+    this.isUploadingFile.set(false);
+    input.value = '';
   }
 
-  removeStagedFile() {
-    this.stagedFile.set(null);
+  async removeStagedFile(index: number) {
+    const files = this.stagedFiles();
+    const fileToRemove = files[index];
+    if (fileToRemove && fileToRemove.fileKey) {
+        try {
+            await this.chatService.deleteFile(fileToRemove.fileKey);
+        } catch (e) {
+            console.error('Error deleting file from storage:', e);
+        }
+    }
+    this.stagedFiles.update(files => files.filter((_, i) => i !== index));
   }
 
   private sendFileMessage(fileName: string, fileUrl: string, fileSize: number, fileType: string) {
