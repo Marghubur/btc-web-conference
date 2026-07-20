@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, input, viewChild, effect } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, input, viewChild, effect, computed } from '@angular/core';
 import { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client';
 import { MeetingService } from '../meeting/meeting.service';
 
@@ -19,6 +19,13 @@ export class VideoComponent implements AfterViewInit, OnDestroy {
     isMute = input(false);
     isScreenShare = input(false);
     isActiveSpeaker = input(false);
+
+    isHandRaised = computed(() => {
+        const name = this.participantIdentity();
+        const statusList = this.meetingService.roomService.handChnageStatus();
+        const status = statusList.find(x => x.name === name);
+        return status ? status.isHandRaise : false;
+    });
 
     private attachedElement: HTMLVideoElement | null = null;
 

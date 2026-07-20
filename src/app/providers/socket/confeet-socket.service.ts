@@ -23,6 +23,7 @@ export class ConfeetSocketService {
     pong$: Observable<PongPayload>;
     initUserList$: Observable<User[]>;
     messageReacted$: Observable<any>;
+    userStatus$: Observable<any>;
     //--------------------------------------------------------------
     currentConversation = signal<Conversation | null>(null);
     currentConversationId = signal<string | null>(null);
@@ -44,6 +45,7 @@ export class ConfeetSocketService {
         this.pong$ = this.onEvent<PongPayload>(WsEvents.PONG);
         this.initUserList$ = this.onEvent<User[]>(WsEvents.INIT_USERLIST);
         this.messageReacted$ = this.onEvent<any>(WsEvents.MESSAGE_REACTED);
+        this.userStatus$ = this.onEvent<any>(WsEvents.USER_STATUS);
         console.log(this.initUserList$)
     }
 
@@ -106,6 +108,10 @@ export class ConfeetSocketService {
     // Send message
     getInitUser(): void {
         return this.send(WsEvents.INIT_USERLIST, {});
+    }
+
+    updateStatus(status: string): void {
+        this.send(WsEvents.UPDATE_STATUS, { status });
     }
 
     // Mark as delivered
@@ -255,6 +261,7 @@ export const WsEvents = {
     REACT_MESSAGE: 'react_message',
     HEARTBEAT: 'heartbeat', // Client sends ping for heartbeat
     INIT_USERLIST: 'init_userlist',
+    UPDATE_STATUS: 'update_status',
 
     // Server -> Client
     NEW_MESSAGE: 'new_message',
@@ -263,6 +270,7 @@ export const WsEvents = {
     DELIVERED: 'delivered',
     SEEN: 'seen',
     USER_TYPING: 'user_typing',
+    USER_STATUS: 'user_status',
     ERROR: 'error',
     PONG: 'pong' // Server responds with pong
 } as const;

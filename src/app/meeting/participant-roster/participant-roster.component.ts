@@ -4,8 +4,9 @@ import { FormGroup } from '@angular/forms';
 import { RemoteParticipant, LocalVideoTrack, RemoteVideoTrack } from 'livekit-client';
 import { MeetingService } from '../meeting.service';
 import { InvitedParticipant } from '../meeting.component';
-import { CallParticipant } from '../../models/conference_call/call_model';
+import { CallParticipant, CallStatus } from '../../models/conference_call/call_model';
 import { VideoComponent } from '../../video/video.component';
+import { NotificationService } from '../../notifications/services/notification.service';
 
 export interface RosterParticipantItem {
     id: string;
@@ -31,6 +32,7 @@ export interface RosterParticipantItem {
 export class ParticipantRosterComponent {
     // Inject services directly
     meetingService = inject(MeetingService);
+    notificationService = inject(NotificationService);
 
     // Required inputs
     @Input() roomForm!: FormGroup;
@@ -41,8 +43,8 @@ export class ParticipantRosterComponent {
     // Track which participants are currently being called
     callingParticipants = signal<Set<string>>(new Set());
 
-    // Timeout duration in milliseconds (10 seconds)
-    private readonly CALLING_TIMEOUT = 10000;
+    // Timeout duration in milliseconds (120 seconds)
+    private readonly CALLING_TIMEOUT = 120000;
 
     isCallingParticipant(userId: string): boolean {
         return this.callingParticipants().has(userId);
@@ -146,8 +148,24 @@ export class ParticipantRosterComponent {
         // Reset after timeout
         setTimeout(() => {
             const updatedSet = new Set(this.callingParticipants());
-            updatedSet.delete(invited.userId);
-            this.callingParticipants.set(updatedSet);
+            if (updatedSet.has(invited.userId)) {
+                updatedSet.delete(invited.userId);
+                this.callingParticipants.set(updatedSet);
+                
+                // Show timeout notification if the user is still not in the meeting room
+                const isAccepted = this.meetingService.filteredInvitedParticipants(true).some(p => p.userId === invited.userId);
+                if (!isAccepted) {
+                    this.notificationService.showNotification({
+                        id: crypto.randomUUID(),
+                        type: 'warning',
+                        title: 'No response',
+                        content: `${invited.name} did not answer the call.`,
+                        conversationId: '',
+                        timestamp: new Date(),
+                        read: false
+                    });
+                }
+            }
         }, this.CALLING_TIMEOUT);
     }
 }

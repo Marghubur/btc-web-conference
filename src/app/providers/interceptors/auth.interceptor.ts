@@ -43,7 +43,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const token = jwtService.getJwtToken();
     let authReq = req;
 
-    if (token) {
+    // Do not add Authorization header to S3/R2 presigned URLs
+    if (token && !req.url.includes('X-Amz-Signature')) {
         authReq = req.clone({
             setHeaders: {
                 Authorization: `Bearer ${token}`

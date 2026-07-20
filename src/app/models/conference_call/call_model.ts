@@ -26,6 +26,9 @@ export const CallEvents = {
     // EventCallEnd - Either party ends an ongoing call
     CALL_END: 'call:end',
 
+    // EventCallInvite - Caller invites a specific user to an active call
+    CALL_INVITE: 'call:invite',
+
     // EventJoiningRequest - Either party ends an ongoing call
     JOINING_REQUEST: 'call:raise-joining-request',
 
@@ -210,6 +213,17 @@ export interface CallInitiatePayload {
     calleeIds: string[];            // User(s) to call
     callType: CallTypeValue;        // "audio" or "video"
     timeout?: number;               // Ring timeout in seconds (default 40)
+}
+
+/** CallInvitePayload is sent by caller to invite a specific user to an active call */
+export interface CallInvitePayload {
+    targetUserId: string;           // The user being invited
+    callerId: string;
+    callerName?: string;
+    callerAvatar?: string;
+    conversationId: string;         // Current Conversation/room ID
+    callType: CallTypeValue;        // "audio" or "video"
+    timeout?: number;               // Ring timeout in seconds
 }
 
 /** CallAcceptPayload is sent by callee to accept a call */

@@ -150,6 +150,11 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     // Use signal for participant filter to make it reactive
     private participantFilterSignal = signal('');
 
+    // Add People Modal Search State
+    memberSearchQuery: string = '';
+    memberSearchResults: any[] = [];
+    memberSearchSelectedIndex: number = -1;
+
     toggleParticipanatsList() {
         this.isViewParticipant = !this.isViewParticipant;
     }
@@ -157,6 +162,105 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     filterParticipants(event: Event): void {
         const target = event.target as HTMLInputElement;
         this.participantFilterSignal.set(target.value);
+    }
+
+    onMemberSearch(): void {
+        this.memberSearchSelectedIndex = -1;
+        if (!this.memberSearchQuery || this.memberSearchQuery.length < 2) {
+            this.memberSearchResults = [];
+            return;
+        }
+
+        this.chatService.searchUsers(this.memberSearchQuery).then(() => {
+            const existingIds = this.meetingService.remoteParticipants() 
+                ? Array.from(this.meetingService.remoteParticipants().values()).map(p => p.identity) 
+                : [];
+            
+            // Exclude already connected users or the local user
+            const currentUserId = this.local.getUser()?.userId || '';
+            this.memberSearchResults = this.chatService.searchResults()
+                .filter(user => user.userId !== currentUserId && !existingIds.includes(user.userId) && !existingIds.includes((user as any).email));
+        });
+    }
+
+    onMemberSearchKeydown(event: KeyboardEvent): void {
+        const total = this.memberSearchResults.length;
+        if (total === 0) return;
+
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                this.memberSearchSelectedIndex = Math.min(this.memberSearchSelectedIndex + 1, total - 1);
+                break;
+            case 'ArrowUp':
+                event.preventDefault();
+                this.memberSearchSelectedIndex = Math.max(this.memberSearchSelectedIndex - 1, -1);
+                break;
+            case 'Enter':
+                event.preventDefault();
+                if (this.memberSearchSelectedIndex >= 0 && this.memberSearchSelectedIndex < total) {
+                    this.addParticipantToCall(this.memberSearchResults[this.memberSearchSelectedIndex]);
+                }
+                break;
+            case 'Escape':
+                event.preventDefault();
+                this.memberSearchQuery = '';
+                this.memberSearchResults = [];
+                this.memberSearchSelectedIndex = -1;
+                break;
+        }
+    }
+
+    addParticipantToCall(user: any): void {
+        const conversation = this.ws.currentConversation();
+        
+        if (conversation && conversation.conversationType !== 'group') {
+            // Direct call -> Automatically create a group call
+            
+            const existingParticipantId = conversation.participants.find(p => p.userId !== this.local.getUser()?.userId)?.userId;
+            const newGroupMembers = [user];
+            if (existingParticipantId) {
+                // To create a group, we pass the other direct call member AND the new user
+                const otherMember = { conversationId: existingParticipantId, userId: existingParticipantId };
+                newGroupMembers.push(otherMember);
+            }
+            
+            // Create a group and initiate a call in the new group room
+            this.chatService.createGroupConversation(this.local.getUser()?.userId || '', { title: "Group Call", members: newGroupMembers.map(m => m.userId) }).then(res => {
+                if (res.isSuccess) {
+                    const newConversation = res.responseBody;
+                    // Switch to the new conversation room (navigation)
+                    this.router.navigate(['/btc/chat'], { queryParams: { conversationId: newConversation.id } });
+                    
+                    // The backend automatically initiates the call or we do it here?
+                    // Actually, if we switch rooms, we might need to hang up and call again in the new room
+                    // For now, let's just use InviteService on the existing room, or trigger initiate in the new one.
+                    // The easiest approach is to create the group, then we can invite the new user into the current session,
+                    // but the meeting room ID is tied to the conversation.
+                    
+                    // As per requirements: "1. create automatically new group 2. Adding a user to a Group Call follow rule as teams followed."
+                    // Let's invite them to the CURRENT meeting room (so they join as temporary participant in this direct call room),
+                    // but we also create the group chat for future history.
+                    
+                    this.meetingService.requestToJoin({ userId: user.userId, name: user.name, email: user.email } as any);
+                }
+            });
+        } else {
+            // Group call -> Just invite them as temporary participant to the meeting
+            this.meetingService.requestToJoin({ userId: user.userId, name: user.name, email: user.email } as any);
+        }
+        
+        // Reset search
+        this.memberSearchQuery = '';
+        this.memberSearchResults = [];
+        this.memberSearchSelectedIndex = -1;
+        
+        // Close modal
+        const addPeopleModal = document.getElementById('addPeopleModal');
+        if (addPeopleModal) {
+            const bootstrapModal = (window as any).bootstrap?.Modal?.getInstance(addPeopleModal);
+            if (bootstrapModal) bootstrapModal.hide();
+        }
     }
 
     // Getter methods to expose meetingService signals reactively

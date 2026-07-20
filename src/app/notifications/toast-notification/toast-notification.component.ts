@@ -27,7 +27,7 @@ import { AppNotification, NotificationService } from '../services/notification.s
                         <span class="toast-title">{{ toast.title }}</span>
                         <button class="toast-close" (click)="dismiss(toast, $event)">×</button>
                     </div>
-                    <div class="toast-body">{{ toast.content | slice:0:100 }}{{ toast.content.length > 100 ? '...' : '' }}</div>
+                    <div class="toast-body">{{ formatContent(toast.content) }}</div>
                     <div class="toast-time">{{ getTimeAgo(toast.timestamp) }}</div>
                 </div>
             }
@@ -192,5 +192,25 @@ export class ToastNotificationComponent {
         if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
         if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
         return `${Math.floor(diff / 86400)}d ago`;
+    }
+
+    formatContent(content: string): string {
+        if (!content) return '';
+        let displayContent = content;
+        try {
+            if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+                const parsed = JSON.parse(content);
+                if (parsed.fileName) {
+                    displayContent = `📎 ${parsed.fileName}`;
+                }
+            }
+        } catch (e) {
+            // Ignore parse errors, it's just normal text
+        }
+
+        if (displayContent.length > 100) {
+            return displayContent.slice(0, 100) + '...';
+        }
+        return displayContent;
     }
 }
