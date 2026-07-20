@@ -34,6 +34,9 @@ export class RoomService {
   remoteParticipants = signal<Map<string, RemoteParticipant>>(new Map());
   activeSpeakers = signal<Set<string>>(new Set());
   lastActiveSpeaker = signal<string | null>(null);
+  
+  isRecording = signal<boolean>(false);
+
   latestScreenShare = new BehaviorSubject<{ participant: Participant; track: RemoteVideoTrack; } | null>(null);
   // Expose reactions as observable
   reactions = signal<{ id: string; emoji: string, name: string }[]>([]);
@@ -42,6 +45,9 @@ export class RoomService {
   private counter = 0;
   private _newMessage = signal<{ id: string, message: string } | null>(null);
   newMessage = this._newMessage.asReadonly(); // expose readonly signal
+  
+  // Commands received from DataChannel (e.g. MUTE_ALL)
+  public incomingCommands = new Subject<any>();
 
   constructor(private httpClient: HttpClient, private http: HttpHandlerService) {
     http.setSFUProdEnabled(true);
@@ -236,6 +242,8 @@ export class RoomService {
         this.addReaction(msg.emoji, participant?.identity!);
       } else if (msg.type === Chat) {
         this.addMessage(msg.message, participant?.identity!);
+      } else if (msg.type === 'MUTE_ALL') {
+        this.incomingCommands.next({ type: 'MUTE_ALL', sender: participant?.identity });
       }
     });
 
@@ -388,6 +396,27 @@ export class RoomService {
   private addMessage(message: string, name: string, isSender: boolean = false) {
     const id = ++this.counter;
     this.chatsMessage.update((list) => [...list, { id: crypto.randomUUID(), message: message, name: name, isSender: isSender, time: new Date() }]);
+  }
+
+  muteAll() {
+    const r = this.room();
+    if (r) {
+      r.localParticipant.publishData(new TextEncoder().encode(JSON.stringify({ type: 'MUTE_ALL' })), { reliable: true });
+    }
+  }
+
+  toggleRecording(roomName: string) {
+    if (this.isRecording()) {
+      this.httpClient.post(this.APPLICATION_SERVER_URL + 'api/recording/stop', { roomName }).subscribe({
+        next: () => this.isRecording.set(false),
+        error: (err) => console.error('Error stopping recording', err)
+      });
+    } else {
+      this.httpClient.post(this.APPLICATION_SERVER_URL + 'api/recording/start', { roomName }).subscribe({
+        next: () => this.isRecording.set(true),
+        error: (err) => console.error('Error starting recording', err)
+      });
+    }
   }
 
   async leaveRoom() {

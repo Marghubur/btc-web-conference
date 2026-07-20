@@ -60,6 +60,22 @@ export class ChatService {
         return this.http.post('storage/multipart/start', payload);
     }
 
+    updateUserStatus(userId: string, status: string): void {
+        this.searchResults.update(results => {
+            return results.map(res => {
+                const parts = res.participants?.map(p => p.userId === userId ? { ...p, status: status } : p) || [];
+                return { ...res, participants: parts as any };
+            });
+        });
+        
+        this.meetingRooms.update(rooms => {
+            return rooms.map(room => {
+                const parts = room.participants?.map(p => p.userId === userId ? { ...p, status: status } : p) || [];
+                return { ...room, participants: parts as any };
+            });
+        });
+    }
+
     async getMultipartPreSignedUrl(payload: { fileKey: string, uploadId: string, partNumber: number }): Promise<any> {
         return this.http.post('storage/multipart/url', payload);
     }

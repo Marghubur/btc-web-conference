@@ -8,12 +8,12 @@ import {
 
 import { Conversation, Participant, LastMessage } from '../../components/global-search/search.models';
 import { ChatService } from '../../chat/chat.service';
-import { User } from '../../models/model';
+import { GetStatusName, User } from '../../models/model';
 import { LocalService } from '../../providers/services/local.service';
 
 export interface AppNotification {
     id: string;
-    type: 'message' | 'delivered' | 'seen' | 'typing' | 'error';
+    type: 'message' | 'delivered' | 'seen' | 'typing' | 'error' | 'warning';
     title: string;
     content: string;
     conversationId: string;
@@ -187,7 +187,7 @@ export class NotificationService {
                     avatar: m.avatar || '',
                     joinedAt: null,
                     role: m.role || 'member',
-                    status: (m.status || m.presence_status || 'offline').toLowerCase(),
+                    status: GetStatusName(m.status),
                     lastSeen: m.last_seen || m.lastSeen || 0
                 }));
                 const participantIds = participants.map(p => p.userId);
@@ -307,17 +307,17 @@ export class NotificationService {
         }
     }
 
-	private handleSeen(seen: MessageSeen): void {
-		// Update message status in active conversation
-		const msg = this.chatService.messages().find(m => m.id === seen.id);
-		if (msg) {
-			// Mark as seen in UI
-			console.log('Message seen:', seen.id);
-			this.chatService.messages.update(msgs =>
-				msgs.map(x => x.id === seen.id ? { ...x, status: 3 } : x)
-			);
-		}
-	}
+    private handleSeen(seen: MessageSeen): void {
+        // Update message status in active conversation
+        const msg = this.chatService.messages().find(m => m.id === seen.id);
+        if (msg) {
+            // Mark as seen in UI
+            console.log('Message seen:', seen.id);
+            this.chatService.messages.update(msgs =>
+                msgs.map(x => x.id === seen.id ? { ...x, status: 3 } : x)
+            );
+        }
+    }
 
     private handleMessageReacted(event: any): void {
         const payload = event && event.payload ? event.payload : event;
@@ -366,7 +366,7 @@ export class NotificationService {
         }
     }
 
-    private showNotification(notification: AppNotification): void {
+    showNotification(notification: AppNotification): void {
         // Add to notifications list
         this.notifications.update(notifs => [notification, ...notifs].slice(0, 50));
 

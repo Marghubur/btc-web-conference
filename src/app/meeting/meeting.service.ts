@@ -7,12 +7,14 @@ import { CameraService } from './../providers/services/camera.service';
 import { VideoBackgroundService } from './../providers/services/video-background.service';
 import { DeviceService } from '../layout/device.service';
 import { ServerEventService } from '../providers/socket/server-events/server-event.service';
-import { InitiateAudioJoiningRequestService } from '../providers/socket/client-events/call/initiate-audio-joining-request.service';
+import { InitiateAudioCallService } from '../providers/socket/client-events/call/initiate-audio-call.service';
+import { InviteCallEventService } from '../providers/socket/client-events/call/invite-call.service';
 import { EndCallService } from '../providers/socket/client-events/call/end-call.service';
 import { User } from '../models/model';
 import { Dashboard, Login } from '../models/constant';
 import { CallParticipant, ParticipantStatus } from '../models/conference_call/call_model';
 import { InvitedParticipant } from './meeting.component';
+import { NotificationService } from '../notifications/services/notification.service';
 
 @Injectable({
   providedIn: 'root'
@@ -81,16 +83,33 @@ export class MeetingService {
   // ==================== Constructor ====================
 
   constructor(
-    private roomService: RoomService,
+    public roomService: RoomService,
     private local: LocalService,
     private nav: iNavigation,
     private cameraService: CameraService,
     private deviceService: DeviceService,
     private serverEventService: ServerEventService,
-    private initiateAudioJoiningRequestService: InitiateAudioJoiningRequestService,
+    private initiateAudioCallService: InitiateAudioCallService,
+    private inviteCallEventService: InviteCallEventService,
     private endCallService: EndCallService,
-    private videoBackgroundService: VideoBackgroundService
-  ) { }
+    private videoBackgroundService: VideoBackgroundService,
+    private notificationService: NotificationService
+  ) { 
+    this.roomService.incomingCommands.subscribe(cmd => {
+      if (cmd.type === 'MUTE_ALL' && this.isMicOn()) {
+        this.toggleMic();
+        this.notificationService.showNotification({
+          id: crypto.randomUUID(),
+          type: 'warning',
+          title: 'Muted by Host',
+          content: 'The host has muted your microphone.',
+          conversationId: '',
+          timestamp: new Date(),
+          read: false
+        });
+      }
+    });
+  }
 
   getUserInitiaLetter(name: string): string {
     if (!name)
@@ -161,7 +180,9 @@ export class MeetingService {
 
   requestToJoin(participant: CallParticipant): void {
     const request = this.serverEventService.incomingCall();
-    this.initiateAudioJoiningRequestService.execute(participant.userId, request.conversationId);
+    if(request) {
+      this.inviteCallEventService.execute(participant.userId, request.conversationId, 'audio');
+    }
   }
 
   get invitedParticipants(): number {

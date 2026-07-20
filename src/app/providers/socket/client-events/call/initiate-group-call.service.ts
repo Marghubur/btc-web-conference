@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { ConfeetSocketService } from '../../confeet-socket.service';
 import { ServerEventService } from '../../server-events/server-event.service';
-import { CallEvents, CallConfig, CallStatus, CallInitiatePayload, CallTypeValue } from '../../../../models/conference_call/call_model';
+import { CallEvents, CallConfig, CallStatus, CallInitiatePayload, CallTypeValue, CallEndReason } from '../../../../models/conference_call/call_model';
 import { LocalService } from '../../../services/local.service';
+import { TimeoutCallService } from './timeout-call.service';
+import { NotificationService } from '../../../../notifications/services/notification.service';
 
 @Injectable({
     providedIn: 'root'
@@ -11,7 +13,9 @@ export class InitiateGroupCallService {
     constructor(
         private ws: ConfeetSocketService,
         private serverEventService: ServerEventService,
-        private local: LocalService
+        private local: LocalService,
+        private timeoutCallService: TimeoutCallService,
+        private notificationService: NotificationService
     ) { }
 
     execute(calleeIds: string[], conversationId: string, callType: CallTypeValue): void {
@@ -31,5 +35,24 @@ export class InitiateGroupCallService {
             timeout: CallConfig.DEFAULT_TIMEOUT
         });
         this.serverEventService.callStatus.set(CallStatus.INITIATED);
+
+        // Start 120s ring timeout
+        setTimeout(() => {
+            if (this.serverEventService.callStatus() === CallStatus.INITIATED || this.serverEventService.callStatus() === CallStatus.RINGING) {
+                // Time's up! No one answered.
+                this.timeoutCallService.execute(conversationId, '');
+
+                // For group calls, just show a message but keep caller in the room
+                this.notificationService.showNotification({
+                    id: crypto.randomUUID(),
+                    type: 'warning',
+                    title: 'No Answer',
+                    content: 'One or more users did not respond in 2 minutes.',
+                    conversationId: '',
+                    timestamp: new Date(),
+                    read: false
+                });
+            }
+        }, 120 * 1000); // 120 seconds
     }
 }

@@ -38,3 +38,32 @@ export interface User {
   isLogin?: boolean;
   status?: 'online' | 'away' | 'busy' | 'offline';
 }
+
+export enum PresenceStatus {
+  PRESENCE_STATUS_UNSPECIFIED = 0,
+  ONLINE = 1,
+  OFFLINE = 2,
+  AWAY = 3,
+  BUSY = 4,
+  DO_NOT_DISTURB = 5,
+  INVISIBLE = 6,
+}
+
+export function GetStatusName(status: PresenceStatus): string {
+  switch (status) {
+    case PresenceStatus.ONLINE:
+      return "Online";
+    case PresenceStatus.OFFLINE:
+      return "Offline";
+    case PresenceStatus.AWAY:
+      return "Away";
+    case PresenceStatus.BUSY:
+      return "Busy";
+    case PresenceStatus.DO_NOT_DISTURB:
+      return "DND";
+    case PresenceStatus.INVISIBLE:
+      return "Invisible";
+    default:
+      return "Unknown";
+  }
+}
