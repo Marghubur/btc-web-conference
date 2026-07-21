@@ -63,23 +63,6 @@ export class ChatContainerComponent implements AfterViewChecked {
   memberSearchResults: SearchResult[] = [];
   memberSearchSelectedIndex: number = -1;
 
-  // Header status popover (top-right avatar in chat header)
-  showHeaderStatusPopover: boolean = false;
-  headerPopoverTop: number = 0;
-  headerPopoverLeft: number = 0;
-  headerUserStatus: 'available' | 'busy' | 'dnd' | 'away' | 'offline' = 'available';
-  headerStatusMessage: string = '';
-  headerEditingStatusMessage: boolean = false;
-  headerTempStatusMessage: string = '';
-
-  readonly statusOptions = [
-    { value: 'available', label: 'Available', color: '#92c353' },
-    { value: 'busy', label: 'Busy', color: '#c4314b' },
-    { value: 'dnd', label: 'Do not disturb', color: '#c4314b' },
-    { value: 'away', label: 'Be right back', color: '#f8d22a' },
-    { value: 'offline', label: 'Appear offline', color: '#8a8886' },
-  ] as const;
-
   // Emoji Picker state & categories
   showEmojiPicker = signal<boolean>(false);
   selectedEmojiCategory = signal<string>('smileys');
@@ -290,29 +273,6 @@ export class ChatContainerComponent implements AfterViewChecked {
     return 'Member';
   }
 
-  getSenderStatus(senderId: string): string {
-    if (!senderId) return 'offline';
-    if (senderId === this.currentUserId) return this.headerUserStatus;
-    const p = (this.ws.currentConversation()?.participants || []).find(part => part.userId === senderId);
-    return (p?.status || 'available').toLowerCase();
-  }
-
-  getSenderStatusColor(senderId: string): string {
-    const status = this.getSenderStatus(senderId);
-    switch (status) {
-      case 'available':
-      case 'online':
-        return '#92c353'; // Teams Green
-      case 'busy':
-      case 'dnd':
-        return '#c4314b'; // Teams Red
-      case 'away':
-      case 'brb':
-        return '#f8d22a'; // Teams Yellow
-      default:
-        return '#8a8886'; // Teams Gray
-    }
-  }
 
   isSequentialMessage(index: number): boolean {
     if (index <= 0) return false;
@@ -611,6 +571,18 @@ export class ChatContainerComponent implements AfterViewChecked {
     });
   }
 
+  joinMeeting() {
+    if (!this.ws.currentConversation() || !this.ws.currentConversation().id) return;
+    this.router.navigate(['/btc/preview'], {
+      state: {
+        id: this.ws.currentConversation().id,
+        type: CallType.VIDEO,
+        title: this.ws.currentConversation().conversationName ? this.ws.currentConversation().conversationName : 'NEW',
+        autoJoin: true
+      }
+    });
+  }
+
   // Members Popover Methods
   private membersPopoverCloseHandler = (event: Event) => {
     // If the click target was removed from the DOM during event bubbling (e.g. clicking a search result), ignore it
@@ -625,14 +597,14 @@ export class ChatContainerComponent implements AfterViewChecked {
   toggleMembersDropdown(event: Event): void {
     event.stopPropagation();
     this.showMembersDropdown = !this.showMembersDropdown;
-    
+
     if (this.showMembersDropdown) {
       // Compute fixed position for popover
       const trigger = event.currentTarget as HTMLElement;
       const rect = trigger.getBoundingClientRect();
       this.membersPopoverTop = rect.bottom + 6;
       this.membersPopoverLeft = rect.right - 280; // Approximate width of the panel to align right edges
-      
+
       setTimeout(() => {
         document.addEventListener('click', this.membersPopoverCloseHandler);
       }, 0);
@@ -652,63 +624,6 @@ export class ChatContainerComponent implements AfterViewChecked {
     this.newGroupMembers = [];
     this.memberSearchQuery = '';
     this.memberSearchResults = [];
-  }
-
-  // Header Status Popover Methods
-  private headerPopoverCloseHandler = () => {
-    this.showHeaderStatusPopover = false;
-    this.headerEditingStatusMessage = false;
-    document.removeEventListener('click', this.headerPopoverCloseHandler);
-  };
-
-  toggleHeaderStatusPopover(event: Event): void {
-    event.stopPropagation();
-    this.showHeaderStatusPopover = !this.showHeaderStatusPopover;
-    if (this.showHeaderStatusPopover) {
-      this.headerTempStatusMessage = this.headerStatusMessage;
-      this.headerEditingStatusMessage = false;
-      // Compute fixed position below and to the right of the avatar
-      const trigger = event.currentTarget as HTMLElement;
-      const rect = trigger.getBoundingClientRect();
-      this.headerPopoverTop = rect.bottom + 6;
-      this.headerPopoverLeft = rect.right - 280; // 280 = popover width, align right edge
-      setTimeout(() => {
-        document.addEventListener('click', this.headerPopoverCloseHandler);
-      }, 0);
-    } else {
-      document.removeEventListener('click', this.headerPopoverCloseHandler);
-    }
-  }
-
-  stopHeaderPopoverPropagation(event: Event): void {
-    event.stopPropagation();
-  }
-
-  setHeaderUserStatus(status: 'available' | 'busy' | 'dnd' | 'away' | 'offline'): void {
-    this.headerUserStatus = status;
-  }
-
-  getHeaderStatusColor(): string {
-    return this.statusOptions.find(s => s.value === this.headerUserStatus)?.color ?? '#92c353';
-  }
-
-  getHeaderStatusLabel(): string {
-    return this.statusOptions.find(s => s.value === this.headerUserStatus)?.label ?? 'Available';
-  }
-
-  startHeaderEditingStatusMessage(): void {
-    this.headerEditingStatusMessage = true;
-    this.headerTempStatusMessage = this.headerStatusMessage;
-  }
-
-  saveHeaderStatusMessage(): void {
-    this.headerStatusMessage = this.headerTempStatusMessage;
-    this.headerEditingStatusMessage = false;
-  }
-
-  cancelHeaderStatusMessage(): void {
-    this.headerTempStatusMessage = this.headerStatusMessage;
-    this.headerEditingStatusMessage = false;
   }
 
   getDefaultGroupName(): string {
@@ -839,13 +754,13 @@ export class ChatContainerComponent implements AfterViewChecked {
         content: `${member.name} was added to the group by ${currentUserName}.`,
         fileUrl: null
       };
-      
+
       this.chatService.messages.update(msgs => [...msgs, groupMsg]);
       this.ws.sendEvent('send_notification', groupMsg);
 
       // 2nd Notification: Sent specifically to the newly added member
       let directMsg: any = {
-        conversationId: conv.id, 
+        conversationId: conv.id,
         messageId: crypto.randomUUID(),
         senderId: this.currentUserId,
         recievedId: member.userId,
@@ -1104,128 +1019,128 @@ export class ChatContainerComponent implements AfterViewChecked {
     this.isUploadingFile.set(true);
 
     const uploadPromises = files.map(async (file) => {
-        const uploadId = crypto.randomUUID();
-        this.pendingUploads.update(uploads => [...uploads, { id: uploadId, fileName: file.name, fileSize: file.size, progress: 0 }]);
+      const uploadId = crypto.randomUUID();
+      this.pendingUploads.update(uploads => [...uploads, { id: uploadId, fileName: file.name, fileSize: file.size, progress: 0 }]);
 
-        try {
-            const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
-            if (file.size > CHUNK_SIZE) {
-                // Multipart Upload
-                const startPayload = {
-                    fileName: file.name,
-                    contentType: file.type || 'application/octet-stream',
-                    conversationId: this.ws.currentConversation().id
-                };
-                const startRes: any = await this.chatService.startMultipartUpload(startPayload);
-                if (!startRes.isSuccess || !startRes.responseBody) throw new Error("Failed to start multipart");
-                const { uploadId: s3UploadId, fileKey } = startRes.responseBody;
-                
-                const numChunks = Math.ceil(file.size / CHUNK_SIZE);
-                let completedParts: { partNumber: number, eTag: string }[] = [];
-                let uploadedBytes = 0;
+      try {
+        const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+        if (file.size > CHUNK_SIZE) {
+          // Multipart Upload
+          const startPayload = {
+            fileName: file.name,
+            contentType: file.type || 'application/octet-stream',
+            conversationId: this.ws.currentConversation().id
+          };
+          const startRes: any = await this.chatService.startMultipartUpload(startPayload);
+          if (!startRes.isSuccess || !startRes.responseBody) throw new Error("Failed to start multipart");
+          const { uploadId: s3UploadId, fileKey } = startRes.responseBody;
 
-                // Upload chunks concurrently in batches of 4
-                const CONCURRENCY = 4;
-                for (let i = 0; i < numChunks; i += CONCURRENCY) {
-                    const chunkPromises = [];
-                    for (let j = 0; j < CONCURRENCY && i + j < numChunks; j++) {
-                        const partNumber = i + j + 1;
-                        const start = (partNumber - 1) * CHUNK_SIZE;
-                        const end = Math.min(start + CHUNK_SIZE, file.size);
-                        const chunk = file.slice(start, end);
+          const numChunks = Math.ceil(file.size / CHUNK_SIZE);
+          let completedParts: { partNumber: number, eTag: string }[] = [];
+          let uploadedBytes = 0;
 
-                        const chunkPromise = (async () => {
-                            const urlRes: any = await this.chatService.getMultipartPreSignedUrl({ fileKey, uploadId: s3UploadId, partNumber });
-                            if (!urlRes.isSuccess || !urlRes.responseBody) throw new Error("Failed to get part url");
-                            const uploadUrl = urlRes.responseBody.uploadUrl;
+          // Upload chunks concurrently in batches of 4
+          const CONCURRENCY = 4;
+          for (let i = 0; i < numChunks; i += CONCURRENCY) {
+            const chunkPromises = [];
+            for (let j = 0; j < CONCURRENCY && i + j < numChunks; j++) {
+              const partNumber = i + j + 1;
+              const start = (partNumber - 1) * CHUNK_SIZE;
+              const end = Math.min(start + CHUNK_SIZE, file.size);
+              const chunk = file.slice(start, end);
 
-                            return await new Promise<{partNumber: number, eTag: string}>((resolve, reject) => {
-                                const req = new HttpRequest('PUT', uploadUrl, chunk, { reportProgress: true });
-                                let lastLoaded = 0;
-                                this.httpClient.request(req).subscribe({
-                                    next: (event: any) => {
-                                        if (event.type === HttpEventType.UploadProgress && event.total) {
-                                            const diff = event.loaded - lastLoaded;
-                                            lastLoaded = event.loaded;
-                                            uploadedBytes += diff;
-                                            this.pendingUploads.update(uploads => {
-                                                const up = uploads.find(u => u.id === uploadId);
-                                                if (up) up.progress = Math.round((uploadedBytes / file.size) * 100);
-                                                return [...uploads];
-                                            });
-                                        } else if (event.type === HttpEventType.Response) {
-                                            if (event.status === 200 || event.ok) {
-                                                const eTag = event.headers.get('ETag');
-                                                if (!eTag) reject(new Error("No ETag in response"));
-                                                else resolve({ partNumber, eTag: eTag });
-                                            } else {
-                                                reject(new Error("Part upload failed"));
-                                            }
-                                        }
-                                    },
-                                    error: (err) => reject(err)
-                                });
-                            });
-                        })();
-                        chunkPromises.push(chunkPromise);
-                    }
-                    const results = await Promise.all(chunkPromises);
-                    completedParts.push(...results);
-                }
+              const chunkPromise = (async () => {
+                const urlRes: any = await this.chatService.getMultipartPreSignedUrl({ fileKey, uploadId: s3UploadId, partNumber });
+                if (!urlRes.isSuccess || !urlRes.responseBody) throw new Error("Failed to get part url");
+                const uploadUrl = urlRes.responseBody.uploadUrl;
 
-                completedParts.sort((a, b) => a.partNumber - b.partNumber);
-                const completeRes: any = await this.chatService.completeMultipartUpload({ fileKey, uploadId: s3UploadId, parts: completedParts });
-                if (!completeRes.isSuccess || !completeRes.responseBody) throw new Error("Complete failed");
-                
-                this.stagedFiles.update(files => [...files, { fileName: file.name, url: completeRes.responseBody.publicUrl, fileSize: file.size, fileType: file.type, fileKey: fileKey }]);
-            } else {
-                // Standard Single Upload
-                const payload = {
-                    fileName: file.name,
-                    contentType: file.type || 'application/octet-stream',
-                    conversationId: this.ws.currentConversation().id
-                };
-                const res: any = await this.chatService.getPresignedUrl(payload);
-                if (res.isSuccess && res.responseBody) {
-                    const { uploadUrl, publicUrl, fileKey } = res.responseBody;
-                    
-                    await new Promise((resolve, reject) => {
-                        const req = new HttpRequest('PUT', uploadUrl, file, {
-                            reportProgress: true,
-                            responseType: 'text',
-                            headers: new HttpHeaders({ 'Content-Type': 'application/octet-stream' })
+                return await new Promise<{ partNumber: number, eTag: string }>((resolve, reject) => {
+                  const req = new HttpRequest('PUT', uploadUrl, chunk, { reportProgress: true });
+                  let lastLoaded = 0;
+                  this.httpClient.request(req).subscribe({
+                    next: (event: any) => {
+                      if (event.type === HttpEventType.UploadProgress && event.total) {
+                        const diff = event.loaded - lastLoaded;
+                        lastLoaded = event.loaded;
+                        uploadedBytes += diff;
+                        this.pendingUploads.update(uploads => {
+                          const up = uploads.find(u => u.id === uploadId);
+                          if (up) up.progress = Math.round((uploadedBytes / file.size) * 100);
+                          return [...uploads];
                         });
-                        this.httpClient.request(req).subscribe({
-                            next: (event: any) => {
-                                if (event.type === HttpEventType.UploadProgress && event.total) {
-                                    const progress = Math.round(100 * event.loaded / event.total);
-                                    this.pendingUploads.update(uploads => {
-                                        const up = uploads.find(u => u.id === uploadId);
-                                        if (up) up.progress = progress;
-                                        return [...uploads];
-                                    });
-                                } else if (event.type === HttpEventType.Response) {
-                                    if (event.status === 200 || event.ok) {
-                                        this.stagedFiles.update(files => [...files, { fileName: file.name, url: publicUrl, fileSize: file.size, fileType: file.type, fileKey: fileKey }]);
-                                        resolve(event);
-                                    } else {
-                                        reject(new Error("Upload failed"));
-                                    }
-                                }
-                            },
-                            error: (err) => reject(err)
-                        });
-                    });
-                } else {
-                    throw new Error("Presigned URL failed");
-                }
+                      } else if (event.type === HttpEventType.Response) {
+                        if (event.status === 200 || event.ok) {
+                          const eTag = event.headers.get('ETag');
+                          if (!eTag) reject(new Error("No ETag in response"));
+                          else resolve({ partNumber, eTag: eTag });
+                        } else {
+                          reject(new Error("Part upload failed"));
+                        }
+                      }
+                    },
+                    error: (err) => reject(err)
+                  });
+                });
+              })();
+              chunkPromises.push(chunkPromise);
             }
-        } catch (err) {
-            console.error('File upload error:', err);
-            alert(`Error uploading file: ${file.name}`);
-        } finally {
-            this.pendingUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
+            const results = await Promise.all(chunkPromises);
+            completedParts.push(...results);
+          }
+
+          completedParts.sort((a, b) => a.partNumber - b.partNumber);
+          const completeRes: any = await this.chatService.completeMultipartUpload({ fileKey, uploadId: s3UploadId, parts: completedParts });
+          if (!completeRes.isSuccess || !completeRes.responseBody) throw new Error("Complete failed");
+
+          this.stagedFiles.update(files => [...files, { fileName: file.name, url: completeRes.responseBody.publicUrl, fileSize: file.size, fileType: file.type, fileKey: fileKey }]);
+        } else {
+          // Standard Single Upload
+          const payload = {
+            fileName: file.name,
+            contentType: file.type || 'application/octet-stream',
+            conversationId: this.ws.currentConversation().id
+          };
+          const res: any = await this.chatService.getPresignedUrl(payload);
+          if (res.isSuccess && res.responseBody) {
+            const { uploadUrl, publicUrl, fileKey } = res.responseBody;
+
+            await new Promise((resolve, reject) => {
+              const req = new HttpRequest('PUT', uploadUrl, file, {
+                reportProgress: true,
+                responseType: 'text',
+                headers: new HttpHeaders({ 'Content-Type': 'application/octet-stream' })
+              });
+              this.httpClient.request(req).subscribe({
+                next: (event: any) => {
+                  if (event.type === HttpEventType.UploadProgress && event.total) {
+                    const progress = Math.round(100 * event.loaded / event.total);
+                    this.pendingUploads.update(uploads => {
+                      const up = uploads.find(u => u.id === uploadId);
+                      if (up) up.progress = progress;
+                      return [...uploads];
+                    });
+                  } else if (event.type === HttpEventType.Response) {
+                    if (event.status === 200 || event.ok) {
+                      this.stagedFiles.update(files => [...files, { fileName: file.name, url: publicUrl, fileSize: file.size, fileType: file.type, fileKey: fileKey }]);
+                      resolve(event);
+                    } else {
+                      reject(new Error("Upload failed"));
+                    }
+                  }
+                },
+                error: (err) => reject(err)
+              });
+            });
+          } else {
+            throw new Error("Presigned URL failed");
+          }
         }
+      } catch (err) {
+        console.error('File upload error:', err);
+        alert(`Error uploading file: ${file.name}`);
+      } finally {
+        this.pendingUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
+      }
     });
 
     await Promise.all(uploadPromises);
@@ -1237,11 +1152,11 @@ export class ChatContainerComponent implements AfterViewChecked {
     const files = this.stagedFiles();
     const fileToRemove = files[index];
     if (fileToRemove && fileToRemove.fileKey) {
-        try {
-            await this.chatService.deleteFile(fileToRemove.fileKey);
-        } catch (e) {
-            console.error('Error deleting file from storage:', e);
-        }
+      try {
+        await this.chatService.deleteFile(fileToRemove.fileKey);
+      } catch (e) {
+        console.error('Error deleting file from storage:', e);
+      }
     }
     this.stagedFiles.update(files => files.filter((_, i) => i !== index));
   }

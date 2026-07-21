@@ -194,6 +194,18 @@
                             [ngClass]="{'is-invalid': isSubmitted && meetingForm.controls['title'].errors}">
                     </div>
 
+                    <div class="mb-4 position-relative">
+                        <label class="form-label">Participants</label>
+                        <app-multi-user-autocomplete
+                            [placeholder]="'Search users by name or email...'"
+                            [selectedUsers]="selectedParticipants"
+                            [searchResults]="participantSearchResults"
+                            (searchChange)="participantSearchQuery = $event; onParticipantSearch()"
+                            (selectedUsersChange)="selectedParticipants = $event"
+                            [currentUserId]="user?.userId">
+                        </app-multi-user-autocomplete>
+                    </div>
+
                     <div class="row mb-4">
                         <div class="col-md-5">
                             <label class="form-label">Start <span class="text-danger">*</span></label>
@@ -202,7 +214,7 @@
                                     <div class="input-group">
                                         <input class="form-control" placeholder="Date" name="dp"
                                             [minDate]="minPickerDate" [(ngModel)]="meetingDate"
-                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #md="ngbDatepicker"
+                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #md="ngbDatepicker" container="body"
                                             (dateSelect)="onMeetingDateSelect($event)" />
                                         <button class="btn btn-outline-secondary" (click)="md.toggle()" type="button">
                                             <i class="fa-solid fa-calendar-days"></i>
@@ -232,7 +244,7 @@
                                     <div class="input-group">
                                         <input class="form-control" placeholder="Date" name="dp"
                                             [minDate]="minEndPickerDate" [(ngModel)]="meetingEndDate"
-                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #med="ngbDatepicker"
+                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #med="ngbDatepicker" container="body"
                                             (dateSelect)="onMeetingEndDateSelect($event)" />
                                         <button class="btn btn-outline-secondary" (click)="med.toggle()" type="button">
                                             <i class="fa-solid fa-calendar-days"></i>
@@ -242,7 +254,7 @@
                                 <div class="col-5">
                                     <select class="form-select" formControlName="endTime" (change)="onEndTimeSelect()">
                                         <option [value]="null">Time</option>
-                                        @for (time of meetingTimes; track $index) {
+                                        @for (time of endMeetingTimes; track $index) {
                                         <option [value]="time">{{ time }}</option>
                                         }
                                     </select>
@@ -251,10 +263,40 @@
                         </div>
                     </div>
 
+                    <div class="row mb-4">
+                        <div class="col-md-5">
+                            <div class="form-check form-switch pt-2">
+                                <input class="form-check-input" type="checkbox" id="allDaySwitch" formControlName="isAllDay">
+                                <label class="form-check-label" for="allDaySwitch">All day</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2"></div>
+                        <div class="col-md-5">
+                            <select class="form-select" formControlName="repeatType">
+                                <option value="Does not repeat">Does not repeat</option>
+                                <option value="Daily">Daily</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Monthly">Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="form-label">Description</label>
-                        <textarea rows="3" placeholder="Add meeting notes..." formControlName="agenda"
-                            class="form-control"></textarea>
+                        <div class="border rounded overflow-hidden">
+                            <div class="d-flex gap-2 p-2 bg-light border-bottom">
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('bold')" title="Bold"><i class="fa-solid fa-bold"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('italic')" title="Italic"><i class="fa-solid fa-italic"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('underline')" title="Underline"><i class="fa-solid fa-underline"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('strikeThrough')" title="Strikethrough"><i class="fa-solid fa-strikethrough"></i></button>
+                                <div class="border-start mx-1"></div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('insertUnorderedList')" title="Bullet List"><i class="fa-solid fa-list-ul"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('insertOrderedList')" title="Numbered List"><i class="fa-solid fa-list-ol"></i></button>
+                                <div class="border-start mx-1"></div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('createLink')" title="Link"><i class="fa-solid fa-link"></i></button>
+                            </div>
+                            <div class="p-3 bg-white" style="min-height: 120px; outline: none; color: black;" contenteditable="true" #editorContent (input)="updateAgendaContent($event)"></div>
+                        </div>
                     </div>
                 </form>
             </div>
