@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { NgbDatepickerModule, NgbDateStruct, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { AjaxService } from '../providers/services/ajax.service';
@@ -11,14 +11,13 @@ import { ConfeetSocketService } from '../providers/socket/confeet-socket.service
 import { MeetingDetail, ResponseModel, User } from '../models/model';
 import { Router } from '@angular/router';
 import { JoinCallService } from '../providers/socket/client-events/call/join-call.service';
-import { UserFilter } from '../models/user.filter';
-import { Conversation } from '../components/global-search/search.models';
 import { CallType } from '../models/conference_call/call_model';
+import { MultiUserAutocompleteComponent } from '../shared/components/multi-user-autocomplete/multi-user-autocomplete.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbDatepickerModule, NgbTooltipModule, NgbTooltipModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbDatepickerModule, NgbTooltipModule, MultiUserAutocompleteComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -29,7 +28,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   meetingEndDate!: NgbDateStruct;
   minEndPickerDate!: NgbDateStruct;
   meetingForm!: FormGroup;
-  meetingDetail: MeetingDetail = { agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null }
+  meetingDetail: MeetingDetail = { agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null, isAllDay: false, repeatType: 0, participants: '' }
+  endMeetingTimes: Array<string> = [];
+  participantSearchQuery: string = '';
+  participantSearchResults: any[] = [];
+  selectedParticipants: any[] = [];
+  @ViewChild('editorContent') editorContent!: ElementRef;
   isSubmitted: boolean = false;
   isLoading: boolean = false;
   isPageReady: boolean = false;
@@ -89,6 +93,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         hour++;
       }
     }
+    this.endMeetingTimes = [...this.meetingTimes];
   }
 
   private initForm() {
@@ -103,7 +108,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       durationInSecond: new FormControl(this.meetingDetail.durationInSecond),
       endDate: new FormControl(this.meetingDetail.endDate, [Validators.required]),
       startTime: new FormControl(this.meetingDetail.startTime, [Validators.required]),
-      endTime: new FormControl(this.meetingDetail.endTime, [Validators.required])
+      endTime: new FormControl(this.meetingDetail.endTime, [Validators.required]),
+      isAllDay: new FormControl(this.meetingDetail.isAllDay),
+      repeatType: new FormControl(this.meetingDetail.repeatType)
     });
   }
 
@@ -128,6 +135,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
       var time = this.convertTo24Hour(startTime);
       var selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), time[0], time[1]);
       this.meetingForm.get('startDate')?.setValue(selectedDate);
+
+      // Update end meeting times to only show times after start time
+      const startIndex = this.meetingTimes.indexOf(startTime);
+      if (startIndex !== -1) {
+        this.endMeetingTimes = this.meetingTimes.slice(startIndex + 1);
+        let currentEndTime = this.meetingForm.get('endTime').value;
+        if (this.endMeetingTimes.length > 0 && (!currentEndTime || this.endMeetingTimes.indexOf(currentEndTime) === -1)) {
+          this.meetingForm.get('endTime').setValue(this.endMeetingTimes[0]);
+          this.onEndTimeSelect();
+        }
+      }
       this.calculateDuration();
     }
   }
@@ -163,6 +181,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
     this.isLoading = true;
     let value = this.meetingForm.getRawValue();
+    if (this.selectedParticipants.length > 0) {
+      value.participantsId = this.selectedParticipants.map(p => p.userId);
+    } else {
+      value.participantsId = [];
+    }
+
     console.log(value);
     this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
       if (res.responseBody) {
@@ -249,7 +273,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   scheduleMeetingPopup() {
     this.isSubmitted = false;
-    this.meetingDetail = { agenda: '', durationInSecond: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null };
+    this.meetingDetail = { agenda: '', durationInSecond: 0, repeatType: 0, meetingDetailId: 0, meetingId: '', meetingPassword: '', organizedBy: 0, title: '', startTime: null, endTime: null };
     this.meetingDate = null;
     this.meetingEndDate = null;
     this.initForm();
@@ -444,6 +468,54 @@ Passcode: ${item.meetingPassword}`;
       day: 'numeric'
     };
     return date.toLocaleDateString('en-US', options);
+  }
+
+  // Participant Search Logic
+  onParticipantSearch() {
+    if (!this.participantSearchQuery) {
+      this.participantSearchResults = [];
+      return;
+    }
+    this.http.get(`users/search?term=${this.participantSearchQuery}&pageNumber=1&pageSize=10`).then((res: ResponseModel) => {
+      if (res.responseBody && res.responseBody.data) {
+        this.participantSearchResults = res.responseBody.data.map((u: any) => ({
+          userId: u.id || u.userId,
+          name: (u.firstName && u.lastName) ? `${u.firstName} ${u.lastName}` : (u.firstName || u.email || u.id),
+          email: u.email,
+          avatar: u.avatarUrl,
+          designation: u.email
+        })).filter((u: any) =>
+          !this.selectedParticipants.find(sp => sp.userId === u.userId)
+        );
+      }
+    });
+  }
+
+  addParticipant(user: any) {
+    if (!this.selectedParticipants.find(p => p.userId === (user.userId || user.id))) {
+      this.selectedParticipants.push({
+        userId: user.userId || user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email
+      });
+    }
+    this.participantSearchQuery = '';
+    this.participantSearchResults = [];
+  }
+
+  removeParticipant(user: any) {
+    this.selectedParticipants = this.selectedParticipants.filter(p => p.userId !== user.userId);
+  }
+
+  // Editor Logic
+  execCommand(command: string) {
+    document.execCommand(command, false, '');
+    this.editorContent.nativeElement.focus();
+  }
+
+  updateAgendaContent(event: any) {
+    this.meetingForm.get('agenda')?.setValue(event.target.innerHTML);
   }
 
   ngOnDestroy() {

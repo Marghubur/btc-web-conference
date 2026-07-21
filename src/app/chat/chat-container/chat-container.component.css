@@ -284,6 +284,32 @@
     height: 20px;
 }
 
+.join-btn {
+    background-color: var(--teams-primary);
+    color: white;
+    border-radius: var(--teams-radius);
+    padding: 0 16px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    height: 36px;
+    width: auto;
+    cursor: pointer;
+    transition: var(--teams-transition);
+}
+
+.join-btn:hover {
+    background-color: var(--teams-primary-hover);
+}
+
+.join-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
 /* ===== Members Dropdown ===== */
 .members-dropdown-container {
     position: relative;

@@ -13,7 +13,7 @@ import { ConfeetSocketService } from '../providers/socket/confeet-socket.service
 import { Router } from '@angular/router';
 import { CallType } from '../models/conference_call/call_model';
 import { JoinCallService } from '../providers/socket/client-events/call/join-call.service';
-
+import { MultiUserAutocompleteComponent } from '../shared/components/multi-user-autocomplete/multi-user-autocomplete.component';
 interface CalendarDay {
     date: Date;
     dayOfMonth: number;
@@ -33,7 +33,7 @@ interface TimeSlot {
 @Component({
     selector: 'app-calendar',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbDatepickerModule, NgbTooltipModule, NgbModalModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbDatepickerModule, NgbTooltipModule, NgbModalModule, MultiUserAutocompleteComponent],
     templateUrl: './calendar.component.html',
     styleUrls: ['./calendar.component.css']
 })
@@ -85,6 +85,12 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     user: User = null;
     private columnLayoutCache: { [key: string]: { width: string, left: string } } = {};
     private lastLayoutCacheDate: string = '';
+
+    endMeetingTimes: Array<string> = [];
+    participantSearchQuery: string = '';
+    participantSearchResults: any[] = [];
+    selectedParticipants: any[] = [];
+    @ViewChild('editorContent') editorContent!: ElementRef;
 
     constructor(
         private ws: ConfeetSocketService,
@@ -186,6 +192,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
             this.meetingTimes.push(`${displayHour}:00 ${ampm}`);
             this.meetingTimes.push(`${displayHour}:30 ${ampm}`);
         }
+        this.endMeetingTimes = [...this.meetingTimes];
     }
 
     initForm(): void {
@@ -200,7 +207,9 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
             endDate: new FormControl(null, [Validators.required]),
             startTime: new FormControl(null, [Validators.required]),
             endTime: new FormControl(null, [Validators.required]),
-            durationInSecond: new FormControl(0)
+            durationInSecond: new FormControl(0),
+            isAllDay: new FormControl(false),
+            repeatType: new FormControl('Does not repeat')
         });
     }
 
@@ -726,6 +735,17 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
             const time = this.convertTo24Hour(startTime);
             const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), time[0], time[1]);
             this.meetingForm.get('startDate')?.setValue(selectedDate);
+
+            // Update end meeting times to only show times after start time
+            const startIndex = this.meetingTimes.indexOf(startTime);
+            if (startIndex !== -1) {
+                this.endMeetingTimes = this.meetingTimes.slice(startIndex + 1);
+                let currentEndTime = this.meetingForm.get('endTime')?.value;
+                if (this.endMeetingTimes.length > 0 && (!currentEndTime || this.endMeetingTimes.indexOf(currentEndTime) === -1)) {
+                    this.meetingForm.get('endTime')?.setValue(this.endMeetingTimes[0]);
+                    this.onEndTimeSelect();
+                }
+            }
             this.calculateDuration();
         }
     }
@@ -786,6 +806,11 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this.isLoading = true;
         const value = this.meetingForm.getRawValue();
+        if (this.selectedParticipants.length > 0) {
+            value.participantsId = this.selectedParticipants.map(p => p.userId);
+        } else {
+            value.participantsId = [];
+        }
 
         this.http.post("meeting/generateMeeting", value).then((res: ResponseModel) => {
             if (res.responseBody) {
@@ -860,5 +885,52 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
             return colors[Math.abs(hash) % colors.length];
         }
         return colors[(index as number) % colors.length];
+    }
+    // Participant Search Logic
+    onParticipantSearch() {
+        if (!this.participantSearchQuery) {
+            this.participantSearchResults = [];
+            return;
+        }
+        this.http.get(`users/search?term=${this.participantSearchQuery}&pageNumber=1&pageSize=10`).then((res: ResponseModel) => {
+            if (res.responseBody && res.responseBody.data) {
+                this.participantSearchResults = res.responseBody.data.map((u: any) => ({
+                    userId: u.id || u.userId,
+                    name: (u.firstName && u.lastName) ? `${u.firstName} ${u.lastName}` : (u.firstName || u.email || u.id),
+                    email: u.email,
+                    avatar: u.avatarUrl,
+                    designation: u.email
+                })).filter((u: any) =>
+                    !this.selectedParticipants.find(sp => sp.userId === u.userId)
+                );
+            }
+        });
+    }
+
+    addParticipant(user: any) {
+        if (!this.selectedParticipants.find(p => p.userId === (user.userId || user.id))) {
+            this.selectedParticipants.push({
+                userId: user.userId || user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+            });
+        }
+        this.participantSearchQuery = '';
+        this.participantSearchResults = [];
+    }
+
+    removeParticipant(user: any) {
+        this.selectedParticipants = this.selectedParticipants.filter(p => p.userId !== user.userId);
+    }
+
+    // Editor Logic
+    execCommand(command: string) {
+        document.execCommand(command, false, '');
+        this.editorContent.nativeElement.focus();
+    }
+
+    updateAgendaContent(event: any) {
+        this.meetingForm.get('agenda')?.setValue(event.target.innerHTML);
     }
 }

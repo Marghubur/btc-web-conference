@@ -24,6 +24,9 @@ export interface MeetingDetail {
   organizerName?: string;
   hasQuickMeeting?: boolean;
   conversationId?: string;
+  isAllDay?: boolean;
+  repeatType?: number;
+  participants?: string; // Stored as string for the backend, can contain JSON or CSV
 }
 
 
