@@ -514,32 +514,6 @@
                     {{ getUserInitiaLetter(getSenderName(msg.senderId), '') }}
                 </div>
                 }
-                <span class="sender-presence-badge"
-                    [ngStyle]="{ 'background-color': getSenderStatusColor(msg.senderId) }"
-                    [title]="getSenderStatus(msg.senderId)">
-                    @switch (getSenderStatus(msg.senderId)) {
-                    @case ('available') { <svg viewBox="0 0 12 12">
-                        <polyline points="10 3 4.5 8.5 2 6" stroke="white" stroke-width="2" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round" />
-                    </svg> }
-                    @case ('online') { <svg viewBox="0 0 12 12">
-                        <polyline points="10 3 4.5 8.5 2 6" stroke="white" stroke-width="2" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round" />
-                    </svg> }
-                    @case ('busy') { <svg viewBox="0 0 12 12">
-                        <line x1="3" y1="6" x2="9" y2="6" stroke="white" stroke-width="2" stroke-linecap="round" />
-                    </svg> }
-                    @case ('dnd') { <svg viewBox="0 0 12 12">
-                        <line x1="3" y1="6" x2="9" y2="6" stroke="white" stroke-width="2" stroke-linecap="round" />
-                    </svg> }
-                    @case ('away') { <svg viewBox="0 0 12 12">
-                        <circle cx="6" cy="6" r="2" fill="white" />
-                    </svg> }
-                    @default { <svg viewBox="0 0 12 12">
-                        <circle cx="6" cy="6" r="2" fill="white" />
-                    </svg> }
-                    }
-                </span>
                 }
             </div>
             <div class="message-received-content">
