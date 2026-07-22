@@ -1975,3 +1975,14 @@
     background-color: var(--teams-primary, #5b5fc7);
     border-left: 3px solid var(--teams-primary, #5b5fc7);
 }
+
+textarea.message-input {
+    resize: none;
+    overflow-y: auto;
+    min-height: 40px;
+    max-height: 150px;
+    line-height: 1.5;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    display: block;
+}

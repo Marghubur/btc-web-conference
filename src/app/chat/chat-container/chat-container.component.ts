@@ -40,7 +40,7 @@ export class ChatContainerComponent implements AfterViewChecked {
   currentUserId: string = "";
 
   // Message state
-  @ViewChild('messageInputRef') messageInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('messageInputRef') messageInputRef!: ElementRef<HTMLTextAreaElement>;
   @ViewChild('membersDropdownRef') membersDropdownRef!: ElementRef;
   message = signal<string | null>('');
   stagedFiles = signal<any[]>([]);
@@ -372,11 +372,17 @@ export class ChatContainerComponent implements AfterViewChecked {
         });
       }
     }
+    
+    // Convert newlines to HTML line breaks
+    content = content.replace(/\n/g, '<br>');
+    
     return content;
   }
 
   onMessageInput(event: any): void {
-    const input = event.target as HTMLInputElement;
+    const input = event.target as HTMLTextAreaElement;
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 'px';
     const val = input.value || '';
     this.message.set(val);
 
@@ -434,6 +440,52 @@ export class ChatContainerComponent implements AfterViewChecked {
   }
 
   onInputKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey && !this.showMentionDropdown()) {
+      event.preventDefault();
+      this.sendMessage();
+      return;
+    }
+
+    if (event.key === 'Backspace' && this.messageInputRef) {
+      const input = this.messageInputRef.nativeElement;
+      const cursor = input.selectionStart;
+      if (cursor === input.selectionEnd && cursor !== null && cursor > 0) {
+        const val = input.value;
+        const textBeforeCursor = val.substring(0, cursor);
+        const participants = this.ws.currentConversation()?.participants || [];
+        
+        for (const userId of this.pendingMentions) {
+          const p = participants.find(x => x.userId === userId);
+          if (p) {
+            const fullName = `@${(p.firstName || '')} ${(p.lastName || '')}`.trim();
+            const fullNameWithSpace = `${fullName} `;
+            let matchedText = '';
+            
+            if (textBeforeCursor.endsWith(fullNameWithSpace)) {
+              matchedText = fullNameWithSpace;
+            } else if (textBeforeCursor.endsWith(fullName)) {
+              matchedText = fullName;
+            }
+            
+            if (matchedText) {
+              event.preventDefault();
+              const newText = textBeforeCursor.substring(0, textBeforeCursor.length - matchedText.length) + val.substring(cursor);
+              this.message.set(newText);
+              this.pendingMentions.delete(userId);
+              
+              setTimeout(() => {
+                input.value = newText;
+                input.selectionStart = input.selectionEnd = cursor - matchedText.length;
+                input.style.height = 'auto';
+                input.style.height = input.scrollHeight + 'px';
+              }, 0);
+              return;
+            }
+          }
+        }
+      }
+    }
+
     if (!this.showMentionDropdown()) return;
     const items = this.getMentionParticipants();
     if (items.length === 0) return;
@@ -943,6 +995,9 @@ export class ChatContainerComponent implements AfterViewChecked {
     }
 
     this.message.set('');
+    if (this.messageInputRef) {
+      this.messageInputRef.nativeElement.style.height = 'auto';
+    }
     this.pendingMentions.clear();
     this.replyingToMessage.set(null);
     this.shouldScrollToBottom = true;

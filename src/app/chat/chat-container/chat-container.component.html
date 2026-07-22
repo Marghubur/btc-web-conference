@@ -414,7 +414,7 @@
         </div>
         } @else {
         <!-- Received Message -->
-        <div class="message-wrapper received" ngClass="{'mt-2': !isSequentialMessage($index)}"
+        <div class="message-wrapper received mt-2" ngClass="{'mt-2': !isSequentialMessage($index)}"
             [class.sequential]="isSequentialMessage($index)" (mouseleave)="hoveredMsgIndex = null">
             <div class="msg-avatar-container" [class.avatar-hidden]="isSequentialMessage($index)">
                 @if (!isSequentialMessage($index)) {
@@ -693,9 +693,9 @@
                 </button>
             </div>
 
-            <input type="text" #messageInputRef class="message-input" [disabled]="!ws.currentConversation()"
-                [value]="message()" (input)="onMessageInput($event)" (keydown)="onInputKeydown($event)"
-                (keyup.enter)="sendMessage()" placeholder="Type a new message or @mention" />
+            <textarea #messageInputRef class="message-input" [disabled]="!ws.currentConversation()" [value]="message()"
+                (input)="onMessageInput($event)" (keydown)="onInputKeydown($event)"
+                placeholder="Type a new message or @mention" rows="1"></textarea>
 
             <div class="input-actions-right">
                 <button class="send-btn"

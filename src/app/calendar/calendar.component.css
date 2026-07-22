@@ -642,7 +642,28 @@
     color: var(--cal-text-primary);
 }
 
+.meeting-description-box {
+    color: var(--cal-text-primary);
+    max-height: 80px; /* roughly 3-4 lines */
+    overflow-y: auto;
+    word-break: break-word;
+    padding-right: 8px; /* space for scrollbar */
+    font-size: 0.95rem;
+}
+
 /* Form Styles */
+.meeting-participants-badge {
+    font-size: 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-top: 4px;
+    color: inherit;
+    font-weight: 500;
+}
 .form-label {
     font-size: 0.875rem;
     font-weight: 500;
@@ -655,7 +676,6 @@
     border-radius: 8px;
     border: 1px solid var(--cal-border);
     font-size: 0.9rem;
-    background: var(--cal-bg-tertiary);
     color: var(--cal-text-primary);
 }
 
@@ -725,4 +745,9 @@
         width: 28px;
         height: 28px;
     }
+}
+
+.dropdown-menu {
+    z-index: 100020 !important;
+    background: #f8f9fa !important;
 }

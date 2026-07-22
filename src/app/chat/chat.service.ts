@@ -28,7 +28,9 @@ export class ChatService {
         private local: LocalService
     ) {
         const user = this.local.getUser();
-        this.currentUserId = user.userId;
+        if (user) {
+            this.currentUserId = user.userId;
+        }
     }
 
     setIsChatStatus(isActive: boolean, requestFrom: string = 'Auto') {

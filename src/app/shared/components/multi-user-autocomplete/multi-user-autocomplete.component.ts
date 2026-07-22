@@ -50,12 +50,12 @@ export class MultiUserAutocompleteComponent {
   }
 
   get filteredResults(): SearchResult[] {
-    return (this.searchResults || []).filter(u => u && u.userId !== this.currentUserId);
+    return (this.searchResults || []); //.filter(u => u && u.userId !== this.currentUserId);
   }
 
   isSelected(user: SearchResult): boolean {
-    return this.selectedUsers.some(u => 
-      (u.conversationId && u.conversationId === user.conversationId) || 
+    return this.selectedUsers.some(u =>
+      (u.conversationId && u.conversationId === user.conversationId) ||
       (u.userId && u.userId === user.userId)
     );
   }
@@ -111,8 +111,8 @@ export class MultiUserAutocompleteComponent {
     if (event) {
       event.stopPropagation();
     }
-    const updated = this.selectedUsers.filter(u => 
-      !( (u.conversationId && u.conversationId === user.conversationId) || (u.userId && u.userId === user.userId) )
+    const updated = this.selectedUsers.filter(u =>
+      !((u.conversationId && u.conversationId === user.conversationId) || (u.userId && u.userId === user.userId))
     );
     this.selectedUsersChange.emit(updated);
     this.searchInput?.nativeElement?.focus();

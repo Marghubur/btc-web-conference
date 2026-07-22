@@ -229,7 +229,8 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
     private isUtcDate(date: any): boolean {
         if (typeof date === 'string') {
-            return !date.endsWith('Z') && !date.includes('+') && !date.includes('-0') && !date.match(/-\d{2}:\d{2}$/);
+            // Check if the string does NOT end with a timezone indicator (Z or +/-HH:mm)
+            return !date.endsWith('Z') && !/(?:Z|[+-]\d{2}:?\d{2})$/.test(date);
         }
         return false;
     }
@@ -402,7 +403,17 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
             const startDay = new Date(meetingStart.getFullYear(), meetingStart.getMonth(), meetingStart.getDate());
             const endDay = new Date(meetingEnd.getFullYear(), meetingEnd.getMonth(), meetingEnd.getDate());
 
-            return checkDay >= startDay && checkDay <= endDay;
+            const repeatType = meeting.repeatType || 0;
+
+            if (repeatType === 1) { // Daily
+                return checkDay >= startDay;
+            } else if (repeatType === 2) { // Weekly
+                return checkDay >= startDay && checkDay.getDay() === startDay.getDay();
+            } else if (repeatType === 3) { // Monthly
+                return checkDay >= startDay && checkDay.getDate() === startDay.getDate();
+            } else { // Does not repeat (0)
+                return checkDay >= startDay && checkDay <= endDay;
+            }
         });
     }
 
@@ -416,19 +427,38 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
 
             const checkDayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
             const checkDayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+            const startDayStart = new Date(meetingStart.getFullYear(), meetingStart.getMonth(), meetingStart.getDate(), 0, 0, 0, 0);
 
-            if (meetingEnd <= checkDayStart || meetingStart > checkDayEnd) return false;
+            const repeatType = meeting.repeatType || 0;
+            let isApplicableDay = false;
 
-            // If meeting started on a previous day, it starts visually at slot 00:00 for today
-            if (meetingStart < checkDayStart) {
+            if (repeatType === 1) { // Daily
+                isApplicableDay = checkDayStart >= startDayStart;
+            } else if (repeatType === 2) { // Weekly
+                isApplicableDay = checkDayStart >= startDayStart && checkDayStart.getDay() === startDayStart.getDay();
+            } else if (repeatType === 3) { // Monthly
+                isApplicableDay = checkDayStart >= startDayStart && checkDayStart.getDate() === startDayStart.getDate();
+            } else { // Does not repeat
+                if (meetingEnd <= checkDayStart || meetingStart > checkDayEnd) return false;
+                isApplicableDay = true;
+            }
+
+            if (!isApplicableDay) return false;
+
+            // For recurring meetings or same-day non-recurring
+            // Calculate effective start time for this specific day
+            const effectiveMeetingStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), meetingStart.getHours(), meetingStart.getMinutes(), meetingStart.getSeconds());
+
+            // If it's a non-recurring meeting that started on a previous day, it starts visually at slot 00:00 for today
+            if (repeatType === 0 && meetingStart < checkDayStart) {
                 return slot.hour === 0 && slot.minute === 0;
             }
 
-            // Otherwise check if meetingStart falls exactly into this 30-minute slot
+            // Otherwise check if effective meeting start falls exactly into this 30-minute slot
             const slotStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), slot.hour, slot.minute, 0, 0);
             const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
 
-            return meetingStart >= slotStart && meetingStart < slotEnd;
+            return effectiveMeetingStart >= slotStart && effectiveMeetingStart < slotEnd;
         });
     }
 
@@ -439,13 +469,17 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
         const meetingStart = new Date(meeting.startDate);
         const meetingEnd = meeting.endDate ? new Date(meeting.endDate) : new Date(meetingStart.getTime() + (meeting.durationInSecond ? meeting.durationInSecond * 1000 : 3600000));
 
+        const duration = meetingEnd.getTime() - meetingStart.getTime();
+        const effectiveStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), meetingStart.getHours(), meetingStart.getMinutes(), meetingStart.getSeconds());
+        const effectiveEnd = new Date(effectiveStart.getTime() + duration);
+
         const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
         const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 24, 0, 0, 0);
 
-        const effectiveStart = meetingStart < dayStart ? dayStart : meetingStart;
-        const effectiveEnd = meetingEnd > dayEnd ? dayEnd : meetingEnd;
+        const effStart = effectiveStart < dayStart ? dayStart : effectiveStart;
+        const effEnd = effectiveEnd > dayEnd ? dayEnd : effectiveEnd;
 
-        const durationMinutes = Math.max(30, (effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60));
+        const durationMinutes = Math.max(30, (effEnd.getTime() - effStart.getTime()) / (1000 * 60));
         const slotsSpan = durationMinutes / 30;
 
         // In week view, each slot row is 49px (48px min-height + 1px border).
@@ -480,8 +514,16 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
         const dayEndMs = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999).getTime();
 
         const intervals = dayMeetings.map(m => {
-            const start = m.startDate ? new Date(m.startDate).getTime() : dayStartMs;
-            const end = m.endDate ? new Date(m.endDate).getTime() : (start + (m.durationInSecond ? m.durationInSecond * 1000 : 3600000));
+            let start = m.startDate ? new Date(m.startDate).getTime() : dayStartMs;
+            let end = m.endDate ? new Date(m.endDate).getTime() : (start + (m.durationInSecond ? m.durationInSecond * 1000 : 3600000));
+
+            // For recurrent meetings, map their start and end time to today
+            if (m.startDate) {
+                const meetingStart = new Date(m.startDate);
+                const duration = end - start;
+                start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), meetingStart.getHours(), meetingStart.getMinutes(), meetingStart.getSeconds()).getTime();
+                end = start + duration;
+            }
 
             const effStart = Math.max(dayStartMs, start);
             const effEnd = Math.min(dayEndMs, Math.max(effStart + 30 * 60 * 1000, end));
@@ -586,17 +628,35 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
         const meetingStart = new Date(meeting.startDate);
         const meetingEnd = meeting.endDate ? new Date(meeting.endDate) : new Date(meetingStart.getTime() + (meeting.durationInSecond ? meeting.durationInSecond * 1000 : 3600000));
 
-        const checkDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const startDay = new Date(meetingStart.getFullYear(), meetingStart.getMonth(), meetingStart.getDate());
-        const endDay = new Date(meetingEnd.getFullYear(), meetingEnd.getMonth(), meetingEnd.getDate());
+        const checkDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+        const startDay = new Date(meetingStart.getFullYear(), meetingStart.getMonth(), meetingStart.getDate(), 0, 0, 0, 0);
+        const endDay = new Date(meetingEnd.getFullYear(), meetingEnd.getMonth(), meetingEnd.getDate(), 0, 0, 0, 0);
 
-        if (checkDay < startDay || checkDay > endDay) return false;
+        const repeatType = meeting.repeatType || 0;
+        let isApplicableDay = false;
+
+        if (repeatType === 1) { // Daily
+            isApplicableDay = checkDay >= startDay;
+        } else if (repeatType === 2) { // Weekly
+            isApplicableDay = checkDay >= startDay && checkDay.getDay() === startDay.getDay();
+        } else if (repeatType === 3) { // Monthly
+            isApplicableDay = checkDay >= startDay && checkDay.getDate() === startDay.getDate();
+        } else { // Does not repeat
+            isApplicableDay = checkDay >= startDay && checkDay <= endDay;
+        }
+
+        if (!isApplicableDay) return false;
+
+        // Calculate effective start and end times for this specific day
+        const durationMs = meetingEnd.getTime() - meetingStart.getTime();
+        const effectiveMeetingStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), meetingStart.getHours(), meetingStart.getMinutes(), meetingStart.getSeconds());
+        const effectiveMeetingEnd = new Date(effectiveMeetingStart.getTime() + durationMs);
 
         const slotStart = new Date(date);
         slotStart.setHours(slot.hour, slot.minute, 0, 0);
         const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
 
-        return meetingStart < slotEnd && meetingEnd > slotStart;
+        return effectiveMeetingStart < slotEnd && effectiveMeetingEnd > slotStart;
     }
 
     // Helper: Check if two dates are the same day
@@ -604,6 +664,11 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
         return date1.getFullYear() === date2.getFullYear() &&
             date1.getMonth() === date2.getMonth() &&
             date1.getDate() === date2.getDate();
+    }
+
+    getParticipantCount(meeting: MeetingDetail): number {
+        if (!meeting.participants) return 0;
+        return meeting.participants.split(',').filter(x => x.trim() !== '').length;
     }
 
     // Select date

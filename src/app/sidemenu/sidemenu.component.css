@@ -338,8 +338,7 @@
 }
 
 /* Dropdown Menu */
-.user-dropdown,
-.dropdown-menu {
+.user-dropdown {
     position: absolute;
     bottom: 85% !important;
     left: 50% !important;

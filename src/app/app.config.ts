@@ -8,10 +8,7 @@ import { errorInterceptor } from './providers/interceptors/error.interceptor';
 import { AuthInitService } from './providers/services/auth-init.service';
 
 export function initializeApp(authInitService: AuthInitService) {
-    return () => {
-        authInitService.initialize();
-        return Promise.resolve(true);
-    };
+    return () => authInitService.initialize();
 }
 
 export const appConfig: ApplicationConfig = {
