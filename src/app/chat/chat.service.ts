@@ -5,6 +5,7 @@ import { HttpService } from '../providers/services/http.service';
 import { ConfeetSocketService, Message } from '../providers/socket/confeet-socket.service';
 import { ResponseModel } from '../models/model';
 import { LocalService } from '../providers/services/local.service';
+import { ChatDbService } from '../core/services/chat-db.service';
 
 @Injectable({
     providedIn: 'root'
@@ -25,10 +26,42 @@ export class ChatService {
 
     constructor(private http: HttpService,
         private ws: ConfeetSocketService,
-        private local: LocalService
+        private local: LocalService,
+        private chatDb: ChatDbService
     ) {
         const user = this.local.getUser();
-        this.currentUserId = user.userId;
+        if (user) {
+            this.currentUserId = user.userId;
+        }
+        this.startAutoRetryLoop();
+    }
+
+    private startAutoRetryLoop(): void {
+        // Run every 5 seconds
+        setInterval(async () => {
+            if (!this.currentUserId) return;
+            try {
+                const pending = await this.chatDb.getAllPendingMessages();
+                if (!pending || pending.length === 0) return;
+
+                const now = Date.now();
+                const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+
+                for (const msg of pending) {
+                    if (now - msg.timestamp > FIFTEEN_DAYS_MS) {
+                        // Message expired (older than 15 days), remove from queue
+                        console.warn(`Message ${msg.messageId} expired after 15 days of retries.`);
+                        await this.chatDb.removePendingMessage(msg.messageId);
+                    } else {
+                        // Resend via WebSocket
+                        this.ws.sendMessage(msg.payload);
+                        await this.chatDb.incrementRetryCount(msg.messageId);
+                    }
+                }
+            } catch (err) {
+                console.error('Error in auto-retry loop:', err);
+            }
+        }, 30000);
     }
 
     setIsChatStatus(isActive: boolean, requestFrom: string = 'Auto') {
@@ -67,7 +100,7 @@ export class ChatService {
                 return { ...res, participants: parts as any };
             });
         });
-        
+
         this.meetingRooms.update(rooms => {
             return rooms.map(room => {
                 const parts = room.participants?.map(p => p.userId === userId ? { ...p, status: status } : p) || [];
@@ -155,16 +188,27 @@ export class ChatService {
             if (res.isSuccess && res.responseBody && res.responseBody.messages) {
                 var messages = res.responseBody.messages;
                 for (let i = 0; i < messages.length; i++) {
-                    messages[i].isMentioned = this.isMentioned(messages[i])
+                    messages[i].isMentioned = this.isMentioned(messages[i]);
+                    messages[i].status = messages[i].status || 1;
                 }
+
+                // Get local pending messages for this conversation
+                const allPending = await this.chatDb.getAllPendingMessages();
+                const conversationPending = allPending
+                    .filter(p => p.roomId === conversationId)
+                    .map(p => p.payload)
+                    .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+                messages.reverse();
+
                 if (append) {
                     if (page > 1) {
-                        this.messages.update(current => [...messages.reverse(), ...current]);
+                        this.messages.update(current => [...messages, ...current]);
                     } else {
-                        this.messages.set(messages.reverse());
+                        this.messages.set([...messages, ...conversationPending]);
                     }
                 } else {
-                    this.messages.set(messages.reverse());
+                    this.messages.set([...messages, ...conversationPending]);
                 }
             }
         } finally {

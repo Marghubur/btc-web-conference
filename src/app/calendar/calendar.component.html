@@ -99,11 +99,15 @@
                         @for (meeting of getMeetingsStartingInTimeSlot(date, slot); track $index) {
                         <div class="meeting-block week-meeting-block" [class]="getMeetingColor(meeting)"
                             [style.height.px]="getMeetingSlotHeight(meeting, 'week', date)"
-                            [style.width]="getMeetingWidth(meeting, date)"
-                            [style.left]="getMeetingLeft(meeting, date)"
+                            [style.width]="getMeetingWidth(meeting, date)" [style.left]="getMeetingLeft(meeting, date)"
                             (click)="showMeetingDetails(meeting); $event.stopPropagation()">
                             <div class="meeting-time">{{ meeting.startTime }} - {{ meeting.endTime }}</div>
                             <div class="meeting-title-block">{{ meeting.title }}</div>
+                            @if (getParticipantCount(meeting) > 0) {
+                            <div class="meeting-participants-badge">
+                                <i class="fa-solid fa-users"></i> {{ getParticipantCount(meeting) }} members
+                            </div>
+                            }
                         </div>
                         }
                     </div>
@@ -145,6 +149,11 @@
                             <div class="meeting-info">
                                 <div class="meeting-time-full">{{ meeting.startTime }} - {{ meeting.endTime }}</div>
                                 <div class="meeting-title-full">{{ meeting.title }}</div>
+                                @if (getParticipantCount(meeting) > 0) {
+                                <div class="meeting-participants-badge">
+                                    <i class="fa-solid fa-users"></i> {{ getParticipantCount(meeting) }} members
+                                </div>
+                                }
                                 @if (meeting.organizerName) {
                                 <div class="meeting-organizer">
                                     <i class="fa-regular fa-user"></i> {{ meeting.organizerName }}
@@ -196,13 +205,10 @@
 
                     <div class="mb-4 position-relative">
                         <label class="form-label">Participants</label>
-                        <app-multi-user-autocomplete
-                            [placeholder]="'Search users by name or email...'"
-                            [selectedUsers]="selectedParticipants"
-                            [searchResults]="participantSearchResults"
+                        <app-multi-user-autocomplete [placeholder]="'Search users by name or email...'"
+                            [selectedUsers]="selectedParticipants" [searchResults]="participantSearchResults"
                             (searchChange)="participantSearchQuery = $event; onParticipantSearch()"
-                            (selectedUsersChange)="selectedParticipants = $event"
-                            [currentUserId]="user?.userId">
+                            (selectedUsersChange)="selectedParticipants = $event" [currentUserId]="user?.userId">
                         </app-multi-user-autocomplete>
                     </div>
 
@@ -210,18 +216,18 @@
                         <div class="col-md-5">
                             <label class="form-label">Start <span class="text-danger">*</span></label>
                             <div class="row g-2">
-                                <div class="col-7">
+                                <div class="col-8">
                                     <div class="input-group">
                                         <input class="form-control" placeholder="Date" name="dp"
                                             [minDate]="minPickerDate" [(ngModel)]="meetingDate"
-                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #md="ngbDatepicker" container="body"
+                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #md="ngbDatepicker"
                                             (dateSelect)="onMeetingDateSelect($event)" />
                                         <button class="btn btn-outline-secondary" (click)="md.toggle()" type="button">
                                             <i class="fa-solid fa-calendar-days"></i>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-5">
+                                <div class="col-4">
                                     <select class="form-select" formControlName="startTime"
                                         (change)="onStartTimeSelect()">
                                         <option [value]="null">Time</option>
@@ -240,18 +246,18 @@
                         <div class="col-md-5">
                             <label class="form-label">End <span class="text-danger">*</span></label>
                             <div class="row g-2">
-                                <div class="col-7">
+                                <div class="col-8">
                                     <div class="input-group">
                                         <input class="form-control" placeholder="Date" name="dp"
                                             [minDate]="minEndPickerDate" [(ngModel)]="meetingEndDate"
-                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #med="ngbDatepicker" container="body"
+                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #med="ngbDatepicker"
                                             (dateSelect)="onMeetingEndDateSelect($event)" />
                                         <button class="btn btn-outline-secondary" (click)="med.toggle()" type="button">
                                             <i class="fa-solid fa-calendar-days"></i>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-5">
+                                <div class="col-4">
                                     <select class="form-select" formControlName="endTime" (change)="onEndTimeSelect()">
                                         <option [value]="null">Time</option>
                                         @for (time of endMeetingTimes; track $index) {
@@ -266,17 +272,18 @@
                     <div class="row mb-4">
                         <div class="col-md-5">
                             <div class="form-check form-switch pt-2">
-                                <input class="form-check-input" type="checkbox" id="allDaySwitch" formControlName="isAllDay">
+                                <input class="form-check-input" type="checkbox" id="allDaySwitch"
+                                    formControlName="isAllDay">
                                 <label class="form-check-label" for="allDaySwitch">All day</label>
                             </div>
                         </div>
                         <div class="col-md-2"></div>
                         <div class="col-md-5">
                             <select class="form-select" formControlName="repeatType">
-                                <option value="Does not repeat">Does not repeat</option>
-                                <option value="Daily">Daily</option>
-                                <option value="Weekly">Weekly</option>
-                                <option value="Monthly">Monthly</option>
+                                <option [ngValue]="0">Does not repeat</option>
+                                <option [ngValue]="1">Daily</option>
+                                <option [ngValue]="2">Weekly</option>
+                                <option [ngValue]="3">Monthly</option>
                             </select>
                         </div>
                     </div>
@@ -285,17 +292,31 @@
                         <label class="form-label">Description</label>
                         <div class="border rounded overflow-hidden">
                             <div class="d-flex gap-2 p-2 bg-light border-bottom">
-                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('bold')" title="Bold"><i class="fa-solid fa-bold"></i></button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('italic')" title="Italic"><i class="fa-solid fa-italic"></i></button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('underline')" title="Underline"><i class="fa-solid fa-underline"></i></button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('strikeThrough')" title="Strikethrough"><i class="fa-solid fa-strikethrough"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0"
+                                    (click)="execCommand('bold')" title="Bold"><i class="fa-solid fa-bold"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0"
+                                    (click)="execCommand('italic')" title="Italic"><i
+                                        class="fa-solid fa-italic"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0"
+                                    (click)="execCommand('underline')" title="Underline"><i
+                                        class="fa-solid fa-underline"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0"
+                                    (click)="execCommand('strikeThrough')" title="Strikethrough"><i
+                                        class="fa-solid fa-strikethrough"></i></button>
                                 <div class="border-start mx-1"></div>
-                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('insertUnorderedList')" title="Bullet List"><i class="fa-solid fa-list-ul"></i></button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('insertOrderedList')" title="Numbered List"><i class="fa-solid fa-list-ol"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0"
+                                    (click)="execCommand('insertUnorderedList')" title="Bullet List"><i
+                                        class="fa-solid fa-list-ul"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0"
+                                    (click)="execCommand('insertOrderedList')" title="Numbered List"><i
+                                        class="fa-solid fa-list-ol"></i></button>
                                 <div class="border-start mx-1"></div>
-                                <button type="button" class="btn btn-sm btn-outline-secondary border-0" (click)="execCommand('createLink')" title="Link"><i class="fa-solid fa-link"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0"
+                                    (click)="execCommand('createLink')" title="Link"><i
+                                        class="fa-solid fa-link"></i></button>
                             </div>
-                            <div class="p-3 bg-white" style="min-height: 120px; outline: none; color: black;" contenteditable="true" #editorContent (input)="updateAgendaContent($event)"></div>
+                            <div class="p-3 bg-white" style="min-height: 120px; outline: none; color: black;"
+                                contenteditable="true" #editorContent (input)="updateAgendaContent($event)"></div>
                         </div>
                     </div>
                 </form>
@@ -348,9 +369,9 @@
                 @if (selectedMeeting.agenda) {
                 <div class="meeting-detail-row">
                     <i class="fa-regular fa-file-lines"></i>
-                    <div>
+                    <div style="flex: 1; min-width: 0;">
                         <strong>Description</strong>
-                        <p class="mb-0">{{ selectedMeeting.agenda }}</p>
+                        <div class="mb-0 meeting-description-box" [innerHTML]="selectedMeeting.agenda"></div>
                     </div>
                 </div>
                 }
@@ -358,7 +379,7 @@
                     <i class="fa-solid fa-key"></i>
                     <div>
                         <strong>Meeting ID</strong>
-                        <p class="mb-0">{{ selectedMeeting.meetingId }}</p>
+                        <p class="mb-0 text-break">{{ selectedMeeting.meetingId }}</p>
                     </div>
                 </div>
             </div>

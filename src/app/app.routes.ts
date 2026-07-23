@@ -1,7 +1,4 @@
 import { Routes, UrlSegment } from "@angular/router";
-import { AppComponent } from "./app.component";
-import { MeetingComponent } from "./meeting/meeting.component";
-import { PreviewComponent } from "./preview/preview.component";
 import { authGuard } from "./providers/auth.guard";
 import { SplashComponent } from "./splash/splash.component";
 // Import our new fallback component

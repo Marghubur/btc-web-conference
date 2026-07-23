@@ -225,19 +225,24 @@
                         <div class="col-md-5">
                             <label class="form-label">Start Date & Time <span class="text-danger">*</span></label>
                             <div class="row g-2">
-                                <div class="col-7">
-                                    <div class="input-group"
-                                        [ngClass]="{'error-field':isSubmitted && meetingForm.controls['startDate'].errors !== null && meetingForm.controls['startDate'].errors['required']}">
-                                        <input class="form-control" placeholder="Select date" name="dp"
-                                            [minDate]="minPickerDate" [(ngModel)]="meetingDate"
-                                            [ngModelOptions]="{standalone: true}" ngbDatepicker #md="ngbDatepicker"
-                                            container="body" (dateSelect)="onMeetingDateSelect($event)" />
-                                        <button class="btn btn-outline-secondary" (click)="md.toggle()" type="button">
-                                            <i class="fa-solid fa-calendar-days"></i>
-                                        </button>
-                                    </div>
+                                <div class="col-8">
+                                    <form class="row row-cols-sm-auto">
+                                        <div class="col-12">
+                                            <div class="input-group"
+                                                [ngClass]="{'error-field':isSubmitted && meetingForm.controls['startDate'].errors !== null && meetingForm.controls['startDate'].errors['required']}">
+                                                <input class="form-control" placeholder="Select date" name="dp"
+                                                    [minDate]="minPickerDate" [(ngModel)]="meetingDate"
+                                                    [ngModelOptions]="{standalone: true}" ngbDatepicker
+                                                    #md="ngbDatepicker" (dateSelect)="onMeetingDateSelect($event)" />
+                                                <button class="btn btn-outline-secondary" (click)="md.toggle()"
+                                                    type="button">
+                                                    <i class="fa-solid fa-calendar-days"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
                                 </div>
-                                <div class="col-5">
+                                <div class="col-4">
                                     <select class="form-select" formControlName="startTime"
                                         [ngClass]="{'error-field':isSubmitted && meetingForm.controls['startTime'].errors !== null && meetingForm.controls['startTime'].errors['required']}"
                                         (change)="onstartTimeSelect()">
@@ -255,19 +260,19 @@
                         <div class="col-md-5">
                             <label class="form-label">End Date & Time <span class="text-danger">*</span></label>
                             <div class="row g-2">
-                                <div class="col-7">
+                                <div class="col-8">
                                     <div class="input-group"
                                         [ngClass]="{'error-field':isSubmitted && meetingForm.controls['endDate'].errors !== null && meetingForm.controls['endDate'].errors['required']}">
                                         <input class="form-control" placeholder="Select date" name="dp"
                                             [minDate]="minEndPickerDate" (dateSelect)="onMeetingEndDateSelect($event)"
                                             [(ngModel)]="meetingEndDate" [ngModelOptions]="{standalone: true}"
-                                            ngbDatepicker #med="ngbDatepicker" container="body" />
+                                            ngbDatepicker #med="ngbDatepicker" />
                                         <button class="btn btn-outline-secondary" (click)="med.toggle()" type="button">
                                             <i class="fa-solid fa-calendar-days"></i>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-5">
+                                <div class="col-4">
                                     <select class="form-select" formControlName="endTime"
                                         [ngClass]="{'error-field':isSubmitted && meetingForm.controls['endTime'].errors !== null && meetingForm.controls['endTime'].errors['required']}"
                                         (change)="onEndTimeSelect()">
