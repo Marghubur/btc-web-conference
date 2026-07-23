@@ -11,6 +11,7 @@ import { NotifyGroupCreatedService } from '../../providers/socket/client-events/
 import { Conversation, Participant, SearchResult } from '../../components/global-search/search.models';
 import { ResponseModel, User } from '../../models/model';
 import { CallType } from '../../models/conference_call/call_model';
+import { ChatDbService } from '../../core/services/chat-db.service';
 
 @Component({
   selector: 'app-chat-container',
@@ -26,6 +27,7 @@ export class ChatContainerComponent implements AfterViewChecked {
 
   ws = inject(ConfeetSocketService);
   chatService = inject(ChatService);
+  chatDb = inject(ChatDbService);
   private local = inject(LocalService);
   private router = inject(Router);
   private initiateAudioCallService = inject(InitiateAudioCallService);
@@ -958,7 +960,7 @@ export class ChatContainerComponent implements AfterViewChecked {
           clientType: "web",
           createdAt: new Date(),
           editedAt: null,
-          status: 1,
+          status: 0,
           fileUrl: fileData.url,
           content: JSON.stringify({
             fileName: fileData.fileName,
@@ -969,6 +971,7 @@ export class ChatContainerComponent implements AfterViewChecked {
           })
         };
         this.chatService.messages.update(msgs => [...msgs, event]);
+        this.chatDb.addPendingMessage(event.messageId, event.conversationId, event);
         this.ws.sendMessage(event);
       }
       this.stagedFiles.set([]);
@@ -986,11 +989,12 @@ export class ChatContainerComponent implements AfterViewChecked {
         clientType: "web",
         createdAt: new Date(),
         editedAt: null,
-        status: 1,
+        status: 0,
         content: cleanContent,
         fileUrl: null
       };
       this.chatService.messages.update(msgs => [...msgs, event]);
+      this.chatDb.addPendingMessage(event.messageId, event.conversationId, event);
       this.ws.sendMessage(event);
     }
 

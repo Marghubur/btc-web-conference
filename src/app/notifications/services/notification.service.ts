@@ -10,6 +10,7 @@ import { Conversation, Participant, LastMessage } from '../../components/global-
 import { ChatService } from '../../chat/chat.service';
 import { GetStatusName, User } from '../../models/model';
 import { LocalService } from '../../providers/services/local.service';
+import { ChatDbService } from '../../core/services/chat-db.service';
 
 export interface AppNotification {
     id: string;
@@ -47,7 +48,8 @@ export class NotificationService {
     constructor(
         private ws: ConfeetSocketService,
         private chatService: ChatService,
-        private local: LocalService
+        private local: LocalService,
+        private chatDb: ChatDbService
     ) {
         this.user = this.local.getUser();
     }
@@ -96,8 +98,12 @@ export class NotificationService {
     addMessageToActiveConversation(message: Message): void {
         if (message.senderId === this.user.userId) {
             this.chatService.messages.update(msgs =>
-                msgs.map(x => x.messageId === message.messageId ? { ...x, status: message.status } : x)
+                msgs.map(x => x.messageId === message.messageId ? { ...x, status: message.status || 1, id: message.id } : x)
             );
+            // Remove from IndexedDB once acknowledged by the server
+            if (message.messageId) {
+                this.chatDb.removePendingMessage(message.messageId);
+            }
         } else {
             this.chatService.messages.update(msgs => [...msgs, message]);
             // Auto mark as delivered

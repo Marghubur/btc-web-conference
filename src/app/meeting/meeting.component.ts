@@ -143,7 +143,7 @@ export class MeetingComponent implements OnInit, AfterViewInit, OnDestroy {
     private timer$ = interval(1000);
     handRaised: boolean = false;
     private notified = new Set<string>(); // tracks who is already raised
-    isViewParticipant: boolean = false;
+    isViewParticipant: boolean = true;
     participantFilter: string = '';
     isChatEnabled: boolean = false;
 

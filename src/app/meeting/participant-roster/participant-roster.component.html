@@ -85,13 +85,13 @@
         </div>
         }
         <!-- Section Divider -->
-        @if (meetingService.invitedParticipants > 0) {
+        @if (getOthersInvited().length > 0) {
         <div class="roster-divider"></div>
-        <!-- Section: Not in this call -->
+        <!-- Section: Others invited -->
         <div class="roster-section-header">
-            <span>Not in this call ({{meetingService.invitedParticipants}})</span>
+            <span>Others invited ({{getOthersInvited().length}})</span>
         </div>
-        @for (invited of meetingService.filteredInvitedParticipants(false); track invited.userId) {
+        @for (invited of getOthersInvited(); track invited.userId) {
         <div class="participant-item not-in-call">
             <div class="participant-avatar-wrapper">
                 <div class="participant-avatar"
@@ -102,26 +102,28 @@
             </div>
             <div class="participant-info">
                 <span class="participant-name">{{invited.name}}</span>
-                <span class="participant-status-text">{{invited.email}}</span>
+                <span class="participant-status-text" [ngClass]="{'text-danger': isNoResponseParticipant(invited.userId)}">
+                    @if (isCallingParticipant(invited.userId)) {
+                        Calling...
+                    } @else if (isNoResponseParticipant(invited.userId)) {
+                        No response
+                    } @else {
+                        {{invited.email}}
+                    }
+                </span>
             </div>
             <div class="participant-actions">
                 @if (isCallingParticipant(invited.userId)) {
-                <button class="request-join-btn calling" disabled title="Calling...">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px"
-                        fill="currentColor" class="calling-icon">
-                        <path
-                            d="M798-120q-125 0-247-54.5T329-329Q229-429 174.5-551T120-798q0-18 12-30t30-12h162q14 0 25 9.5t13 22.5l26 140q2 16-1 27t-11 19l-97 98q20 37 47.5 71.5T387-386q31 31 65 57.5t72 48.5l94-94q9-9 23.5-13.5T670-390l138 28q14 4 23 14.5t9 23.5v162q0 18-12 30t-30 12Z" />
+                <button class="request-join-btn calling border-0 bg-transparent text-muted" disabled title="Calling...">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                        <path d="M798-120q-125 0-247-54.5T329-329Q229-429 174.5-551T120-798q0-18 12-30t30-12h162q14 0 25 9.5t13 22.5l26 140q2 16-1 27t-11 19l-97 98q20 37 47.5 71.5T387-386q31 31 65 57.5t72 48.5l94-94q9-9 23.5-13.5T670-390l138 28q14 4 23 14.5t9 23.5v162q0 18-12 30t-30 12Z" />
                     </svg>
-                    <span>Calling</span>
                 </button>
                 } @else {
-                <button class="request-join-btn" (click)="requestToJoin(invited)" title="Request to join">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="14px" viewBox="0 -960 960 960" width="14px"
-                        fill="currentColor">
-                        <path
-                            d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Z" />
+                <button class="request-join-btn border-0 bg-transparent text-primary" (click)="requestToJoin(invited)" title="Ask to join">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                        <path d="M798-120q-125 0-247-54.5T329-329Q229-429 174.5-551T120-798q0-18 12-30t30-12h162q14 0 25 9.5t13 22.5l26 140q2 16-1 27t-11 19l-97 98q20 37 47.5 71.5T387-386q31 31 65 57.5t72 48.5l94-94q9-9 23.5-13.5T670-390l138 28q14 4 23 14.5t9 23.5v162q0 18-12 30t-30 12Z" />
                     </svg>
-                    <span>Request</span>
                 </button>
                 }
             </div>
