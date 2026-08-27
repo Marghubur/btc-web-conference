@@ -2091,27 +2091,35 @@ textarea.message-input {
 /* ===== New Message Snackbar ===== */
 .new-message-snackbar {
     position: absolute;
-    bottom: calc(100% + 16px);
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--teams-primary, #6264a7);
+    background: #242424;
     color: #ffffff;
-    padding: 8px 14px;
-    border-radius: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    padding: 10px 16px;
+    border-radius: var(--teams-radius-large);
     display: flex;
     align-items: center;
     gap: 12px;
+    box-shadow: var(--teams-shadow-hover);
     z-index: 1000;
-    font-size: 13px;
-    font-weight: 500;
     cursor: pointer;
-    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-    animation: fadeInSnackbar 0.25s ease-out;
+    animation: snackbarSlideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes snackbarSlideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
 }
 
 .new-message-snackbar:hover {
-    background-color: var(--teams-primary-hover, #4f518c);
+    background-color: #333333;
     transform: translate(-50%, -2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
@@ -2151,4 +2159,442 @@ textarea.message-input {
         opacity: 1;
         transform: translate(-50%, 0);
     }
+}
+
+.drag-drop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(91, 95, 199, 0.1);
+    border: 3px dashed var(--teams-primary);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--teams-radius);
+    pointer-events: none;
+}
+
+.drag-drop-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--teams-primary);
+    background: var(--teams-bg-main);
+    padding: 32px 48px;
+    border-radius: var(--teams-radius-large);
+    box-shadow: var(--teams-shadow-hover);
+}
+
+.drag-drop-content h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.message-edited-indicator {
+    padding-bottom: 10px;
+    display: block;
+}
+
+.nudge-img {
+    width: 12% !important;
+}
+
+/* Seen User Avatars below messages */
+.seen-avatars-container {
+    position: absolute;
+    bottom: -6px;
+    left: -6px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    z-index: 5;
+}
+
+.seen-user-avatar {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.seen-user-initials {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    font-size: 7px;
+    font-weight: bold;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== Scroll to Bottom Button ===== */
+.scroll-bottom-btn {
+    position: absolute;
+    bottom: calc(100% + 16px);
+    right: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    color: var(--teams-primary, #6264a7);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 999;
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    animation: fadeInScrollBtn 0.25s ease-out;
+}
+
+.scroll-bottom-btn:hover {
+    background-color: #f3f2f1;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.scroll-bottom-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes fadeInScrollBtn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== New Message Snackbar ===== */
+.new-message-snackbar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #242424;
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: var(--teams-radius-large);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--teams-shadow-hover);
+    z-index: 1000;
+    cursor: pointer;
+    animation: snackbarSlideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes snackbarSlideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.new-message-snackbar:hover {
+    background-color: #333333;
+    transform: translate(-50%, -2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.new-message-snackbar .snackbar-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.new-message-snackbar .snackbar-close-btn {
+    background: transparent;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 50%;
+    opacity: 0.8;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.new-message-snackbar .snackbar-close-btn:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+@keyframes fadeInSnackbar {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.drag-drop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(91, 95, 199, 0.1);
+    border: 3px dashed var(--teams-primary);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--teams-radius);
+    pointer-events: none;
+}
+
+.drag-drop-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--teams-primary);
+    background: var(--teams-bg-main);
+    padding: 32px 48px;
+    border-radius: var(--teams-radius-large);
+    box-shadow: var(--teams-shadow-hover);
+}
+
+.drag-drop-content h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.message-edited-indicator {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    opacity: 0.8;
+}
+
+.edit-banner {
+    background: rgba(248, 210, 42, 0.15) !important;
+    border-left-color: var(--teams-away) !important;
+}
+
+/* Pinned Messages Bar */
+.pinned-messages-bar {
+    display: flex;
+    align-items: center;
+    background-color: var(--teams-bg-main);
+    border-bottom: 1px solid var(--teams-border);
+    padding: 8px 16px;
+    position: relative;
+    z-index: 10;
+    min-height: 44px;
+}
+
+.pinned-message-preview {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.pinned-message-preview:hover {
+    opacity: 0.8;
+}
+
+.pin-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--teams-primary);
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.pinned-text-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pinned-label {
+    font-size: 0.75rem;
+    color: var(--teams-text-secondary);
+    font-weight: 600;
+}
+
+.pinned-text {
+    font-size: 0.875rem;
+    color: var(--teams-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pinned-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: var(--teams-radius-small);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--teams-text-secondary);
+}
+
+.pinned-dropdown-trigger:hover {
+    background-color: var(--teams-hover);
+}
+
+.pinned-dropdown-trigger svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Pinned Messages Dropdown */
+.pinned-messages-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 16px;
+    width: 350px;
+    max-height: 400px;
+    background: var(--teams-bg-main);
+    border: 1px solid var(--teams-border);
+    border-radius: var(--teams-radius-medium);
+    box-shadow: var(--teams-shadow-hover);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 100;
+}
+
+.pinned-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--teams-border);
+}
+
+.pinned-dropdown-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: var(--teams-text-secondary);
+}
+
+.pinned-dropdown-list {
+    overflow-y: auto;
+    max-height: calc(400px - 45px);
+}
+
+.pinned-dropdown-item {
+    display: flex;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--teams-border);
+    transition: background-color 0.2s;
+}
+
+.pinned-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.pinned-dropdown-item:hover {
+    background-color: var(--teams-hover);
+}
+
+.pinned-item-avatar {
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.pinned-item-avatar img,
+.pinned-item-avatar .avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.pinned-item-avatar .avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.pinned-item-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.pinned-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.pinned-item-header .sender-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--teams-text-primary);
+}
+
+.pinned-item-header .message-time {
+    font-size: 0.75rem;
+    color: var(--teams-text-secondary);
+}
+
+.pinned-item-content .message-preview {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--teams-text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Highlight effect for scrolled message */
+@keyframes highlight-fade {
+    0% { background-color: rgba(98, 100, 167, 0.2); }
+    100% { background-color: transparent; }
+}
+
+.highlight-message {
+    animation: highlight-fade 2s ease-out;
 }

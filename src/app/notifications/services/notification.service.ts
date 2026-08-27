@@ -11,6 +11,7 @@ import { ChatService } from '../../chat/chat.service';
 import { GetStatusName, User } from '../../models/model';
 import { LocalService } from '../../providers/services/local.service';
 import { ChatDbService } from '../../core/services/chat-db.service';
+import { MessageStatus } from '../../models/constant';
 
 export interface AppNotification {
     id: string;
@@ -40,6 +41,9 @@ export class NotificationService {
 
     // Active conversation tracking (set by ChatComponent)
     private activeConversationId = signal<string | null>(null);
+
+    // Deduplication set for incoming live messages
+    private processedMessageIds = new Set<string>();
 
     private subscriptions = new Subscription();
     private initialized = false;
@@ -98,18 +102,26 @@ export class NotificationService {
     updateMessageState(message: Message): boolean {
         if (message.senderId === this.user.userId) {
             if (this.activeConversationId() === message.conversationId) {
-                this.chatService.messages.update(msgs =>
-                    msgs.map(x => x.messageId === message.messageId ? { ...x, status: message.status || 1, id: message.id } : x)
-                );
+                this.chatService.messages.update(msgs => {
+                    if (!msgs.some(m => m.messageId === message.messageId)) {
+                        return [...msgs, message];
+                    }
+                    return msgs.map(x => x.messageId === message.messageId ? { ...x, status: message.status || 1, id: message.id } : x);
+                });
             }
-            // Remove from IndexedDB once acknowledged by the server
+            // Update message status from IndexedDB once acknowledged by the server
             if (message.messageId) {
-                this.chatDb.removePendingMessage(message.messageId);
+                this.chatDb.updateMessageStatus(message.messageId, MessageStatus.Sent);
             }
             return true;
         } else {
             if (this.activeConversationId() === message.conversationId) {
-                this.chatService.messages.update(msgs => [...msgs, message]);
+                this.chatService.messages.update(msgs => {
+                    if (msgs.some(m => m.messageId === message.messageId)) {
+                        return msgs.map(m => m.messageId === message.messageId ? { ...m, ...message } : m);
+                    }
+                    return [...msgs, message];
+                });
             }
             return false;
         }
@@ -126,10 +138,9 @@ export class NotificationService {
             })
         );
 
-        // New message received
+        // Init User List
         this.subscriptions.add(
             this.ws.initUserList$.subscribe(message => {
-                console.log("initUserList", message);
                 this.handleInitUserList(message);
             })
         );
@@ -173,6 +184,24 @@ export class NotificationService {
         this.subscriptions.add(
             this.ws.error$.subscribe(error => {
                 this.handleError(error);
+            })
+        );
+
+        // Pin message handling
+        this.subscriptions.add(
+            this.ws.pinMessage$.subscribe(event => {
+                if (event && event.messageId && event.conversationId) {
+                    this.chatService.updateMessagePinned(event.conversationId, event.messageId, true);
+                }
+            })
+        );
+
+        // Unpin message handling
+        this.subscriptions.add(
+            this.ws.unpinMessage$.subscribe(event => {
+                if (event && event.messageId && event.conversationId) {
+                    this.chatService.updateMessagePinned(event.conversationId, event.messageId, false);
+                }
             })
         );
     }
@@ -261,6 +290,21 @@ export class NotificationService {
             }
         }
 
+        // Deduplicate incoming messages to prevent multiple notifications
+        if (message.messageId) {
+            if (this.processedMessageIds.has(message.messageId)) {
+                return;
+            }
+            this.processedMessageIds.add(message.messageId);
+            
+            if (this.processedMessageIds.size > 1000) {
+                const iterator = this.processedMessageIds.values();
+                for (let i = 0; i < 200; i++) {
+                    this.processedMessageIds.delete(iterator.next().value);
+                }
+            }
+        }
+
         // Add to current chat view && remove from pending messages if it's a sent message
         // If the message is from the current user, update its state and return early
         if (this.updateMessageState(message)) return;
@@ -307,7 +351,7 @@ export class NotificationService {
                 return;
             }
         }
-        
+
         // Always update message state to ensure it is removed from the pending queue.
         // updateMessageState will internally handle checking the activeConversationId for UI updates.
         this.updateMessageState(message);
@@ -359,7 +403,7 @@ export class NotificationService {
     private handleTyping(typing: TypingIndicator): void {
         this.typingUsers.update(users => {
             const newUsers = new Map(users);
-            newUsers.set(typing.userId, typing.isTyping);
+            newUsers.set(typing.conversationId + '_' + typing.userId, typing.isTyping);
             return newUsers;
         });
     }

@@ -100,6 +100,7 @@ export interface Messages {
   editedAt: Date;
   status: number;
   isNewConversation: boolean;
+  pinned?: boolean;
 }
 
 export interface Reaction {

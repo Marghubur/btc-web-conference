@@ -25,6 +25,7 @@ import { ResponseModel, User } from '../../models/model';
 import { CallType } from '../../models/conference_call/call_model';
 import { ChatDbService } from '../../core/services/chat-db.service';
 import { ViewPortService } from '../../providers/services/view-port.service';
+import { NotificationService } from '../../notifications/services/notification.service';
 
 @Component({
     selector: 'app-chat-container',
@@ -48,6 +49,7 @@ export class ChatContainerComponent implements AfterViewChecked {
     private initiateAudioCallService = inject(InitiateAudioCallService);
     private notifyGroupCreatedService = inject(NotifyGroupCreatedService);
     private httpClient = inject(HttpClient);
+    notificationService = inject(NotificationService);
 
     // User data
     user: User = {
@@ -63,6 +65,8 @@ export class ChatContainerComponent implements AfterViewChecked {
     stagedFiles = signal<any[]>([]);
     pendingUploads = signal<any[]>([]);
     replyingToMessage = signal<any | null>(null);
+    editingMessage = signal<any | null>(null);
+    isDraggingFile = signal<boolean>(false);
     pageIndex: number = 1;
     private shouldScrollToBottom = false;
     private shouldPreserveScrollPosition = false;
@@ -73,6 +77,9 @@ export class ChatContainerComponent implements AfterViewChecked {
     showMembersDropdown: boolean = false;
     membersPopoverTop: number = 0;
     membersPopoverLeft: number = 0;
+
+    // Pinned messages state
+    showPinnedDropdown = signal(false);
     showCreateGroupInput: boolean = false;
     newGroupName: string = '';
     newGroupMembers: SearchResult[] = [];
@@ -348,6 +355,13 @@ export class ChatContainerComponent implements AfterViewChecked {
                     this.lastMessageId = undefined; // Reset tracking
                     this.loadMoreMessages(true); // true = scroll to bottom
                     this.chatService.setIsChatStatus(true, 'Chat container');
+                    if ((this.notificationService.unreadCounts().get(conversation.id) || 0) > 0 &&
+                        this.chatService.messages() != null && this.chatService.messages().length > 0) {
+                        this.chatService.sendMarkedSeen(
+                            this.chatService.messages().at(-1).messageId,
+                            conversation.conversationId,
+                        );
+                    }
                 }
             },
             { allowSignalWrites: true },
@@ -369,6 +383,40 @@ export class ChatContainerComponent implements AfterViewChecked {
             } else {
                 this.lastMessageId = undefined;
             }
+        });
+
+        // Subscriptions for edit/delete
+        this.ws.messageEdited$.subscribe((msg: any) => {
+            if (!msg || !msg.messageId) return;
+            this.chatService.messages.update(msgs => {
+                return msgs.map(m => {
+                    const idMatch = (m.id === msg.messageId) || (m.messageId === msg.messageId);
+                    if (idMatch) {
+                        if (m.type === 'file') {
+                            try {
+                                const parsed = JSON.parse(m.content);
+                                parsed.text = msg.content;
+                                return { ...m, content: JSON.stringify(parsed), editedAt: msg.editedAt, status: msg.status };
+                            } catch (e) { }
+                        }
+                        return { ...m, content: msg.content, editedAt: msg.editedAt, status: msg.status };
+                    }
+                    return m;
+                });
+            });
+        });
+
+        this.ws.messageDeleted$.subscribe((msg: any) => {
+            if (!msg || !msg.messageId) return;
+            this.chatService.messages.update(msgs => {
+                return msgs.map(m => {
+                    const idMatch = (m.id === msg.messageId) || (m.messageId === msg.messageId);
+                    if (idMatch) {
+                        return { ...m, content: msg.content, fileUrl: null, status: msg.status };
+                    }
+                    return m;
+                });
+            });
         });
     }
 
@@ -569,6 +617,63 @@ export class ChatContainerComponent implements AfterViewChecked {
 
     isUploadingFile = signal<boolean>(false);
 
+    showForwardModal = signal<boolean>(false);
+    forwardingMessage = signal<any>(null);
+    forwardSearchQuery = signal<string>('');
+
+    openForwardModal(msg: any) {
+        this.forwardingMessage.set(msg);
+        this.showForwardModal.set(true);
+        this.forwardSearchQuery.set('');
+    }
+
+    closeForwardModal() {
+        this.showForwardModal.set(false);
+        this.forwardingMessage.set(null);
+    }
+
+    getForwardConversations() {
+        const query = this.forwardSearchQuery().toLowerCase().trim();
+        const rooms = this.chatService.meetingRooms() || [];
+        return rooms.filter(r => {
+            if (r.id === this.ws.currentConversation()?.id) return false;
+            return r.title?.toLowerCase().includes(query) || r.conversationName?.toLowerCase().includes(query);
+        });
+    }
+
+    confirmForward(conversation: any) {
+        const msg = this.forwardingMessage();
+        if (!msg || !conversation) return;
+
+        const currentUserName = this.user.firstName + ' ' + this.user.lastName;
+        let contentToForward = msg.content;
+
+        let event: any = {
+            conversationId: conversation.id || conversation.conversationId,
+            messageId: crypto.randomUUID(),
+            senderId: this.currentUserId,
+            recievedId: null,
+            type: msg.type,
+            content: contentToForward,
+            senderName: currentUserName,
+            fileUrl: msg.fileUrl || null,
+            replyTo: null,
+            mentions: msg.mentions || [],
+            reactions: [],
+            clientType: 'web',
+            createdAt: new Date(),
+            editedAt: null,
+            status: 1,
+        };
+
+        this.chatDb.addPendingMessage(event.messageId, event.conversationId, event);
+        this.ws.sendMessage(event);
+        this.closeForwardModal();
+
+        // Show success snackbar/toast or alert
+        alert('Message forwarded successfully');
+    }
+
     parseFileContent(content: string | null): { fileName: string; fileSize?: number; fileType?: string; url?: string } {
         if (!content) return { fileName: 'Attached File' };
         try {
@@ -663,12 +768,38 @@ export class ChatContainerComponent implements AfterViewChecked {
         return content;
     }
 
+    typingTimeout: any = null;
+
+    get typingUsersList(): string[] {
+        const convId = this.ws.currentConversation()?.id;
+        if (!convId) return [];
+        const typingMap = this.notificationService.typingUsers();
+        const users: string[] = [];
+        for (const [key, isTyping] of typingMap.entries()) {
+            if (isTyping && key.startsWith(convId + '_') && !key.endsWith(`_${this.currentUserId}`)) {
+                const uid = key.split('_')[1];
+                users.push(this.getSenderName(uid));
+            }
+        }
+        return users;
+    }
+
     onMessageInput(event: any): void {
         const input = event.target as HTMLTextAreaElement;
         input.style.height = 'auto';
         input.style.height = input.scrollHeight + 'px';
         const val = input.value || '';
         this.message.set(val);
+
+        // Send typing indicator
+        const convId = this.ws.currentConversation()?.id;
+        if (convId) {
+            this.ws.sendTyping(convId, true);
+            if (this.typingTimeout) clearTimeout(this.typingTimeout);
+            this.typingTimeout = setTimeout(() => {
+                this.ws.sendTyping(convId, false);
+            }, 2000);
+        }
 
         const cursor = input.selectionStart || val.length;
         const textBeforeCursor = val.substring(0, cursor);
@@ -851,6 +982,14 @@ export class ChatContainerComponent implements AfterViewChecked {
             !target.closest('.message-input')
         ) {
             this.showMentionDropdown.set(false);
+        }
+
+        if (
+            this.showPinnedDropdown() &&
+            !target.closest('.pinned-messages-dropdown') &&
+            !target.closest('.pinned-dropdown-trigger')
+        ) {
+            this.showPinnedDropdown.set(false);
         }
     }
 
@@ -1278,6 +1417,12 @@ export class ChatContainerComponent implements AfterViewChecked {
     }
 
     sendMessage() {
+        const editingMsg = this.editingMessage();
+        if (editingMsg) {
+            this.sendEdit(editingMsg);
+            return;
+        }
+
         if (this.ws.currentConversation().id == null) {
             // call java to insert or create conversation channel
             this.chatService.createConversation(this.currentUserId, this.ws.currentConversation()).then((res: any) => {
@@ -1429,6 +1574,179 @@ export class ChatContainerComponent implements AfterViewChecked {
             }
         } catch (err) {
             console.error('Error scrolling to bottom:', err);
+        }
+    }
+
+    // Edit and Delete Message Methods
+    editMessage(msg: any) {
+        const timeDiff = Date.now() - new Date(msg.createdAt).getTime();
+        if (timeDiff > 15 * 60 * 1000) {
+            alert('Messages can only be edited within 15 minutes of sending.');
+            return;
+        }
+
+        this.editingMessage.set(msg);
+        this.cancelReply();
+
+        let rawText = msg.content;
+        if (msg.type === 'file') {
+            try {
+                const parsed = JSON.parse(msg.content);
+                rawText = parsed.text || '';
+            } catch (e) { }
+        }
+
+        this.message.set(rawText);
+        setTimeout(() => {
+            if (this.messageInputRef) {
+                this.messageInputRef.nativeElement.focus();
+                this.messageInputRef.nativeElement.style.height = 'auto';
+                this.messageInputRef.nativeElement.style.height = this.messageInputRef.nativeElement.scrollHeight + 'px';
+            }
+        }, 0);
+    }
+
+    cancelEdit() {
+        this.editingMessage.set(null);
+        this.message.set('');
+        if (this.messageInputRef) {
+            this.messageInputRef.nativeElement.style.height = 'auto';
+        }
+    }
+
+    sendEdit(editingMsg: any) {
+        const hasText = this.message() != null && this.message() !== '';
+        if (!hasText) return;
+
+        const currentUserName = this.user.firstName + ' ' + this.user.lastName;
+        const mentionsArray = Array.from(this.pendingMentions);
+        const cleanContent = this.cleanMessageBeforeSending(this.message() || '', mentionsArray);
+
+        let event: any = {
+            conversationId: editingMsg.conversationId,
+            messageId: editingMsg.messageId || editingMsg.id,
+            senderId: this.currentUserId,
+            content: cleanContent,
+            mentions: mentionsArray,
+        };
+
+        // Optimistically update local UI
+        this.chatService.messages.update(msgs => {
+            return msgs.map(m => {
+                if ((m.id === event.messageId) || (m.messageId === event.messageId)) {
+                    if (m.type === 'file') {
+                        try {
+                            const parsed = JSON.parse(m.content);
+                            parsed.text = cleanContent;
+                            return { ...m, content: JSON.stringify(parsed), editedAt: new Date(), status: 4 };
+                        } catch (e) { }
+                    }
+                    return { ...m, content: cleanContent, editedAt: new Date(), status: 4 };
+                }
+                return m;
+            });
+        });
+
+        this.ws.sendEvent('edit_message', event);
+        this.cancelEdit();
+        this.pendingMentions.clear();
+    }
+
+    deleteMessage(msg: any) {
+        const timeDiff = Date.now() - new Date(msg.createdAt).getTime();
+        if (timeDiff > 15 * 60 * 1000) {
+            alert('Messages can only be deleted within 15 minutes of sending.');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to delete this message?')) return;
+
+        let event: any = {
+            conversationId: msg.conversationId,
+            messageId: msg.messageId || msg.id,
+            senderId: this.currentUserId
+        };
+
+        // Optimistically update local UI
+        this.chatService.messages.update(msgs => {
+            return msgs.map(m => {
+                if ((m.id === event.messageId) || (m.messageId === event.messageId)) {
+                    return { ...m, content: "This message was deleted", fileUrl: null, status: 5 };
+                }
+                return m;
+            });
+        });
+
+        this.ws.sendEvent('delete_message', event);
+    }
+
+    copyMessage(msg: any) {
+        let textToCopy = msg.content || '';
+        if (msg.type === 'file') {
+            try {
+                const parsed = JSON.parse(msg.content);
+                textToCopy = parsed.text || parsed.fileName || parsed.url || msg.fileUrl || '';
+            } catch (e) {
+                textToCopy = msg.fileUrl || '';
+            }
+        }
+
+        if (textToCopy) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // optionally show a toast/snackbar
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+            });
+        }
+    }
+
+    pinMessage(msg: any, pin: boolean) {
+        let event: any = {
+            conversationId: msg.conversationId,
+            messageId: msg.messageId || msg.id,
+            senderId: this.currentUserId,
+            isPinned: pin
+        };
+
+        // Optimistically update local UI
+        this.chatService.messages.update(msgs => {
+            return msgs.map(m => {
+                if ((m.id === event.messageId) || (m.messageId === event.messageId)) {
+                    return { ...m, pinned: pin };
+                }
+                return m;
+            });
+        });
+
+        this.ws.sendEvent(pin ? 'pin_message' : 'unpin_message', event);
+    }
+
+    isMessageEditable(msg: any): boolean {
+        if (msg.senderId !== this.currentUserId) return false;
+        if (msg.status === 5) return false; // deleted
+        const timeDiff = Date.now() - new Date(msg.createdAt).getTime();
+        return timeDiff <= 15 * 60 * 1000;
+    }
+
+    // Drag and Drop Files
+    onDragOver(event: DragEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.isDraggingFile.set(true);
+    }
+
+    onDragLeave(event: DragEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.isDraggingFile.set(false);
+    }
+
+    onDrop(event: DragEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.isDraggingFile.set(false);
+        if (event.dataTransfer && event.dataTransfer.files.length > 0) {
+            this.onFileSelected({ target: { files: event.dataTransfer.files } });
         }
     }
 
@@ -1663,5 +1981,30 @@ export class ChatContainerComponent implements AfterViewChecked {
         this.chatService.messages.update((msgs) => [...msgs, event]);
         this.ws.sendMessage(event);
         this.shouldScrollToBottom = true;
+    }
+
+    // Pinned messages methods
+    togglePinnedDropdown(event?: Event) {
+        if (event) {
+            event.stopPropagation();
+        }
+        this.showPinnedDropdown.update(val => !val);
+    }
+
+    stopPinnedDropdownPropagation(event: Event) {
+        event.stopPropagation();
+    }
+
+    scrollToMessage(messageId: string) {
+        this.showPinnedDropdown.set(false);
+        const element = document.getElementById(`msg-${messageId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Add a temporary highlight effect
+            element.classList.add('highlight-message');
+            setTimeout(() => {
+                element.classList.remove('highlight-message');
+            }, 2000);
+        }
     }
 }

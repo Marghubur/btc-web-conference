@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { Subject, filter, take } from 'rxjs';
 import { Conversation, Participant, SearchResult, UserDetail } from '../components/global-search/search.models';
 import { HttpService } from '../providers/services/http.service';
@@ -6,6 +6,7 @@ import { ConfeetSocketService, Message, MessageSeen } from '../providers/socket/
 import { ResponseModel } from '../models/model';
 import { LocalService } from '../providers/services/local.service';
 import { ChatDbService } from '../core/services/chat-db.service';
+import { MessageStatus } from '../models/constant';
 
 @Injectable({
     providedIn: 'root'
@@ -16,6 +17,7 @@ export class ChatService {
     // Signals for State Management
     public meetingRooms = signal<Conversation[]>([]);
     public messages = signal<Message[]>([]);
+    public pinnedMessages = computed(() => this.messages().filter(m => m.pinned));
     public searchResults = signal<SearchResult[]>([]);
     public userSearchResults = signal<UserDetail[]>([]);
     public isLoading = signal<boolean>(false);
@@ -236,6 +238,12 @@ export class ChatService {
         }
     }
 
+    updateMessagePinned(conversationId: string, messageId: string, isPinned: boolean) {
+        this.messages.update(msgs => msgs.map(msg =>
+            msg.messageId === messageId ? { ...msg, pinned: isPinned } : msg
+        ));
+    }
+
     async getMessages(conversationId: string, page: number, limit: number, append: boolean = false): Promise<void> {
         if (page === 1 || !append) {
             this.isMessagesLoading.set(true);
@@ -259,14 +267,24 @@ export class ChatService {
 
                 messages.reverse();
 
+                // Deduplicate pending messages
+                const fetchedIds = new Set(messages.map(m => m.messageId));
+                const filteredPending = conversationPending.filter(p => {
+                    if (fetchedIds.has(p.messageId)) {
+                        this.chatDb.updateMessageStatus(p.messageId, MessageStatus.Sent);
+                        return false;
+                    }
+                    return true;
+                });
+
                 if (append) {
                     if (page > 1) {
                         this.messages.update(current => [...messages, ...current]);
                     } else {
-                        this.messages.set([...messages, ...conversationPending]);
+                        this.messages.set([...messages, ...filteredPending]);
                     }
                 } else {
-                    this.messages.set([...messages, ...conversationPending]);
+                    this.messages.set([...messages, ...filteredPending]);
                 }
             }
         } finally {

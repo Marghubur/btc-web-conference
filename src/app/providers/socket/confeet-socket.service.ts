@@ -24,6 +24,10 @@ export class ConfeetSocketService {
     initUserList$: Observable<User[]>;
     messageReacted$: Observable<any>;
     userStatus$: Observable<any>;
+    messageEdited$: Observable<any>;
+    messageDeleted$: Observable<any>;
+    pinMessage$: Observable<any>;
+    unpinMessage$: Observable<any>;
     //--------------------------------------------------------------
     currentConversation = signal<Conversation | null>(null);
     currentConversationId = signal<string | null>(null);
@@ -46,6 +50,10 @@ export class ConfeetSocketService {
         this.initUserList$ = this.onEvent<User[]>(WsEvents.INIT_USERLIST);
         this.messageReacted$ = this.onEvent<any>(WsEvents.MESSAGE_REACTED);
         this.userStatus$ = this.onEvent<any>(WsEvents.USER_STATUS);
+        this.messageEdited$ = this.onEvent<any>(WsEvents.MESSAGE_EDITED);
+        this.messageDeleted$ = this.onEvent<any>(WsEvents.MESSAGE_DELETED);
+        this.pinMessage$ = this.onEvent<any>(WsEvents.PIN_MESSAGE);
+        this.unpinMessage$ = this.onEvent<any>(WsEvents.UNPIN_MESSAGE);
         console.log(this.initUserList$)
     }
 
@@ -216,6 +224,7 @@ export interface Message {
     recievedId?: string;
     isMentioned?: boolean;
     seenByUserIds?: string[];
+    pinned?: boolean;
 }
 
 export interface Reactions {
@@ -261,6 +270,8 @@ export interface PongPayload {
 export const WsEvents = {
     // Client -> Server
     SEND_MESSAGE: 'send_message',
+    EDIT_MESSAGE: 'edit_message',
+    DELETE_MESSAGE: 'delete_message',
     MARK_DELIVERED: 'mark_delivered',
     MARK_SEEN: 'mark_seen',
     TYPING: 'typing',
@@ -274,6 +285,10 @@ export const WsEvents = {
     NEW_MESSAGE: 'new_message',
     MESSAGE_SENT: 'message_sent',
     MESSAGE_REACTED: 'message_reacted',
+    MESSAGE_EDITED: 'message_edited',
+    MESSAGE_DELETED: 'message_deleted',
+    PIN_MESSAGE: 'pin_message',
+    UNPIN_MESSAGE: 'unpin_message',
     DELIVERED: 'delivered',
     SEEN: 'mark_seen',
     USER_TYPING: 'user_typing',
