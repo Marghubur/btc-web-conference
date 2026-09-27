@@ -1,22 +1,17 @@
 import { Injectable } from '@angular/core';
-import { ConfeetSocketService } from '../../confeet-socket.service';
-import { ServerEventService } from '../../server-events/server-event.service';
+import { BaseCallService } from './base-call.service';
 import { CallEvents, CallStatus, CallCancelPayload } from '../../../../models/conference_call/call_model';
 
 @Injectable({
     providedIn: 'root'
 })
-export class CancelCallService {
-    constructor(
-        private ws: ConfeetSocketService,
-        private serverEventService: ServerEventService
-    ) {}
-
+export class CancelCallService extends BaseCallService {
     execute(conversationId: string, calleeIds: string[]): void {
-        this.ws.sendEvent(CallEvents.CALL_CANCEL, <CallCancelPayload>{
-            conversationId: conversationId,
+        const payload = this.createPayload<CallCancelPayload>(conversationId, {
             calleeIds: calleeIds
         });
-        this.serverEventService.callStatus.set(CallStatus.CANCELLED);
+
+        this.ws.sendEvent(CallEvents.CALL_CANCEL, payload);
+        this.callStore.callStatus.set(CallStatus.CANCELLED);
     }
 }

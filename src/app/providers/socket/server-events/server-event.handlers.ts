@@ -1,6 +1,7 @@
 import { CallStatus } from '../../../models/conference_call/call_model';
 import { LocalService } from '../../services/local.service';
-import { ServerEventService } from './server-event.service';
+import { NotificationService } from '../../../notifications/services/notification.service';
+import { MeetingService } from '../../../meeting/meeting.service';
 
 /**
  * registerCallEventHandlers
@@ -10,8 +11,10 @@ import { ServerEventService } from './server-event.service';
  * CallStore method call — the store owns all state mutations.
  */
 export function registerCallEventHandlers(
-    service: ServerEventService,
-    local: LocalService
+    service: any,
+    local: LocalService,
+    notificationService: NotificationService,
+    meetingService: MeetingService
 ): void {
 
     // ── Incoming Call ────────────────────────────────────────────────────────
@@ -80,9 +83,24 @@ export function registerCallEventHandlers(
 
     // ── Call Rejected ────────────────────────────────────────────────────────
     service.subscriptions.add(
-        service.callRejected$.subscribe(event => {
+        service.callRejected$.subscribe(async event => {
+            // 1. Update Call Store
             service.store.setRejected(CallStatus.REJECTED);
             console.log('[ServerEvents] Call rejected by:', event.rejectedBy);
+
+            // 2. Show notification to user
+            notificationService.showNotification({
+                id: crypto.randomUUID(),
+                type: 'warning',
+                title: 'Call Rejected',
+                content: `${event.rejectedBy || 'The user'} declined the call.`,
+                conversationId: event.conversationId,
+                timestamp: new Date(),
+                read: false
+            });
+
+            // 3. Fully tear down room, release media & navigate back to chat
+            await meetingService.leaveRoom(true, false);
         })
     );
 

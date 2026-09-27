@@ -23,6 +23,8 @@ import {
 } from '../../../models/conference_call/call_model';
 import { CallStore } from '../../../store/call/call.store';
 import { User } from '../../../models/model';
+import { NotificationService } from '../../../notifications/services/notification.service';
+import { MeetingService } from '../../../meeting/meeting.service';
 
 @Injectable({
     providedIn: 'root'
@@ -110,7 +112,9 @@ export class ServerEventService {
     constructor(
         private ws: ConfeetSocketService,
         private local: LocalService,
-        store: CallStore
+        store: CallStore,
+        private notificationService: NotificationService,
+        private meetingService: MeetingService
     ) {
         this.store = store;
 
@@ -139,7 +143,7 @@ export class ServerEventService {
      * Should be called once from LayoutComponent or NotificationService.
      */
     initialize(): void {
-        registerCallEventHandlers(this, this.local);
+        registerCallEventHandlers(this, this.local, this.notificationService, this.meetingService);
         console.log('[ServerEventService] Initialized with NgRx SignalStore');
     }
 

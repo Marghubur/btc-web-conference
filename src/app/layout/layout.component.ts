@@ -13,6 +13,7 @@ import { ServerEventService } from '../providers/socket/server-events/server-eve
 import { IncomingCallComponent } from '../notifications/incoming-call/incoming-call.component';
 import { DeviceService } from './device.service';
 import { MeetingService } from '../meeting/meeting.service';
+import { ChatService } from '../chat/chat.service';
 
 @Component({
   selector: 'app-layout',
@@ -31,6 +32,7 @@ export class LayoutComponent implements OnInit {
     private ws: ConfeetSocketService,
     private serverEvents: ServerEventService,
     private notificationService: NotificationService,
+    private chatService: ChatService,
     private router: Router,
     private deviceService: DeviceService
   ) {
@@ -59,6 +61,7 @@ export class LayoutComponent implements OnInit {
     if (this.user?.userId) {
       this.socketHandShake();
       this.notificationService.initialize();
+      this.chatService.handleSocketEvents();
       this.serverEvents.initialize();
     }
   }

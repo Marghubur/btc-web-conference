@@ -7,16 +7,15 @@ import { LocalVideoTrack, RemoteParticipant, RemoteVideoTrack, Room, Track } fro
 import { CameraService } from './../providers/services/camera.service';
 import { VideoBackgroundService } from './../providers/services/video-background.service';
 import { DeviceService } from '../layout/device.service';
-import { ServerEventService } from '../providers/socket/server-events/server-event.service';
 import { InitiateAudioCallService } from '../providers/socket/client-events/call/initiate-audio-call.service';
 import { InviteCallEventService } from '../providers/socket/client-events/call/invite-call.service';
 import { EndCallService } from '../providers/socket/client-events/call/end-call.service';
 import { User } from '../models/model';
 import { ChatPage, Dashboard, Login } from '../models/constant';
-import { CallParticipant, ParticipantStatus } from '../models/conference_call/call_model';
-import { InvitedParticipant } from './meeting.component';
+import { CallParticipant, ParticipantStatus, InvitedParticipant } from '../models/conference_call/call_model';
 import { NotificationService } from '../notifications/services/notification.service';
 import { DiagnosticsService } from '../providers/services/diagnostics.service';
+import { CallStore } from '../store/call/call.store';
 
 @Injectable({
   providedIn: 'root'
@@ -72,6 +71,7 @@ export class MeetingService {
 
   private cameraService = inject(CameraService);
   private router = inject(Router);
+  private callStore = inject(CallStore);
   private isLeavingRoom = false;
 
   /** Preview stream for camera preview before joining (delegated to unified CameraService) */
@@ -94,7 +94,6 @@ export class MeetingService {
     private local: LocalService,
     private nav: iNavigation,
     private deviceService: DeviceService,
-    private serverEventService: ServerEventService,
     private initiateAudioCallService: InitiateAudioCallService,
     private inviteCallEventService: InviteCallEventService,
     private endCallService: EndCallService,
@@ -186,14 +185,14 @@ export class MeetingService {
   }
 
   requestToJoin(participant: CallParticipant): void {
-    const request = this.serverEventService.incomingCall();
+    const request = this.callStore.incomingCall();
     if (request) {
       this.inviteCallEventService.execute(participant.userId, request.conversationId, 'audio');
     }
   }
 
   get invitedParticipants(): number {
-    var p = this.serverEventService.participantsInRoom();
+    var p = this.callStore.participantsInRoom();
     if (p && p.length > 0) {
       return p.filter(p => p.status != ParticipantStatus.ACCEPTED).length;
     } else {
@@ -203,7 +202,7 @@ export class MeetingService {
 
   // Computed signal - only recalculates when incomingCall or filter changes
   filteredInvitedParticipants(isInRoom: boolean = true): CallParticipant[] {
-    let participants: CallParticipant[] = this.serverEventService.participantsInRoom();
+    let participants: CallParticipant[] = this.callStore.participantsInRoom();
 
     if (!participants) {
       return [];
@@ -296,7 +295,7 @@ export class MeetingService {
   /**
    * Leave the meeting room and cleanup all media resources
    */
-  async leaveRoom(isNavigate: boolean = false): Promise<void> {
+  async leaveRoom(isNavigate: boolean = false, notifyOthers: boolean = true): Promise<void> {
     if (this.isLeavingRoom) {
       console.log('[MeetingService] leaveRoom already in progress, skipping duplicate');
       if (isNavigate) {
@@ -351,7 +350,9 @@ export class MeetingService {
 
       // Notify call service
       try {
-        this.endCallService.execute();
+        if (notifyOthers) {
+          this.endCallService.execute();
+        }
       } catch (error) {
         console.warn('[MeetingService] Error in endCallService:', error);
       }
@@ -510,7 +511,7 @@ export class MeetingService {
     this._inMeeting.set(false);
     try {
       this.cameraService.releaseAllMedia();
-    } catch (e) {}
+    } catch (e) { }
     this.meetingId = "";
     this.user = null;
     this.maximize();

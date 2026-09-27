@@ -62,9 +62,9 @@ export const routes: Routes = [
           import('./dashboard/dashboard.component').then(c => c.DashboardComponent),
       },
       {
-        path: 'preview',
+        path: 'in-meeting-room',
         loadComponent: () =>
-          import('./preview/preview.component').then(c => c.PreviewComponent),
+          import('./in-meeting-room/in-meeting-room.component').then(c => c.InMeetingRoomComponent),
       },
       {
         path: 'meeting/:id',

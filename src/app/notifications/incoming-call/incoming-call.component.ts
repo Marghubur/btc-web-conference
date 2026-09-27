@@ -89,12 +89,14 @@ export class IncomingCallComponent implements OnDestroy {
             this.stopRingtone();
             this.stopTimer();
             this.acceptCallService.execute(call.conversationId, call.callerId);
-            this.router.navigate(['/btc/preview'], {
+            this.router.navigate(['/btc/in-meeting-room'], {
                 state: {
                     id: call.conversationId,
                     type: call.callType || CallType.AUDIO,
                     title: call.callerName || 'NEW',
-                    autoJoin: true
+                    joinMeeting: 1,
+                    mic: 1,
+                    camera: call.callType === CallType.VIDEO ? 1 : 0
                 }
             });
         }
@@ -108,12 +110,14 @@ export class IncomingCallComponent implements OnDestroy {
             this.acceptJoiningRequestService.execute(request.conversationId, request.callerId);
             if (!this.meetingService.inMeeting()) {
                 this.ws.currentConversationId.set(request.conversationId);
-                this.router.navigate(['/btc/preview'], {
+                this.router.navigate(['/btc/in-meeting-room'], {
                     state: {
                         id: request.conversationId,
                         type: request.callType || CallType.AUDIO,
                         title: request.callerName || 'Call',
-                        autoJoin: true
+                        joinMeeting: 1,
+                        mic: 1,
+                        camera: request.callType === CallType.VIDEO ? 1 : 0
                     }
                 });
             }
@@ -131,7 +135,9 @@ export class IncomingCallComponent implements OnDestroy {
 
     dismissJoinRequest(): void {
         const call = this.incomingCall();
-        this.dismissJoiningRequestService.execute(call.conversationId, call.callerId);
+        if (call) {
+            this.dismissJoiningRequestService.execute(call.conversationId, call.callerId);
+        }
     }
 
     private startRingtone(): void {

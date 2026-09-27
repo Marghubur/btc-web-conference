@@ -1043,9 +1043,4 @@ export interface Reaction {
     name: string;
 }
 
-export interface InvitedParticipant {
-    name: string;
-    id: string;
-    email: string;
-    invited: boolean;
-}
+export type { InvitedParticipant } from '../models/conference_call/call_model';

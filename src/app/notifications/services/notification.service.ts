@@ -1,5 +1,4 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { ChatService } from '../../chat/chat.service';
 
 export interface AppNotification {
     id: string;
@@ -32,12 +31,10 @@ export class NotificationService {
 
     private initialized = false;
 
-    constructor(
-        private chatService: ChatService
-    ) { }
+    constructor() { }
 
     /**
-     * Initialize global WebSocket event subscriptions.
+     * Initialize notification service state.
      * Should be called once from LayoutComponent after socket connection.
      */
     initialize(): void {
@@ -46,7 +43,6 @@ export class NotificationService {
             return;
         }
 
-        this.chatService.handleSocketEvents();
         this.initialized = true;
         console.log('NotificationService initialized');
     }
@@ -110,7 +106,6 @@ export class NotificationService {
      * Cleanup subscriptions and clear local state
      */
     destroy(): void {
-        this.chatService.destroySocketSubscriptions();
         this.initialized = false;
         this.clearAllNotifications();
         this.unreadCounts.set(new Map());

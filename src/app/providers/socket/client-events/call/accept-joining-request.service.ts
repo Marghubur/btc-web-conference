@@ -1,24 +1,19 @@
 import { Injectable } from '@angular/core';
-import { ConfeetSocketService } from '../../confeet-socket.service';
-import { ServerEventService } from '../../server-events/server-event.service';
+import { BaseCallService } from './base-call.service';
 import { CallEvents, CallStatus, CallAcceptPayload } from '../../../../models/conference_call/call_model';
 
 @Injectable({
     providedIn: 'root'
 })
-export class AcceptJoiningRequestService {
-    constructor(
-        private ws: ConfeetSocketService,
-        private serverEventService: ServerEventService
-    ) {}
-
+export class AcceptJoiningRequestService extends BaseCallService {
     execute(conversationId: string, callerId: string): void {
-        this.ws.sendEvent(CallEvents.CALL_ACCEPT, <CallAcceptPayload>{
-            conversationId: conversationId,
+        const payload = this.createPayload<CallAcceptPayload>(conversationId, {
             callerId: callerId
         });
-        this.serverEventService.hasJoiningRequest.set(false);
-        this.serverEventService.hasIncomingCall.set(false);
-        this.serverEventService.callStatus.set(CallStatus.ACCEPTED);
+
+        this.ws.sendEvent(CallEvents.CALL_ACCEPT, payload);
+        this.callStore.hasJoiningRequest.set(false);
+        this.callStore.hasIncomingCall.set(false);
+        this.callStore.callStatus.set(CallStatus.ACCEPTED);
     }
 }

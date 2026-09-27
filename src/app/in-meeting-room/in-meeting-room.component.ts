@@ -19,13 +19,13 @@ import { ViewPortService } from '../providers/services/view-port.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
-    selector: 'app-preview',
+    selector: 'app-in-meeting-room',
     standalone: true,
     imports: [FormsModule, CommonModule],
-    templateUrl: './preview.component.html',
-    styleUrl: './preview.component.css'
+    templateUrl: './in-meeting-room.component.html',
+    styleUrl: './in-meeting-room.component.css'
 })
-export class PreviewComponent implements OnDestroy {
+export class InMeetingRoomComponent implements OnDestroy {
     @ViewChild('previewVideo') previewVideo!: ElementRef<HTMLVideoElement>;
 
     // Device selection
@@ -65,6 +65,17 @@ export class PreviewComponent implements OnDestroy {
     private conversationId: string = null;
     readonly isMobileView = inject(ViewPortService).isMobileView;
 
+    // Parameter overrides
+    micParam: boolean | null = null;
+    cameraParam: boolean | null = null;
+
+    private parseBooleanParam(val: any): boolean | null {
+        if (val === undefined || val === null || val === '') return null;
+        if (val === 1 || val === '1' || val === true || val === 'true') return true;
+        if (val === 0 || val === '0' || val === false || val === 'false') return false;
+        return null;
+    }
+
     constructor(
         private nav: iNavigation,
         private route: ActivatedRoute,
@@ -88,7 +99,6 @@ export class PreviewComponent implements OnDestroy {
     async ngOnInit() {
         this.initializeDeviceSelection();
         this.permissions = this.mediaPerm.getCurrentPermissions();
-        // this.subscribeToPermissions();
 
         if (this.isLoggedIn) {
             this.readRoutedMeetingDetail();
@@ -97,8 +107,10 @@ export class PreviewComponent implements OnDestroy {
                 await this.validatMeetingId();
             } else {
                 await this.initializeMediaStream();
+                this.subscribeToPermissions();
             }
         } else {
+            this.readRoutedMeetingDetail();
             if (this.queryMeetingId && !this.meetingId) {
                 this.meetingId = this.queryMeetingId;
             }
@@ -228,7 +240,7 @@ export class PreviewComponent implements OnDestroy {
         // Use centralized cleanup if not transitioning into an active meeting
         if (!this.meetingService.inMeeting()) {
             this.meetingService.releaseAllMedia().catch((err) => {
-                console.warn('[PreviewComponent] Error in releaseAllMedia during ngOnDestroy:', err);
+                console.warn('[InMeetingRoomComponent] Error in releaseAllMedia during ngOnDestroy:', err);
             });
         }
         this.clearVideoElement();
@@ -334,12 +346,23 @@ export class PreviewComponent implements OnDestroy {
             this.callType = state.type;
         }
 
-        if (state?.autoJoin !== undefined) {
-            this.autoJoin = state.autoJoin;
-        }
+        // Read joinMeeting / autoJoin parameter
+        const rawJoinMeeting = state?.joinMeeting !== undefined
+            ? state.joinMeeting
+            : (this.route.snapshot.queryParamMap.get('joinMeeting') ?? (state?.autoJoin !== undefined ? state.autoJoin : this.route.snapshot.queryParamMap.get('autoJoin')));
+        this.autoJoin = this.parseBooleanParam(rawJoinMeeting) === true;
 
-        // Update camera state based on call type (will be used by initializeMediaStream)
-        // Note: The actual camera state is now managed by MeetingService
+        // Read mic parameter (0 = off, 1 = on)
+        const rawMic = state?.mic !== undefined
+            ? state.mic
+            : this.route.snapshot.queryParamMap.get('mic');
+        this.micParam = this.parseBooleanParam(rawMic);
+
+        // Read camera parameter (0 = off, 1 = on)
+        const rawCamera = state?.camera !== undefined
+            ? state.camera
+            : this.route.snapshot.queryParamMap.get('camera');
+        this.cameraParam = this.parseBooleanParam(rawCamera);
 
         // Fallback to nav service if state is not available
         if (!this.meetingId || !this.meetingTitle) {
@@ -355,6 +378,9 @@ export class PreviewComponent implements OnDestroy {
     }
 
     private subscribeToPermissions() {
+        if (this.subscription) {
+            this.subscription.unsubscribe();
+        }
         this.subscription = this.mediaPerm.permissions$.subscribe(permissions => {
             this.permissions = permissions;
             const hasCamera = (this.deviceService.cameras()?.length || 0) > 0;
@@ -364,8 +390,8 @@ export class PreviewComponent implements OnDestroy {
                 ? permissions.microphone === 'granted'
                 : permissions.camera === 'granted' && permissions.microphone === 'granted';
 
-            // Auto-join if autoJoin is enabled OR if it is an audio-only call
-            if ((this.autoJoin || this.isAudioOnlyCall()) && hasRequiredPermissions && !this.autoJoinTriggered) {
+            // Auto-join ONLY if joinMeeting (autoJoin) is explicitly enabled
+            if (this.autoJoin && hasRequiredPermissions && !this.autoJoinTriggered) {
                 this.autoJoinTriggered = true;
                 setTimeout(() => {
                     if (!this.meetingService.inMeeting()) {
@@ -417,10 +443,16 @@ export class PreviewComponent implements OnDestroy {
 
     // ==================== Media Stream Management ====================
 
-    /** Initialize media stream based on call type - uses centralized MeetingService */
+    /** Initialize media stream based on call type and parameters - uses centralized MeetingService */
     private async initializeMediaStream() {
+        const wantsVideo = this.cameraParam !== null ? this.cameraParam : this.isVideoCall();
+        const wantsMic = this.micParam !== null ? this.micParam : true;
+
+        this.meetingService.isCameraOn.set(wantsVideo);
+        this.meetingService.isMicOn.set(wantsMic);
+
         const stream = await this.meetingService.requestMediaPreview(
-            this.isVideoCall(),
+            wantsVideo,
             this.selectedCamera ?? undefined,
             this.selectedMic ?? undefined
         );
@@ -434,8 +466,9 @@ export class PreviewComponent implements OnDestroy {
 
     /** Start camera & mic preview with selected devices - uses centralized MeetingService */
     async startPreview() {
+        const wantsVideo = this.cameraParam !== null ? this.cameraParam : this.isVideoCall();
         const stream = await this.meetingService.requestMediaPreview(
-            this.isVideoCall(),
+            wantsVideo,
             this.selectedCamera ?? undefined,
             this.selectedMic ?? undefined
         );
@@ -545,6 +578,7 @@ export class PreviewComponent implements OnDestroy {
     async toggleCamera() {
         this.callType = CallType.VIDEO;
         await this.meetingService.togglePreviewCamera(this.selectedCamera ?? undefined);
+        this.cameraParam = this.meetingService.isCameraOn();
 
         // Re-attach stream to video element
         const stream = this.meetingService.previewStream();
@@ -558,6 +592,7 @@ export class PreviewComponent implements OnDestroy {
     /** Toggle mic - uses centralized MeetingService */
     async toggleMic() {
         await this.meetingService.togglePreviewMic(this.selectedMic ?? undefined);
+        this.micParam = this.meetingService.isMicOn();
     }
 
     // ==================== User Management ====================
@@ -565,12 +600,16 @@ export class PreviewComponent implements OnDestroy {
     private saveUser() {
         let user: User;
 
-        // By default when joining room/meeting: camera disabled (false) and mic enabled (true)
-        const isCameraOn = false;
-        const isMicOn = true;
+        const isCameraOn = this.cameraParam !== null
+            ? this.cameraParam
+            : (this.isVideoCall() ? this.meetingService.isCameraOn() : false);
+
+        const isMicOn = this.micParam !== null
+            ? this.micParam
+            : this.meetingService.isMicOn();
 
         if (this.local.isLoggedIn()) {
-            user = this.local.getUser();
+            user = this.local.getUser() || {} as User;
             user.isCameraOn = isCameraOn;
             user.isMicOn = isMicOn;
         } else {
@@ -585,6 +624,8 @@ export class PreviewComponent implements OnDestroy {
         }
 
         this.local.setUser(user);
+        this.meetingService.isCameraOn.set(isCameraOn);
+        this.meetingService.isMicOn.set(isMicOn);
     }
 
     // ==================== Navigation ====================

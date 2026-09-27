@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confeet — Executive Keynote Presentation (CEO & CTO Edition)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #07090e;
+            --bg-secondary: #0d121d;
+            --bg-card: rgba(18, 24, 38, 0.75);
+            --bg-card-hover: rgba(28, 38, 58, 0.85);
+            --border-glow: rgba(0, 242, 254, 0.25);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --accent-purple: #c084fc;
+            --accent-pink: #ff0080;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --grad-primary: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            --grad-fire: linear-gradient(135deg, #ff0080 0%, #7928ca 100%);
+            --grad-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            
+            --shadow-glow: 0 0 35px rgba(0, 242, 254, 0.15);
+            --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            user-select: none;
+        }
+
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .glow-orb-1 {
+            position: absolute;
+            top: -15%;
+            left: 15%;
+            width: 55vw;
+            height: 55vw;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.08) 0%, transparent 65%);
+            filter: blur(80px);
+        }
+        .glow-orb-2 {
+            position: absolute;
+            bottom: -20%;
+            right: 10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(121, 40, 202, 0.09) 0%, transparent 65%);
+            filter: blur(90px);
+        }
+
+        .presentation-container {
+            position: relative;
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            position: absolute;
+            width: 94vw;
+            max-width: 1680px;
+            height: 88vh;
+            max-height: 940px;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 40px 52px;
+            box-shadow: var(--shadow-card), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            opacity: 0;
+            transform: scale(0.96) translateY(20px);
+            pointer-events: none;
+            transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: all;
+            z-index: 2;
+        }
+
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 12px;
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            border-radius: 100px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .slide-title {
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.15;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .slide-title span {
+            background: var(--grad-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slide-subtitle {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-top: 4px;
+            max-width: 900px;
+        }
+
+        .logo-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+        }
+
+        .logo-img {
+            height: 28px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slide-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            padding: 6px 0;
+        }
+
+        .slide-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            position: relative;
+            z-index: 2;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .pill-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.72rem;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-emerald);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-emerald);
+        }
+
+        .slide-num {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 28px;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            padding: 26px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            position: relative;
+            height: 100%;
+        }
+
+        .card-glow-cyan::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--grad-primary);
+        }
+
+        .card-glow-pink::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--grad-fire);
+        }
+
+        .card-glow-emerald::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--grad-emerald);
+        }
+
+        .card-title {
+            font-family: var(--font-heading);
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 14px;
+            letter-spacing: -0.01em;
+        }
+
+        .bullet-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .bullet-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 0.98rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .bullet-icon {
+            color: var(--accent-cyan);
+            font-size: 1.1rem;
+            line-height: 1.2;
+            flex-shrink: 0;
+        }
+
+        .bullet-item strong {
+            color: #ffffff;
+        }
+
+        .chart-box {
+            background: #0d121d;
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            height: 100%;
+            max-height: 480px;
+        }
+
+        .chart-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        /* Slide 1 Hero */
+        .hero-stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .hero-stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 16px 20px;
+        }
+
+        .hero-stat-num {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            margin-bottom: 2px;
+        }
+
+        .hero-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Controls Panel */
+        .nav-controls {
+            position: fixed;
+            bottom: 24px;
+            right: 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+            background: rgba(13, 18, 29, 0.85);
+            backdrop-filter: blur(16px);
+            padding: 8px 16px;
+            border-radius: 100px;
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-cyan);
+            color: #000000;
+            border-color: var(--accent-cyan);
+        }
+
+        .slide-counter-badge {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 0 8px;
+        }
+
+        .progress-track {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            z-index: 99;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--grad-primary);
+            width: 10%;
+            transition: width 0.4s ease;
+        }
+
+        .speaker-notes-drawer {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 420px;
+            height: 100vh;
+            background: #090d16;
+            border-left: 1px solid var(--border-subtle);
+            z-index: 200;
+            padding: 32px 28px;
+            box-shadow: -15px 0 35px rgba(0,0,0,0.7);
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+        }
+
+        .speaker-notes-drawer.open {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-bg">
+        <div class="glow-orb-1"></div>
+        <div class="glow-orb-2"></div>
+    </div>
+
+    <div class="presentation-container">
+
+        <!-- SLIDE 1 -->
+        <section class="slide active" id="slide-1" data-notes="Welcome CEOs, CTOs, and leaders. Confeet unites instant messaging, LiveKit SFU video, and smart presence to solve bandwidth and cost bottlenecks natively.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">Executive Keynote 2026</div>
+                    <h1 class="slide-title">Confeet Enterprise Platform</h1>
+                </div>
+                <div class="logo-badge">
+                    <img src="logos.png" alt="Confeet Logo" class="logo-img" onerror="this.style.display='none'">
+                    <span class="logo-text">Confeet</span>
+                </div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div>
+                        <h2 style="font-family: var(--font-heading); font-size: 2.8rem; font-weight: 900; line-height: 1.1; margin-bottom: 16px;">
+                            Next-Gen Real-Time <br><span>Chat & Video Platform</span>
+                        </h2>
+                        <p style="font-size: 1.15rem; color: var(--text-secondary); line-height: 1.6; font-weight: 300;">
+                            A unified, cloud-native communication engine engineered to eliminate SaaS vendor sprawl, drastically cut bandwidth costs, and provide enterprise data sovereignty with sub-millisecond responsiveness.
+                        </p>
+                        <div class="hero-stats-row">
+                            <div class="hero-stat-card">
+                                <div class="hero-stat-num">&lt;50ms</div>
+                                <div class="hero-stat-label">Chat Delivery Latency</div>
+                            </div>
+                            <div class="hero-stat-card">
+                                <div class="hero-stat-num">90%</div>
+                                <div class="hero-stat-label">Bandwidth Saved (SFU)</div>
+                            </div>
+                            <div class="hero-stat-card">
+                                <div class="hero-stat-num">76%</div>
+                                <div class="hero-stat-label">TCO Cost Reduction</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-box">
+                        <img src="confeet_executive_hero.jpg" alt="Confeet Platform" class="chart-img">
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">
+                    <span class="pill-status"><span class="status-dot"></span> Production Architecture</span>
+                    <span>Distributed Microservices • LiveKit SFU • Event-Driven Bus</span>
+                </div>
+                <div class="slide-num">01 / 10</div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2 -->
+        <section class="slide" id="slide-2" data-notes="As shown in the graph, P2P WebRTC bandwidth scales quadratically (O(N^2)). By 10 participants, client uplink is completely overwhelmed. Confeet's LiveKit SFU keeps client uplink flat at 2.0 Mbps regardless of room size.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">The Enterprise Dilemma</div>
+                    <h2 class="slide-title">Why Legacy Video Stacks <span>Fail at Scale</span></h2>
+                    <p class="slide-subtitle">P2P Mesh WebRTC creates severe bandwidth saturation and device overheating beyond 4 users.</p>
+                </div>
+                <div class="logo-badge"><span class="logo-text">Confeet</span></div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card card-glow-cyan">
+                        <h3 class="card-title">Key Scalability Challenges</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item">
+                                <span class="bullet-icon">⚡</span>
+                                <div><strong>Quadratic Bandwidth Spike:</strong> In legacy P2P mesh, each user uploads $N-1$ streams ($O(N^2)$), saturating uplinks above 4 participants.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🔥</span>
+                                <div><strong>Device Overheating:</strong> High CPU/GPU load causes frame drop rates over 45% on participant laptops.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🛡️</span>
+                                <div><strong>The Confeet Solution:</strong> LiveKit SFU restricts each user to 1 upload stream, saving <strong>90% bandwidth</strong> at 10+ participants.</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="chart-box">
+                        <img src="charts/chart_bandwidth_scaling.png" alt="Bandwidth Scaling Chart" class="chart-img">
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left"><span>Bandwidth Scalability Advantage • LiveKit Selective Forwarding</span></div>
+                <div class="slide-num">02 / 10</div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3 -->
+        <section class="slide" id="slide-3" data-notes="Confeet replaces fragmented vendor tools with four converged pillars in one platform.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">Product Suite</div>
+                    <h2 class="slide-title">Four Core Pillars in <span>One Unified Platform</span></h2>
+                    <p class="slide-subtitle">All enterprise collaboration essentials converged into a seamless, high-performance experience.</p>
+                </div>
+                <div class="logo-badge"><span class="logo-text">Confeet</span></div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-4">
+                    <div class="card card-glow-cyan">
+                        <h3 class="card-title">💬 Chat</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>1:1 & Group Channels</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Read & Delivery Receipts</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Monotonic FIFO Order</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Multi-Device Instant Sync</div></li>
+                        </ul>
+                    </div>
+                    <div class="card card-glow-pink">
+                        <h3 class="card-title">📹 Video SFU</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Simulcast Video Encoding</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Dynacast Bandwidth Saver</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>AI Background Blur</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>1080p60 Screen Sharing</div></li>
+                        </ul>
+                    </div>
+                    <div class="card card-glow-emerald">
+                        <h3 class="card-title">🟢 Presence</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Sub-ms User State Tracking</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Call Ring Orchestration</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>120s Auto Timeout</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Targeted Gateway Mapping</div></li>
+                        </ul>
+                    </div>
+                    <div class="card card-glow-purple">
+                        <h3 class="card-title">🔔 Smart Push</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Presence Suppression</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>FCM / APNs Dispatch</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Zero Duplicate Spam</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Instant Offline Recovery</div></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left"><span>Angular 18 Frontend • Reactive Signals • NgRx SignalStore</span></div>
+                <div class="slide-num">03 / 10</div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4 -->
+        <section class="slide" id="slide-4" data-notes="Notice our latency benchmark: Traditional WebSocket broadcast takes 320ms. Confeet's gRPC + NATS pipeline delivers messages in just 28ms.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">Engineering Advantage</div>
+                    <h2 class="slide-title">Dual-Ingress Architecture & <span>Global Latency</span></h2>
+                    <p class="slide-subtitle">Decoupling synchronous gRPC writes, durable Kafka logs, and sub-millisecond NATS pub/sub.</p>
+                </div>
+                <div class="logo-badge"><span class="logo-text">Confeet</span></div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card card-glow-cyan">
+                        <h3 class="card-title">Architectural Innovations</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item">
+                                <span class="bullet-icon">⚡</span>
+                                <div><strong>Dual-Ingress Separation:</strong> Dedicated WebSocket Hub for chat/signaling and LiveKit SFU for WebRTC media streams.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🛡️</span>
+                                <div><strong>Synchronous gRPC Core:</strong> Atomic validation & sequence assignment before acknowledging senders.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🚀</span>
+                                <div><strong>Sub-50ms Global Delivery:</strong> Confeet chat completes end-to-end delivery in <strong>28ms</strong>, beating legacy HTTP/WS stacks by 80%+.</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="chart-box">
+                        <img src="charts/chart_latency_benchmark.png" alt="Latency Benchmark" class="chart-img">
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left"><span>Sub-50ms Message Delivery Globally • gRPC + NATS JetStream</span></div>
+                <div class="slide-num">04 / 10</div>
+            </div>
+        </section>
+
+        <!-- SLIDE 5 -->
+        <section class="slide" id="slide-5" data-notes="LiveKit SFU delivers crystal clear 1080p video, sub-180ms latency, and client-side AI background blur without server GPU costs.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">Video Infrastructure</div>
+                    <h2 class="slide-title">LiveKit SFU: <span>Carrier-Grade Conferencing</span></h2>
+                    <p class="slide-subtitle">Selective Forwarding Unit with intelligent track distribution and edge media AI.</p>
+                </div>
+                <div class="logo-badge"><span class="logo-text">Confeet</span></div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card card-glow-pink">
+                        <h3 class="card-title">Next-Gen Media Features</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🎯</span>
+                                <div><strong>Adaptive Simulcast:</strong> Generates 1080p, 720p, and 360p layers dynamically based on viewer network quality.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🔋</span>
+                                <div><strong>Dynacast Bandwidth Saver:</strong> Automatically pauses off-screen video feeds to save client CPU & battery.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">✨</span>
+                                <div><strong>Edge AI Virtual Backgrounds:</strong> Client-side TensorFlow.js background blur with <strong>zero server GPU cost</strong>.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">👥</span>
+                                <div><strong>100+ Participants / Room:</strong> Flawlessly scales large enterprise town halls and webinars.</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card" style="background: rgba(0,0,0,0.3); justify-content: center; gap: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div style="background: rgba(0,242,254,0.06); padding: 18px; border-radius: 14px; border: 1px solid rgba(0,242,254,0.2);">
+                                <div style="font-size: 2rem; font-weight: 800; color: var(--accent-cyan); font-family: var(--font-heading);">&lt; 180ms</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Glass-to-Glass Latency</div>
+                            </div>
+                            <div style="background: rgba(16,185,129,0.06); padding: 18px; border-radius: 14px; border: 1px solid rgba(16,185,129,0.2);">
+                                <div style="font-size: 2rem; font-weight: 800; color: var(--accent-emerald); font-family: var(--font-heading);">1080p60</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Crystal Screen Share</div>
+                            </div>
+                            <div style="background: rgba(192,132,252,0.06); padding: 18px; border-radius: 14px; border: 1px solid rgba(192,132,252,0.2);">
+                                <div style="font-size: 2rem; font-weight: 800; color: var(--accent-purple); font-family: var(--font-heading);">100+</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Users per Room</div>
+                            </div>
+                            <div style="background: rgba(255,0,128,0.06); padding: 18px; border-radius: 14px; border: 1px solid rgba(255,0,128,0.2);">
+                                <div style="font-size: 2rem; font-weight: 800; color: var(--accent-pink); font-family: var(--font-heading);">$0</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Server GPU Transcoding</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left"><span>LiveKit WebRTC SFU • Adaptive Simulcast & Dynacast</span></div>
+                <div class="slide-num">05 / 10</div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6 -->
+        <section class="slide" id="slide-6" data-notes="In standard systems, signaling generates 10,000 broadcast packets across clusters. Confeet reduces this to exactly 1 targeted packet via Redis node mapping.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">Signaling Innovation</div>
+                    <h2 class="slide-title">Eliminating Global <span>Broadcast Storms</span></h2>
+                    <p class="slide-subtitle">Redis gateway mapping and NATS targeted queues achieve O(1) signaling delivery.</p>
+                </div>
+                <div class="logo-badge"><span class="logo-text">Confeet</span></div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card card-glow-cyan">
+                        <h3 class="card-title">How Targeted Dispatch Works</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🗺️</span>
+                                <div><strong>Dynamic Gateway Registry:</strong> User's active gateway pod ID is tracked in Redis (TTL: 120s, refreshed by heartbeats).</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">⚡</span>
+                                <div><strong>O(1) Direct Dispatch:</strong> Signaling messages are routed straight to the callee's specific pod, eliminating cluster-wide broadcasts.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🛡️</span>
+                                <div><strong>99.99% Traffic Reduction:</strong> Eliminates wasted CPU cycles and protects gateway memory stability.</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="chart-box">
+                        <img src="charts/chart_signaling_fanout.png" alt="Signaling Fanout Reduction" class="chart-img">
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left"><span>Targeted NATS Dispatch • Zero Broadcast Storms</span></div>
+                <div class="slide-num">06 / 10</div>
+            </div>
+        </section>
+
+        <!-- SLIDE 7 -->
+        <section class="slide" id="slide-7" data-notes="Monotonic sequencing guarantees data integrity across multi-device synchronisation and offline catchups.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">Data Consistency</div>
+                    <h2 class="slide-title">Deterministic FIFO <span>Message Ordering</span></h2>
+                    <p class="slide-subtitle">Monotonic 64-bit sequence counters backed by Kafka event streams and MongoDB.</p>
+                </div>
+                <div class="logo-badge"><span class="logo-text">Confeet</span></div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card card-glow-cyan">
+                        <h3 class="card-title">Why Monotonic Sequencing Matters</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🔢</span>
+                                <div><strong>Clock Skew Immunity:</strong> Strictly incrementing integer counters prevent out-of-order message display across distributed timezones.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🔄</span>
+                                <div><strong>Client Gap Detection:</strong> If a mobile app misses sequence #13, it requests an instant delta sync automatically.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">📜</span>
+                                <div><strong>Kafka Event Sourcing:</strong> Retained event log provides immutable auditability for enterprise compliance.</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card card-glow-emerald" style="justify-content: center;">
+                        <h4 style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--accent-emerald); margin-bottom: 16px;">Reliability Flow Lifecycle</h4>
+                        <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.95rem; color: var(--text-secondary);">
+                            <div><strong style="color:#fff;">1. Ingress:</strong> Client sends frame via WSS</div>
+                            <div><strong style="color:#fff;">2. Sequence:</strong> MongoDB atomically allocates <code>current_seq + 1</code></div>
+                            <div><strong style="color:#fff;">3. Commit:</strong> Event committed to persistent Kafka topic</div>
+                            <div><strong style="color:#fff;">4. Broadcast:</strong> NATS JetStream delivers to online clients (< 28ms)</div>
+                            <div><strong style="color:#fff;">5. Push Fallback:</strong> Dispatches to APNs/FCM only if user is offline</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left"><span>Atomic Monotonic Sequencing • Multi-Device Sync</span></div>
+                <div class="slide-num">07 / 10</div>
+            </div>
+        </section>
+
+        <!-- SLIDE 8 -->
+        <section class="slide" id="slide-8" data-notes="This chart shows our massive resource efficiency: 50,000 active connections take 12.5 GB in Java and 6.2 GB in Node.js. Confeet handles it on 250 MB of RAM.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">Concurrency & Efficiency</div>
+                    <h2 class="slide-title">High Density: <span>50,000 Users on 250 MB RAM</span></h2>
+                    <p class="slide-subtitle">Go's lightweight goroutine scheduler delivers 20x higher memory efficiency than Java or Node.js.</p>
+                </div>
+                <div class="logo-badge"><span class="logo-text">Confeet</span></div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card card-glow-cyan">
+                        <h3 class="card-title">Cloud Resource Optimization</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item">
+                                <span class="bullet-icon">⚡</span>
+                                <div><strong>~2 KB per Connection:</strong> Go goroutines consume tiny memory footprints compared to traditional OS threads.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">💰</span>
+                                <div><strong>Massive Infra Savings:</strong> 50,000 concurrent WebSockets run on a single modest cloud node (250 MB RAM).</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🔄</span>
+                                <div><strong>Stateless Pod Recovery:</strong> Pods restart in under 500ms with zero session loss.</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="chart-box">
+                        <img src="charts/chart_memory_concurrency.png" alt="Memory Concurrency Chart" class="chart-img">
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left"><span>Go Runtime Efficiency • Kubernetes Scalability</span></div>
+                <div class="slide-num">08 / 10</div>
+            </div>
+        </section>
+
+        <!-- SLIDE 9 -->
+        <section class="slide" id="slide-9" data-notes="Security and enterprise compliance are built in: DTLS-SRTP, signed JWT tokens, full audit logs, and host moderation power.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">Security & Compliance</div>
+                    <h2 class="slide-title">Enterprise <span>Zero-Trust Security & Control</span></h2>
+                    <p class="slide-subtitle">End-to-end transport encryption, signed JWT authentication, and host moderation.</p>
+                </div>
+                <div class="logo-badge"><span class="logo-text">Confeet</span></div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-4">
+                    <div class="card card-glow-cyan">
+                        <h3 class="card-title">🛡️ Encryption</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>TLS 1.3 Transport</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Secure WSS</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>DTLS-SRTP Media</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>VPC Isolation</div></li>
+                        </ul>
+                    </div>
+                    <div class="card card-glow-purple">
+                        <h3 class="card-title">🔑 Zero-Trust Auth</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Signed JWTs</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Per-Request Claims</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>RBAC Permissions</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Instant Revocation</div></li>
+                        </ul>
+                    </div>
+                    <div class="card card-glow-emerald">
+                        <h3 class="card-title">📋 Compliance</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Immutable Kafka Log</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>SOC 2 Audit Ready</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>HIPAA Safeguards</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>100% Sovereignty</div></li>
+                        </ul>
+                    </div>
+                    <div class="card card-glow-pink">
+                        <h3 class="card-title">🎛️ Moderation</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Host Mute-All</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Lock Room</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Dismiss Callee</div></li>
+                            <li class="bullet-item"><span class="bullet-icon">✓</span><div>Screen Share Guard</div></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left"><span>DTLS-SRTP • TLS 1.3 • Zero-Trust Access Control</span></div>
+                <div class="slide-num">09 / 10</div>
+            </div>
+        </section>
+
+        <!-- SLIDE 10 -->
+        <section class="slide" id="slide-10" data-notes="As shown in the TCO chart, Confeet saves over 70% in operational costs across all enterprise tiers, returning over $1 Million annually for a 5,000-user enterprise.">
+            <div class="slide-header">
+                <div>
+                    <div class="header-tag">Executive Business Case</div>
+                    <h2 class="slide-title">Strategic ROI: <span>70%+ Reduction in SaaS Costs</span></h2>
+                    <p class="slide-subtitle">Replacing fragmented per-seat collaboration licenses with an owned, high-margin platform.</p>
+                </div>
+                <div class="logo-badge"><span class="logo-text">Confeet</span></div>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card card-glow-emerald">
+                        <h3 class="card-title">Quantifiable Value Drivers</h3>
+                        <ul class="bullet-list">
+                            <li class="bullet-item">
+                                <span class="bullet-icon">💰</span>
+                                <div><strong>76% Average Cost Reduction:</strong> Save $175k/year for 1,000 users and up to <strong>$3.1M/year for 15,000 users</strong> over commercial SaaS.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🏰</span>
+                                <div><strong>100% Data Sovereignty:</strong> All messages, files, and video streams remain in your enterprise VPC.</div>
+                            </li>
+                            <li class="bullet-item">
+                                <span class="bullet-icon">🚀</span>
+                                <div><strong>AI Innovation Ready:</strong> Native hooks for live transcription, action item summaries, and AI agent bots.</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="chart-box">
+                        <img src="charts/chart_tco_savings.png" alt="TCO Savings Chart" class="chart-img">
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left"><span>Transforming Communication from a Cost Center to an Asset • Open for Q&A</span></div>
+                <div class="slide-num">10 / 10</div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="nav-controls">
+        <button class="nav-btn" id="prevBtn" title="Previous Slide (Left Arrow)">❮</button>
+        <span class="slide-counter-badge" id="slideCounter">01 / 10</span>
+        <button class="nav-btn" id="nextBtn" title="Next Slide (Right Arrow or Space)">❯</button>
+        <button class="nav-btn" id="notesBtn" title="Speaker Notes (Press 'S')">📝</button>
+        <button class="nav-btn" id="fsBtn" title="Fullscreen (Press 'F')">⛶</button>
+    </div>
+
+    <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <aside class="speaker-notes-drawer" id="notesDrawer">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border-subtle);">
+            <div style="font-family:var(--font-heading); font-size:1.2rem; font-weight:700; color:var(--accent-cyan);">📝 Speaker Notes</div>
+            <button id="notesCloseBtn" style="background:transparent; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer;">✕</button>
+        </div>
+        <div id="notesContent" style="font-size:0.95rem; color:var(--text-secondary); line-height:1.6;">Loading...</div>
+    </aside>
+
+    <script>
+        (function() {
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const fsBtn = document.getElementById('fsBtn');
+            const notesBtn = document.getElementById('notesBtn');
+            const notesCloseBtn = document.getElementById('notesCloseBtn');
+            const notesDrawer = document.getElementById('notesDrawer');
+            const notesContent = document.getElementById('notesContent');
+            const slideCounter = document.getElementById('slideCounter');
+            const progressFill = document.getElementById('progressFill');
+
+            let currentSlideIndex = 0;
+            const totalSlides = slides.length;
+
+            function updateSlide(index) {
+                if (index < 0) index = 0;
+                if (index >= totalSlides) index = totalSlides - 1;
+                currentSlideIndex = index;
+
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === currentSlideIndex);
+                });
+
+                const currentFormatted = String(currentSlideIndex + 1).padStart(2, '0');
+                const totalFormatted = String(totalSlides).padStart(2, '0');
+                slideCounter.textContent = `${currentFormatted} / ${totalFormatted}`;
+                progressFill.style.width = `${((currentSlideIndex + 1) / totalSlides) * 100}%`;
+
+                const activeSlide = slides[currentSlideIndex];
+                notesContent.innerHTML = `<p>${activeSlide.getAttribute('data-notes') || ''}</p>`;
+            }
+
+            function nextSlide() { if (currentSlideIndex < totalSlides - 1) updateSlide(currentSlideIndex + 1); }
+            function prevSlide() { if (currentSlideIndex > 0) updateSlide(currentSlideIndex - 1); }
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => {});
+                else document.exitFullscreen();
+            }
+
+            nextBtn.addEventListener('click', nextSlide);
+            prevBtn.addEventListener('click', prevSlide);
+            fsBtn.addEventListener('click', toggleFullscreen);
+            notesBtn.addEventListener('click', () => notesDrawer.classList.toggle('open'));
+            notesCloseBtn.addEventListener('click', () => notesDrawer.classList.remove('open'));
+
+            window.addEventListener('keydown', (e) => {
+                if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); nextSlide(); }
+                else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); prevSlide(); }
+                else if (e.key === 'Home') { e.preventDefault(); updateSlide(0); }
+                else if (e.key === 'End') { e.preventDefault(); updateSlide(totalSlides - 1); }
+                else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
+                else if (e.key === 's' || e.key === 'S') { e.preventDefault(); notesDrawer.classList.toggle('open'); }
+            });
+
+            updateSlide(0);
+        })();
+    </script>
+</body>
+</html>

@@ -54,15 +54,6 @@ export class ChatService {
     readonly isChatActive = this._isChatActive.asReadonly();
     private currentUserId: string = "";
 
-    // Lazy NotificationService to avoid circular dependency
-    private _notificationService: NotificationService | null = null;
-    private get notifService(): NotificationService {
-        if (!this._notificationService) {
-            this._notificationService = this.injector.get(NotificationService);
-        }
-        return this._notificationService;
-    }
-
     private socketSubscriptions = new Subscription();
     private processedMessageIds = new Set<string>();
 
@@ -70,7 +61,7 @@ export class ChatService {
         private ws: ConfeetSocketService,
         private local: LocalService,
         private chatDb: ChatDbService,
-        private injector: Injector
+        private notificationService: NotificationService
     ) {
         const user = this.local.getUser();
         if (user) {
@@ -567,7 +558,7 @@ export class ChatService {
      */
     private updateMessageState(message: Message): boolean {
         if (message.senderId === this.currentUserId) {
-            if (this.notifService.activeConversationId() === message.conversationId) {
+            if (this.notificationService.activeConversationId() === message.conversationId) {
                 this.messages.update(msgs =>
                     msgs.map(x => x.messageId === message.messageId ? { ...x, status: message.status || 1, id: message.id } : x)
                 );
@@ -578,7 +569,7 @@ export class ChatService {
             }
             return true;
         } else {
-            if (this.notifService.activeConversationId() === message.conversationId) {
+            if (this.notificationService.activeConversationId() === message.conversationId) {
                 this.messages.update(msgs => [...msgs, message]);
             }
             return false;
@@ -700,17 +691,17 @@ export class ChatService {
         // If the message is from the current user, update its state and return early
         if (this.updateMessageState(message)) return;
 
-        if (this.notifService.activeConversationId() !== message.conversationId) {
+        if (this.notificationService.activeConversationId() !== message.conversationId) {
             // Increment unread count for this conversation
-            this.notifService.unreadCounts.update(counts => {
+            this.notificationService.unreadCounts.update(counts => {
                 const newCounts = new Map(counts);
-                const current = newCounts.get(message.conversationId) || 0;
+                const current = Number(newCounts.get(message.conversationId)) || 0;
                 newCounts.set(message.conversationId, current + 1);
                 return newCounts;
             });
             const senderName = (message as any).senderName;
             // Show notification
-            this.notifService.showNotification({
+            this.notificationService.showNotification({
                 id: message.messageId,
                 type: 'message',
                 title: senderName,
@@ -792,7 +783,7 @@ export class ChatService {
     }
 
     private handleTyping(typing: TypingIndicator): void {
-        this.notifService.typingUsers.update(users => {
+        this.notificationService.typingUsers.update(users => {
             const newUsers = new Map(users);
             newUsers.set(typing.userId, typing.isTyping);
             return newUsers;
@@ -802,7 +793,7 @@ export class ChatService {
     private handleError(error: ErrorPayload): void {
         console.error('WebSocket error:', error.message);
 
-        this.notifService.showNotification({
+        this.notificationService.showNotification({
             id: crypto.randomUUID(),
             type: 'error',
             title: 'Connection Error',

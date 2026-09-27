@@ -894,11 +894,12 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     joinMeeting(item: MeetingDetail): void {
         this.ws.currentConversationId.set(item.conversationId);
         this.joinCallService.execute(this.user.userId, item.conversationId);
-        this.router.navigate(['/btc/preview'], {
+        this.router.navigate(['/btc/in-meeting-room'], {
             state: {
                 id: item.conversationId,
                 type: CallType.AUDIO,
                 autoJoin: true,
+                joinMeeting: 1,
                 title: item.title ? item.title : 'Unknown'
             }
         });
@@ -914,8 +915,8 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit {
     copyMeetingLink(meeting: any, tooltip: any): void {
         const targetId = meeting.meetingId && meeting.meetingDetailId ? `${meeting.meetingId}_${meeting.meetingDetailId}` : (meeting.meetingId || meeting.id);
         const url = environment.production
-            ? `https://www.confeet.com/#/btc/preview?meetingid=${targetId}`
-            : `http://localhost:4200/#/btc/preview?meetingid=${targetId}`;
+            ? `https://www.confeet.com/btc/in-meeting-room?meetingid=${targetId}`
+            : `http://localhost:4200/btc/in-meeting-room?meetingid=${targetId}`;
 
         navigator.clipboard.writeText(url).then(() => {
             tooltip.open();

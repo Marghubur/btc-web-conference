@@ -29,7 +29,8 @@ export const MeetingId = "meetingid"
 
 // ------------------ ROUTES -----------------------------
 export const Dashboard = "btc/dashboard";
-export const Preview = "btc/preview";
+export const InMeetingRoom = "btc/in-meeting-room";
+export const Preview = "btc/in-meeting-room";
 export const Meeting = "btc/meeting";
 export const Login = "login";
 export const ChatPage = "btc/chat";

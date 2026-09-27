@@ -743,11 +743,12 @@ export class MeetingEditComponent implements OnInit {
         this.joinCallService.execute(this.user.userId, convId);
       }
     }
-    this.router.navigate(['/btc/preview'], {
+    this.router.navigate(['/btc/in-meeting-room'], {
       state: {
         id: convId,
         type: CallType.AUDIO,
         autoJoin: true,
+        joinMeeting: 1,
         title: this.meetingDetail.title || 'Meeting'
       }
     });
@@ -842,8 +843,8 @@ export class MeetingEditComponent implements OnInit {
       : (this.meetingDetail.meetingId || this.meetingDetailId);
 
     const url = environment.production
-      ? `https://www.confeet.com/#/btc/preview?meetingid=${targetId}`
-      : `http://localhost:4200/#/btc/preview?meetingid=${targetId}`;
+      ? `https://www.confeet.com/btc/in-meeting-room?meetingid=${targetId}`
+      : `http://localhost:4200/btc/in-meeting-room?meetingid=${targetId}`;
 
     navigator.clipboard.writeText(url).then(() => {
       tooltip.open();
@@ -875,8 +876,8 @@ export class MeetingEditComponent implements OnInit {
       : (this.meetingDetail.meetingId || this.meetingDetailId);
 
     const url = environment.production
-      ? `https://www.confeet.com/#/btc/preview?meetingid=${targetId}`
-      : `http://localhost:4200/#/btc/preview?meetingid=${targetId}`;
+      ? `https://www.confeet.com/btc/in-meeting-room?meetingid=${targetId}`
+      : `http://localhost:4200/btc/in-meeting-room?meetingid=${targetId}`;
 
     const startDateStr = this.meetingForm.get('startDate')?.value ? this.toFullDateString(this.meetingForm.get('startDate')?.value) : '';
     const startTimeStr = this.meetingForm.get('startTime')?.value || '';

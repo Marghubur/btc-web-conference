@@ -1,16 +1,11 @@
 import { Injectable } from '@angular/core';
-import { ConfeetSocketService } from '../../confeet-socket.service';
-import { ServerEventService } from '../../server-events/server-event.service';
-import { CallEvents, CallStatus, CallTimeoutPayload } from '../../../../models/conference_call/call_model';
+import { BaseCallService } from './base-call.service';
+import { CallEvents } from '../../../../models/conference_call/call_model';
 
 @Injectable({
     providedIn: 'root'
 })
-export class TestSignalService {
-    constructor(
-        private ws: ConfeetSocketService
-    ) { }
-
+export class TestSignalService extends BaseCallService {
     execute(): void {
         this.ws.sendEvent(CallEvents.CALL_TEST_SIGNAL, {});
     }

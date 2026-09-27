@@ -1,22 +1,17 @@
 import { Injectable } from '@angular/core';
-import { ConfeetSocketService } from '../../confeet-socket.service';
-import { ServerEventService } from '../../server-events/server-event.service';
+import { BaseCallService } from './base-call.service';
 import { CallEvents, CallStatus, CallTimeoutPayload } from '../../../../models/conference_call/call_model';
 
 @Injectable({
     providedIn: 'root'
 })
-export class TimeoutCallService {
-    constructor(
-        private ws: ConfeetSocketService,
-        private serverEventService: ServerEventService
-    ) {}
-
+export class TimeoutCallService extends BaseCallService {
     execute(conversationId: string, callerId: string): void {
-        this.ws.sendEvent(CallEvents.CALL_TIMEOUT, <CallTimeoutPayload>{
-            conversationId: conversationId,
+        const payload = this.createPayload<CallTimeoutPayload>(conversationId, {
             callerId: callerId
         });
-        this.serverEventService.callStatus.set(CallStatus.TIMEOUT);
+
+        this.ws.sendEvent(CallEvents.CALL_TIMEOUT, payload);
+        this.callStore.callStatus.set(CallStatus.TIMEOUT);
     }
 }

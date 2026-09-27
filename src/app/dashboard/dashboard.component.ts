@@ -287,11 +287,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   joinMeeting(item: any) {
     this.ws.currentConversationId.set(item.conversationId);
     this.joinCallService.execute(this.user.userId, item.conversationId);
-    this.router.navigate(['/btc/preview'], {
+    this.router.navigate(['/btc/in-meeting-room'], {
       state: {
         id: item.conversationId,
         type: CallType.AUDIO,
         autoJoin: true,
+        joinMeeting: 1,
         title: item.title ? item.title : 'Unknown'
       }
     });
@@ -372,7 +373,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   copyLink(item: any, tooltip: any) {
     let targetId = item.meetingId && item.meetingDetailId ? `${item.meetingId}_${item.meetingDetailId}` : (item.meetingId || item.id);
-    let url = environment.production ? `https://www.confeet.com/#/btc/preview?meetingid=${targetId}` : `http://localhost:4200/#/btc/preview?meetingid=${targetId}`;
+    let url = environment.production ? `https://www.confeet.com/btc/in-meeting-room?meetingid=${targetId}` : `http://localhost:4200/btc/in-meeting-room?meetingid=${targetId}`;
     navigator.clipboard.writeText(url).then(() => {
       console.log('Copied to clipboard:');
       tooltip.open();
@@ -464,7 +465,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   shareInviteLink(item: any, tooltip: any) {
     let targetId = item.meetingId && item.meetingDetailId ? `${item.meetingId}_${item.meetingDetailId}` : (item.meetingId || item.id);
-    let url = environment.production ? `https://www.confeet.com/#/btc/preview?meetingid=${targetId}` : `http://localhost:4200/#/btc/preview?meetingid=${targetId}`;
+    let url = environment.production ? `https://www.confeet.com/btc/in-meeting-room?meetingid=${targetId}` : `http://localhost:4200/btc/in-meeting-room?meetingid=${targetId}`;
     let shareUrl = `${item.organizerName || 'Host'} invited you to a BottomHalf Meeting:
 
 ${item.title || 'Meeting'}

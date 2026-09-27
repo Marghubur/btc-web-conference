@@ -12,7 +12,7 @@ export const CallEvents = {
     CALL_ACCEPT: 'call:accept',
 
     // EventCallReject - Callee rejects the incoming call
-    CALL_REJECT: 'call:reject',
+    CALL_REJECT: 'call:rejected',
 
     // EventCallDismiss - Caller cancels before callee answers
     CALL_DISMISS: 'call:dismiss',
@@ -200,67 +200,62 @@ export interface CallParticipant {
 
 
 // ============================================
+// Base Model for Call Payloads & Events
+// ============================================
+
+/** CallBaseModel is the base model for all call events and payloads */
+export interface CallBaseModel {
+    conversationId: string;
+    callerId?: string;
+    receiverId?: string;
+    callerName?: string;
+    callerEmail?: string;
+    callType?: string;
+    avatarUrl?: string;
+    timeout?: number;
+}
+
+
+// ============================================
 // WebSocket Event Payloads - Client to Server
 // ============================================
 
 /** CallInitiatePayload is sent by caller to initiate a call */
-export interface CallInitiatePayload {
+export interface CallInitiatePayload extends CallBaseModel {
     callId?: string;
-    callerId?: string;
-    callerName?: string;
     callerAvatar?: string;
-    conversationId: string;         // Conversation/room ID
-    calleeIds: string[];            // User(s) to call
-    callType: CallTypeValue;        // "audio" or "video"
-    timeout?: number;               // Ring timeout in seconds (default 40)
+    calleeIds: string[];
 }
 
 /** CallInvitePayload is sent by caller to invite a specific user to an active call */
-export interface CallInvitePayload {
-    targetUserId: string;           // The user being invited
-    callerId: string;
-    callerName?: string;
+export interface CallInvitePayload extends CallBaseModel {
+    targetUserId: string;
     callerAvatar?: string;
-    conversationId: string;         // Current Conversation/room ID
-    callType: CallTypeValue;        // "audio" or "video"
-    timeout?: number;               // Ring timeout in seconds
 }
 
 /** CallAcceptPayload is sent by callee to accept a call */
-export interface CallAcceptPayload {
-    conversationId: string;
-    callerId: string;
-}
+export interface CallAcceptPayload extends CallBaseModel {}
 
 /** CallRejectPayload is sent by callee to reject a call */
-export interface CallRejectPayload {
-    conversationId: string;
-    callerId: string;
-    reason?: string;                // Optional rejection reason
+export interface CallRejectPayload extends CallBaseModel {
+    reason?: string;
 }
 
 /** CallDismissPayload is sent by caller to dismiss a call */
-export interface CallDismissPayload {
-    conversationId: string;
-    callerId: string;
-    reason?: string;                // Optional rejection reason
+export interface CallDismissPayload extends CallBaseModel {
+    reason?: string;
 }
 
 /** CallCancelPayload is sent by caller to cancel before answer */
-export interface CallCancelPayload {
-    conversationId: string;
+export interface CallCancelPayload extends CallBaseModel {
     calleeIds: string[];
 }
 
 /** CallTimeoutPayload is sent by callee when ring timeout occurs */
-export interface CallTimeoutPayload {
-    conversationId: string;
-    callerId: string;
-}
+export interface CallTimeoutPayload extends CallBaseModel {}
 
 /** CallEndPayload is sent to end an ongoing call */
-export interface CallEndPayload {
-    conversationId: string;
+export interface CallEndPayload extends CallBaseModel {
     reason?: string;
 }
 
@@ -270,27 +265,21 @@ export interface CallEndPayload {
 // ============================================
 
 /** CallIncomingEvent is sent to callee(s) when receiving a call */
-export interface CallIncomingEvent {
-    conversationId: string;
-    callerId: string;
-    callerName?: string;            // Display name
-    callerAvatar?: string;          // Avatar URL
-    callType: CallTypeValue;        // "audio" or "video"
+export interface CallIncomingEvent extends CallBaseModel {
+    calleeIds: string[];
     participants: Record<string, CallParticipant>;
-    timeout: number;                // Seconds until timeout
-    timestamp: number;              // Unix timestamp
+    isGroup: boolean;
+    reason: string;
+    roomName: number;
 }
 
 /** GroupNotificationEvent is sent to group members when receiving a notification */
-export interface GroupNotificationEvent {
-    conversationId: string;
+export interface GroupNotificationEvent extends CallBaseModel {
     notificationType: string; // "accept", "reject", "dismiss", "timeout"
-    callerId: string;
 }
 
 /** CallAcceptedEvent is sent to caller when callee accepts */
-export interface CallAcceptedEvent {
-    conversationId: string;
+export interface CallAcceptedEvent extends CallBaseModel {
     acceptedBy: string;             // UserID who accepted
     roomName: string;               // LiveKit room name
     token: string;                  // LiveKit access token for caller
@@ -298,15 +287,14 @@ export interface CallAcceptedEvent {
 }
 
 /** CallRejectedEvent is sent to caller when callee rejects */
-export interface CallRejectedEvent {
-    conversationId: string;
+export interface CallRejectedEvent extends CallBaseModel {
     rejectedBy: string;
     reason?: string;
     timestamp: number;
 }
 
 /** CallDismissedEvent is sent to caller when callee dismisses */
-export interface CallDismissedEvent {
+export interface CallDismissedEvent extends CallBaseModel {
     callId: string;
     dismissedBy: string;
     reason?: string;
@@ -314,21 +302,18 @@ export interface CallDismissedEvent {
 }
 
 /** CallCancelledEvent is sent to callee when caller cancels */
-export interface CallCancelledEvent {
-    conversationId: string;
+export interface CallCancelledEvent extends CallBaseModel {
     cancelledBy: string;
     timestamp: number;
 }
 
 /** CallTimedOutEvent is sent to caller when call times out */
-export interface CallTimedOutEvent {
-    conversationId: string;
+export interface CallTimedOutEvent extends CallBaseModel {
     timestamp: number;
 }
 
 /** CallEndedEvent is sent when call ends */
-export interface CallEndedEvent {
-    conversationId: string;
+export interface CallEndedEvent extends CallBaseModel {
     endedBy: string;
     reason: string;
     duration: number;               // Call duration in seconds
@@ -336,16 +321,21 @@ export interface CallEndedEvent {
 }
 
 /** CallBusyEvent is sent to caller when callee is busy */
-export interface CallBusyEvent {
-    conversationId: string;
+export interface CallBusyEvent extends CallBaseModel {
     busyUser: string;
     timestamp: number;
 }
 
 /** CallErrorEvent is sent when a call error occurs */
-export interface CallErrorEvent {
-    conversationId: string;
+export interface CallErrorEvent extends CallBaseModel {
     error: string;
     code?: string;
     timestamp: number;
+}
+
+export interface InvitedParticipant {
+    name: string;
+    id: string;
+    email: string;
+    invited: boolean;
 }

@@ -929,28 +929,32 @@ export class ChatContainerComponent implements AfterViewChecked {
             .filter((p) => p && p.userId !== this.currentUserId)
             .map((p) => p.userId);
         this.initiateAudioCallService.execute(calleeIds, this.ws.currentConversation().id);
-        this.router.navigate(['/btc/preview'], {
+        this.router.navigate(['/btc/in-meeting-room'], {
             state: {
                 id: this.ws.currentConversation().id,
                 type: CallType.AUDIO,
                 title: this.ws.currentConversation().conversationName
                     ? this.ws.currentConversation().conversationName
                     : 'NEW',
-                autoJoin: true,
+                joinMeeting: 1,
+                mic: 1,
+                camera: 0,
             },
         });
     }
 
     joinMeeting() {
         if (!this.ws.currentConversation() || !this.ws.currentConversation().id) return;
-        this.router.navigate(['/btc/preview'], {
+        this.router.navigate(['/btc/in-meeting-room'], {
             state: {
                 id: this.ws.currentConversation().id,
                 type: CallType.VIDEO,
                 title: this.ws.currentConversation().conversationName
                     ? this.ws.currentConversation().conversationName
                     : 'NEW',
-                autoJoin: true,
+                joinMeeting: 1,
+                mic: 1,
+                camera: 0,
             },
         });
     }

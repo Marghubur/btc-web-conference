@@ -1,18 +1,11 @@
 import { Injectable } from '@angular/core';
-import { ConfeetSocketService } from '../../confeet-socket.service';
+import { BaseCallService } from './base-call.service';
 import { CallEvents, CallInvitePayload, CallTypeValue } from '../../../../models/conference_call/call_model';
-import { LocalService } from '../../../../providers/services/local.service';
 
 @Injectable({
     providedIn: 'root'
 })
-export class InviteCallEventService {
-
-    constructor(
-        private ws: ConfeetSocketService,
-        private localService: LocalService
-    ) { }
-
+export class InviteCallEventService extends BaseCallService {
     /**
      * Invite a specific user to an ongoing call
      * @param targetUserId ID of the user to invite
@@ -26,17 +19,11 @@ export class InviteCallEventService {
         callType: CallTypeValue,
         timeout: number = 120
     ): void {
-        const currentUser = this.localService.getUser();
-
-        const payload: CallInvitePayload = {
+        const payload = this.createPayload<CallInvitePayload>(conversationId, {
             targetUserId: targetUserId,
-            callerId: currentUser.userId,
-            callerName: `${currentUser.firstName} ${currentUser.lastName}`.trim(),
-            callerAvatar: (currentUser as any).avatar || '',
-            conversationId: conversationId,
             callType: callType,
             timeout: timeout
-        };
+        });
 
         this.ws.sendEvent(CallEvents.CALL_INVITE, payload);
     }
