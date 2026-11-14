@@ -2,97 +2,99 @@
 # This is a YAML-formatted file.
 
 global:
-  environment: production
+    environment: production
 
 namespace:
-  create: true
-  name: "cf"
+    create: true
+    name: "cf"
 
 replicaCount: 1
 
 image:
-  repository: bottomhalflimited/btc-web-conference
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+    repository: ghcr.io/bottomhalf/btc-web-conference
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: "btc-web-conference"
 
 serviceAccount:
-  create: true
-  automount: true
-  annotations: {}
-  name: ""
+    create: true
+    automount: true
+    annotations: {}
+    name: ""
 
 podAnnotations: {}
 podLabels:
-  app.kubernetes.io/component: frontend
-  app.kubernetes.io/part-of: confeet
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: confeet
 
 podSecurityContext: {}
 
 securityContext: {}
 
 service:
-  type: ClusterIP
-  port: 7800
-  targetPort: 80
-  nodePort: null
+    name: btc-web-conference
+    type: ClusterIP
+    port: 7800
+    targetPort: 80
+    protocol: TCP
+    nodePort: null
 
 resources:
-  limits:
-    cpu: 500m
-    memory: 256Mi
-  requests:
-    cpu: 100m
-    memory: 64Mi
+    limits:
+        cpu: 500m
+        memory: 256Mi
+    requests:
+        cpu: 100m
+        memory: 64Mi
 
 livenessProbe:
-  httpGet:
-    path: /
-    port: 80
-  initialDelaySeconds: 15
-  periodSeconds: 20
-  timeoutSeconds: 5
-  failureThreshold: 3
+    httpGet:
+        path: /
+        port: 80
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
 
 readinessProbe:
-  httpGet:
-    path: /
-    port: 80
-  initialDelaySeconds: 5
-  periodSeconds: 10
-  timeoutSeconds: 3
-  failureThreshold: 2
+    httpGet:
+        path: /
+        port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 2
 
 autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 2
-  targetCPUUtilizationPercentage: 80
-  targetMemoryUtilizationPercentage: 80
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 2
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
 
 nodeSelector: {}
 
 tolerations: []
 
 affinity:
-  podAntiAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchExpressions:
-              - key: app.kubernetes.io/name
-                operator: In
-                values:
-                  - btc-web-conference
-          topologyKey: kubernetes.io/hostname
+    podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                  labelSelector:
+                      matchExpressions:
+                          - key: app.kubernetes.io/name
+                            operator: In
+                            values:
+                                - btc-web-conference
+                  topologyKey: kubernetes.io/hostname
 
 strategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxSurge: 1
-    maxUnavailable: 0
+    type: RollingUpdate
+    rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0

@@ -5,12 +5,12 @@ type: application
 version: 1.0.0
 appVersion: "1.0.0"
 keywords:
-  - angular
-  - nginx
-  - conference
-  - webrtc
-  - microk8s
-  - frontend
+    - angular
+    - nginx
+    - conference
+    - webrtc
+    - microk8s
+    - frontend
 maintainers:
-  - name: Confeet DevOps
-    email: devops@confeet.com
+    - name: Confeet DevOps
+      email: info@confeet.com
